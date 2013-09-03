@@ -1,0 +1,1 @@
+# /regex/, msg (com ID no lugar do identificador do dispositivo e TEXTO no lugar do texto)
