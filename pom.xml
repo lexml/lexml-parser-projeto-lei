@@ -1,12 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	
-	<parent>
-		<groupId>br.gov.lexml</groupId>
-		<artifactId>public-maven-parent</artifactId>
-		<version>0.0.2</version>
-	</parent>
-
 	<groupId>br.gov.lexml.parser.pl</groupId>
 	<artifactId>lexml-parser-projeto-lei</artifactId>
 	<version>1.9.1-SNAPSHOT</version>
@@ -14,6 +8,11 @@
 	<properties>
 		<scala.version>2.10</scala.version>
 		<scala.lib.version>${scala.version}.1</scala.lib.version>
+		
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+		<!-- github server corresponds to entry in ~/.m2/settings.xml -->
+		<github.global.server>github</github.global.server>
 	</properties>
 
 	<scm>
@@ -22,8 +21,28 @@
 		<connection>scm:git:https://github.com/lexml/${project.artifactId}.git</connection>
 		<tag>HEAD</tag>
 	</scm>
+	
+	<distributionManagement>
+		<repository>
+			<id>releases</id>
+			<name>GitHub ${project.artifactId} Repository</name>
+			<url>https://raw.github.com/lexml/mvn-repo/master</url>
+		</repository>
+	</distributionManagement>
 
 	<repositories>
+		<repository>
+			<id>GitHub Repository</id>
+			<url>https://raw.github.com/lexml/mvn-repo/master</url>
+			<releases>
+      			<enabled>true</enabled>
+    		</releases>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+		
 		<repository>
 			<id>typesafe</id>
 			<name>Typesafe Repository</name>
@@ -54,85 +73,72 @@
 			<url>http://scala-tools.org/repo-snapshots</url>
 		</repository>
 	</repositories>
-	<dependencies>
-		<!-- <dependency> <groupId>se.scalablesolutions.akka</groupId> <artifactId>akka-actor</artifactId> 
-			<version>1.3</version> <exclusions> <exclusion> <artifactId>scala-library</artifactId> 
-			<groupId>org.scala-lang</groupId> </exclusion> </exclusions> </dependency> 
-			<dependency> <groupId>junit</groupId> <artifactId>junit</artifactId> <version>4.8</version> 
-			<scope>test</scope> </dependency> -->
-		<dependency>
-			<groupId>com.typesafe.akka</groupId>
-			<artifactId>akka-actor_${scala.version}</artifactId>
-			<version>2.1.4</version>
-		</dependency>
-		<dependency>
-			<groupId>org.scala-lang</groupId>
-			<artifactId>scala-library</artifactId>
-			<version>${scala.lib.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>2.0.1</version>
-		</dependency>
-		
-		<!-- <dependency> <groupId>org.scalaz</groupId> <artifactId>scalaz-core_${scala.lib.version}</artifactId> 
-			<version>6.0.1</version> </dependency> -->
-		<dependency>
-			<groupId>br.gov.lexml</groupId>
-			<artifactId>lexml-xml-schemas</artifactId>
-			<version>3.1.2</version>
-			<type>jar</type>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.googlecode.kiama</groupId>
-			<artifactId>kiama_${scala.version}</artifactId>
-			<version>1.5.0</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.scala-lang</groupId>
-					<artifactId>scala-library</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.specs2</groupId>
-			<artifactId>specs2_${scala.version}</artifactId>
-			<version>1.13</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.ccil.cowan.tagsoup</groupId>
-			<artifactId>tagsoup</artifactId>
-			<version>1.2.1</version>
-			<type>jar</type>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.16</version>
-			<type>jar</type>
-			<scope>runtime</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.6.1</version>
-			<scope>runtime</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.clapper</groupId>
-			<artifactId>grizzled-slf4j_${scala.version}</artifactId>
-			<version>1.0.1</version>
-		</dependency>
-	</dependencies>
+	
+
+	
 	<build>
 		<sourceDirectory>src/main/scala</sourceDirectory>
 		<testSourceDirectory>src/test/scala</testSourceDirectory>
 
 		<plugins>
+		
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>2.4.1</version>
+				<configuration>
+					<detail>true</detail>
+					<allowTimestampedSnapshots>true</allowTimestampedSnapshots>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<version>2.7</version>
+				<configuration>
+					<altDeploymentRepository>internal.repo::default::file://${project.build.directory}/mvn-repo</altDeploymentRepository>
+				</configuration>
+			</plugin>
+			<plugin>
+			  <groupId>org.apache.maven.plugins</groupId>
+			  <artifactId>maven-source-plugin</artifactId>
+			  <executions>
+			    <execution>
+			      <id>attach-sources</id>
+			      <goals>
+			        <goal>jar</goal>
+			      </goals>
+			    </execution>
+			  </executions>
+			</plugin>
+			<plugin>
+				<groupId>com.github.github</groupId>
+				<artifactId>site-maven-plugin</artifactId>
+				<version>0.8</version>
+				<configuration>
+					<message>Maven artifacts for ${project.artifactId}
+						${project.version}</message>  <!-- git commit message -->
+					<noJekyll>true</noJekyll>                                  <!-- disable webpage processing -->
+					<outputDirectory>${project.build.directory}/mvn-repo</outputDirectory> <!-- matches distribution management repository url above -->
+					<branch>refs/heads/master</branch>
+					<includes>
+						<include>**/*</include>
+					</includes>
+					<repositoryName>mvn-repo</repositoryName>      <!-- github repo name -->
+					<repositoryOwner>lexml</repositoryOwner>    <!-- github username -->
+					<merge>true</merge>
+				</configuration>
+				<executions>
+					<!-- run site-maven-plugin's 'site' target as part of the build's normal 
+						'deploy' phase -->
+					<execution>
+						<goals>
+							<goal>site</goal>
+						</goals>
+						<phase>deploy</phase>
+					</execution>
+				</executions>
+			</plugin>				
+		
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -167,7 +173,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>buildnumber-maven-plugin</artifactId>
-				<version>1.0</version>
+				<version>1.2</version>
 				<executions>
 					<execution>
 						<phase>validate</phase>
@@ -183,7 +189,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.3.2</version>
+				<version>2.4</version>
 				<configuration>
 					<archive>
 						<manifestEntries>
@@ -238,5 +244,73 @@
 		</pluginManagement>
 	</build>
 
+	<dependencies>
+		<dependency>
+			<groupId>com.typesafe.akka</groupId>
+			<artifactId>akka-actor_${scala.version}</artifactId>
+			<version>2.1.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.scala-lang</groupId>
+			<artifactId>scala-library</artifactId>
+			<version>${scala.lib.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.0.1</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>br.gov.lexml</groupId>
+			<artifactId>lexml-xml-schemas</artifactId>
+			<version>3.1.2</version>
+			<type>jar</type>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.googlecode.kiama</groupId>
+			<artifactId>kiama_${scala.version}</artifactId>
+			<version>1.5.0</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.scala-lang</groupId>
+					<artifactId>scala-library</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.specs2</groupId>
+			<artifactId>specs2_${scala.version}</artifactId>
+			<version>1.13</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.ccil.cowan.tagsoup</groupId>
+			<artifactId>tagsoup</artifactId>
+			<version>1.2.1</version>
+			<type>jar</type>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.16</version>
+			<type>jar</type>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>1.6.1</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.clapper</groupId>
+			<artifactId>grizzled-slf4j_${scala.version}</artifactId>
+			<version>1.0.1</version>
+		</dependency>
+	</dependencies>
+	
 </project>
 
