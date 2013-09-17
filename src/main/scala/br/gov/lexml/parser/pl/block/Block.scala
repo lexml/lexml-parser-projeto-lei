@@ -277,7 +277,7 @@ object Block extends Block {
     docollect(nl, Nil)
   }
 
-  def fromNodes(nodes: List[Node]): List[Block] = {
+  def fromNodes(nodes: List[Node]): List[Block] = {        
     nodes.collect((n: Node) ⇒ n match {
       case Elem(_, name, attr, _, cl @ _*) if name == "p" || name == "blockquote" ⇒ {
         Paragraph(cl, attr.asAttrMap.withDefault(_ ⇒ "0")("indentation").toDouble,
@@ -486,7 +486,7 @@ object Block extends Block {
     case _ => false
   }
   
-  def organizaDispositivos(blocks: List[Block], dentroAlteracao: Boolean = false): List[Block] = {
+  def organizaDispositivos(blocks: List[Block], dentroAlteracao: Boolean = false): List[Block] = {    
     //println("organizaDispositivos: starting")
     def agrupa(b: Block, bl: List[Block]): List[Block] = {
       def spanUpToEvidenciaAlteracao(bl : List[Block], rl : List[Block] = Nil) : Option[(List[Block],List[Block])] = bl match {
@@ -661,7 +661,7 @@ object Block extends Block {
       case (prev, a: Alteracao) ⇒ a.mapBlocks(reconheceDispositivos) :: prev
       case (prev, x) ⇒ x :: prev
     }
-    blocks.foldLeft(List[Block]())(f).reverse
+    blocks.foldLeft(List[Block]())(f).reverse    
   }
 
   val isParagraph: Block ⇒ Boolean = { case Paragraph(_, _) ⇒ true; case _ ⇒ false }

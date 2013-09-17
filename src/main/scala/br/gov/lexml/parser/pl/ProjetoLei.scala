@@ -328,6 +328,7 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
     }
   }
   def fromBlocks(metadado: Metadado, blocks: List[Block]): (Option[ProjetoLei], List[ParseProblem]) = {
+    
     try {
       val (preEpigrafe, epigrafe, posEpigrafe) =
         if (profile.regexEpigrafe.isEmpty) {

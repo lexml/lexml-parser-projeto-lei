@@ -7,8 +7,8 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable.WeakHashMap
 import grizzled.slf4j.Logging
 
-final case class Component(groupId: String, artifactId: String, build: Long) {
-  override def toString() = "%s:%s:%d" format (groupId, artifactId, build)
+final case class Component(groupId: String, artifactId: String, build: String) {
+  override def toString() = "%s:%s:%s" format (groupId, artifactId, build)
 }
 
 object ParserComponentConfiguration extends Logging {
@@ -30,10 +30,10 @@ object ParserComponentConfiguration extends Logging {
 
   private val compsMap: WeakHashMap[ClassLoader, Configuration] = WeakHashMap()
 
-  def componentBuildNumber(groupId: String, artifactId: String, c: Class[_]): Option[Long] =
+  def componentBuildNumber(groupId: String, artifactId: String, c: Class[_]): Option[String] =
     componentBuildNumber(groupId, artifactId, c.getClassLoader)
 
-  def componentBuildNumber(groupId: String, artifactId: String, cl: ClassLoader): Option[Long] =
+  def componentBuildNumber(groupId: String, artifactId: String, cl: ClassLoader): Option[String] =
     scanConfiguration(cl).get((groupId, artifactId)).map(_.build)
 
   def scanConfiguration(c: Class[_]): Configuration = scanConfiguration(c.getClassLoader)
@@ -51,7 +51,7 @@ object ParserComponentConfiguration extends Logging {
             ucl.getURLs.toList.map(jarAttributes).map(m ⇒ (m.get(lexmlParserComponenteNome), m.get(lexmlParserComponenteBuild)) match {
               case (Some(nome), Some(build)) if buildRe.findFirstIn(build).isDefined ⇒ {
                 nome.split("/") match {
-                  case Array(gid, aid) ⇒ Some(((gid, aid), Component(gid, aid, build.toLong)))
+                  case Array(gid, aid) ⇒ Some(((gid, aid), Component(gid, aid, build)))
                   case _ ⇒ None
                 }
               }

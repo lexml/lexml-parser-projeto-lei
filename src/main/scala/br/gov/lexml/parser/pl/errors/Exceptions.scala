@@ -81,7 +81,8 @@ final case class DispositivosDescontinuos(id1: String, id2: String) extends
 	ParseProblem(TDispositivosDescontinuos, None,id1,id2)
 
 final case class DispositivoInicialNumeracaoInvalida(id : String) extends 
-	ParseProblem(TDispositivoInicialNumeracaoInvalida,None,id)
+	ParseProblem(TDispositivoInicialNumeracaoInvalida,None,id) { 
+}
 
 final case class RotuloRepetido(id : String) extends ParseProblem(TRotuloRepetido,None, id)
 

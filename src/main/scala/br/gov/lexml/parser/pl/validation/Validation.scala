@@ -303,7 +303,12 @@ object Validation {
 	    val l = for { 
 	      (_,rl1@(h::_)) <- m
 	      l1 : List[ParseProblem] = if(!h.canBeFirst) {
-	        List(DispositivoInicialNumeracaoInvalida((p + h).txt))
+	        val t = (p + h).txt.toString
+	        val d = new DispositivoInicialNumeracaoInvalida(t)
+	        println("t = " + t)
+	        println("d = " + d)
+	        println("d.id = " + d.id)
+	        List(d)
 	      } else {
 	        List()
 	      }
@@ -312,6 +317,7 @@ object Validation {
 	      }
 	      e <- l1 ++ l2
 	    } yield { e }
+	    l.foreach(println)
 	    l.toSet	    
 	  }
   }

@@ -98,7 +98,7 @@ final class AbiwordConverter(val removeTemporaryFiles: Boolean = true) extends C
       p.waitFor
       postProc(FileUtils.readFileToByteArray(destFile))
     } finally {
-      if (removeTemporaryFiles) {
+      if (removeTemporaryFiles) {        
         deleteByPrefix(baseDir,baseName)        
       }
     }
@@ -305,7 +305,10 @@ object XHTMLProcessor extends Logging {
     val childs = trim(body.child.toList)
     val childs1 = childs.filter((n: Node) ⇒ { val x = getIdOrType(n) ; x != "header" && x != "footer" })      
     val (cl1, cl2) = childs1.span({ case (e: Elem) ⇒ e.label == "table"; case _ ⇒ false })
-    val childs3 = (cl1 \\ "p") ++ cl2
+    val childs3 = (cl1 \\ "*").filter { 
+      case e : Elem => e.label == "p" || e.label == "h1" || e.label == "h2" || e.label == "h3"
+      case _ => false
+    } ++ cl2
     val r = wrapText(childs3.toList).collect { case e : Elem => e }
     r
   }
@@ -512,11 +515,17 @@ object XHTMLProcessor extends Logging {
 
   def id[T]: T ⇒ T = (t: T) ⇒ t
 
-  val validElements = Set("p", "span", "sup", "sub", "table", "tr", "td", "th", "b", "i", "ol", "li", "img", "blockquote", "u")
+  val validElements = Set("p", "span", "sup", "sub", "table", "tr", "td", "th", "b", "i", "ol", "li", "img", "blockquote", "u",
+      "h1","h2","h3","h4")
 
   val cleanSeqNodes: List[Node] ⇒ List[Node] = bottomUp(mapElements(id,
     (e: Elem) ⇒ if (validElements.contains(e.label)) { e } else { e.child }))
 
+  val headings = Set("h1", "h2", "h3", "h4")
+    
+  val renameHeadings: List[Node] ⇒ List[Node] = bottomUp(mapElements(id,
+    (e: Elem) ⇒ if (headings.contains(e.label)) { e copy (label = "p") } else { e }))
+    
   def bottomUp(f: Node ⇒ Seq[Node]): Seq[Node] ⇒ List[Node] = (ns: Seq[Node]) ⇒ {
     val chChildren = (n: Node) ⇒ (changeChildren(bottomUp(f))(n))
 
@@ -720,22 +729,28 @@ object XHTMLProcessor extends Logging {
   def applySeqTo[T](v0: T)(fs: Seq[T ⇒ T]) = applySeq(fs)(v0)
 
   def pipelineXHTML(xhtml: Elem): List[Node] = {
-    val baseElems = selectBaseElems(xhtml)
-    val divs = chooseDivs(baseElems)
-    val validElems = explodeDivs(divs)
-
+    
     def debug(where: String): List[Node] ⇒ List[Node] = (l: List[Node]) ⇒ {
       println("debug: " + where + ":")
-      println(NodeSeq fromSeq l)
+      l.zipWithIndex foreach { 
+        case (n,i) =>
+          println("  [%20s][%06d]: %s ".format(where,i,n.toString) )
+      }      
       l
     }
+    val xhtml2 = renameHeadings(List(xhtml)).collect { case e : Elem => e }.head
+    val baseElems = selectBaseElems(xhtml2)
+                    
+    val divs = chooseDivs(baseElems)
+       
+    val validElems = explodeDivs(divs)
 
-    val res = applySeqTo(validElems)(List[List[Node] ⇒ List[Node]](
-      cleanNameSpaces,
+    val res = applySeqTo(validElems)(List[List[Node] ⇒ List[Node]](           
+      cleanNameSpaces,            
       cleanSeqNodes,
       _.flatMap(cleanAttributes),      
       normalizeSpace,
-      cleanSpuriousSpans,
+      cleanSpuriousSpans,      
       mergeTextNodes,
       mergeSpans,
       fixSpans, 
