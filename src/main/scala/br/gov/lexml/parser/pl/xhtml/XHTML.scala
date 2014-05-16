@@ -745,9 +745,12 @@ object XHTMLProcessor extends Logging {
        
     val validElems = explodeDivs(divs)
 
-    val res = applySeqTo(validElems)(List[List[Node] ⇒ List[Node]](           
-      cleanNameSpaces,            
+    val res = applySeqTo(validElems)(List[List[Node] ⇒ List[Node]](
+      debug("start"),
+      cleanNameSpaces,
+      debug("after cleanNameSpaces"),
       cleanSeqNodes,
+      debug("after cleanSeqNodes"),
       _.flatMap(cleanAttributes),      
       normalizeSpace,
       cleanSpuriousSpans,      

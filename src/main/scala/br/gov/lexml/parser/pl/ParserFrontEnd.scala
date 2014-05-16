@@ -19,6 +19,7 @@ import br.gov.lexml.parser.pl.output._
 import br.gov.lexml.parser.pl.errors.ParseProblem
 import br.gov.lexml.parser.pl.errors.ParseException
 import br.gov.lexml.parser.pl.errors.FalhaConversaoPrimaria
+import scala.io.Source
 
 
 case class ParserParams(inRTF: InputStream, md: Metadado)
@@ -83,4 +84,5 @@ class ArticulacaoParser {
     val articulacao = parser.parseArticulacao(blocks,false)
     LexmlRenderer.renderArticulacao(articulacao).toString
   }
+  def parse(f : File) = parseList(Source.fromFile(f).getLines().toList)
 }

@@ -46,7 +46,7 @@ class LinkerActor extends Actor {
   def receive = {
     case msg: Seq[Node] => {
       for { p <- oprocess } {
-        //println("sending: " + msg)
+        println("sending: " + msg)
         val msgTxt = (NodeSeq fromSeq msg).toString.replaceAll("""[\n\r\f]""", "")
         p.writer.println(msgTxt)
         p.writer.flush()
@@ -55,6 +55,7 @@ class LinkerActor extends Actor {
         if (l == null) {
           throw new LinkerActorException("Connection to linker process down!")
         } else {
+          println("received: " + l)
           val r = XhtmlParser(Source.fromString("<result>" + l + "</result>")).head.asInstanceOf[Elem]
           val links: Set[String] = (r \\ "span").collect({ case (e: Elem) => e.attributes.find(_.prefixedKey == "xlink:href").map(_.value.text) }).flatten.toSet
           sender ! ((r.child.toList, links))

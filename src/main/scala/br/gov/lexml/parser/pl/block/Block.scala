@@ -312,6 +312,11 @@ object Block extends Block {
             val e2 = Elem(pref, label, attrs, scope, true, cl2: _*)
             (p + len, e1 :: bef, e2 :: aft)
           }
+          case PCData(t)=> {
+            val (t1, t2) = t.splitAt(target - p)
+            (p + len, Text(t1) :: bef, Text(t2) :: aft)
+          }
+          case x => println("ops: " + x.getClass.getName + " : " + x) ; throw new RuntimeException("ops")
         }
       }
     }
@@ -796,7 +801,9 @@ object Block extends Block {
           }
 
           val (fa, na) = i.lastOption.map(x ⇒ (x.fechaAspas, x.notaAlteracao)).getOrElse((d.fechaAspas, d.notaAlteracao))
-          doit(rr, d.copy(conteudo = Some(Paragraph(nl)), fechaAspas = fa, notaAlteracao = na) :: res)
+          println(d.id + " -> " + prevList + " + " + i + " = " + nl)
+          doit(rr,d.copy(conteudo = Some(Paragraph(nl)), fechaAspas = fa, notaAlteracao = na) :: res)
+          
         }
         case (x :: r) ⇒ { /*print("doit(2): bl.length = " + bl.length) ;*/ doit(r, x :: res) }
         case Nil ⇒ { /*print("doit(3): bl is empty") ;*/ res.reverse }
