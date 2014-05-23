@@ -225,18 +225,10 @@ object Validation {
     case _ => None
   }
   
-  /*def pairs[T](l : List[T]) : List[(T,T)] = {
-    val z : (Option[T],List[(T,T)]) = (None,List())
-    l.foldLeft(z)({
-      case ((Some(x),l),y) => (Some(y),(x,y) :: l)
-    })._2.reverse    
-  }*/
-  
   val niveisSubNiveisValidos : ValidationRule[(Path,Block)] = {
     case (Path(rl@(x::y::_)),bl) if !niveis.nivelSubNivelValido(y,x) => {      
       Set(PosicaoInvalida(Path(rl).txt))
     }
-    //case Path(rl) => { println("niveisSubNiveisValidos(ok): " + rl) ; Set() }
   }
   
   def alineasSoDebaixoDeIncisos: ValidationRule[(Path,Block)] = {
@@ -305,9 +297,6 @@ object Validation {
 	      l1 : List[ParseProblem] = if(!h.canBeFirst) {
 	        val t = (p + h).txt.toString
 	        val d = new DispositivoInicialNumeracaoInvalida(t)
-	        println("t = " + t)
-	        println("d = " + d)
-	        println("d.id = " + d.id)
 	        List(d)
 	      } else {
 	        List()
@@ -317,7 +306,6 @@ object Validation {
 	      }
 	      e <- l1 ++ l2
 	    } yield { e }
-	    l.foreach(println)
 	    l.toSet	    
 	  }
   }

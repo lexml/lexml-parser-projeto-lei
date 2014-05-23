@@ -36,7 +36,6 @@ object URN {
       val ufrag = urn.fragment
       val ulen = ufrag.length
       val flen = frag.length
-      //println("matchAll:  urn = " + urn + ", frag = " + frag + ", ufrag = " + ufrag + ", ulen = " + ulen + ", flen = " + flen)
       val altMatch = NeighborMatch.check(ufrag, frag).map(NeighborMatch(urn, frag, _)).getOrElse(NoMatch(urn, frag))
       if (ulen == flen) {
         if (ufrag == frag) { ExactMatch(urn) }
@@ -84,16 +83,11 @@ case class MatchData(val urn: URN, val count: MatchCount = MatchCount(), val mat
   def updateAlteracao(a: Alteracao): Alteracao = {
     val baseId = a.id + "_"
     val blen = baseId.length
-    //println("updateAlteracao. a.id = " + a.id + ", baseId = " + baseId + ", blen = " + blen)
     def applyBlock(b: Block): Block = b match {
       case d: Dispositivo ⇒ {
         val d1 = mapId(d.id.substring(blen)) match {
           case None ⇒ d
-          case Some(newId) ⇒ {
-            val dd = d overrideId (baseId + newId)
-            //println("    applyBlock: Dispositivo: id = " + d.id + ", new id = " + dd.id)
-            dd
-          }
+          case Some(newId) ⇒ d overrideId (baseId + newId)
         }
         d1 replaceChildren (applyBlocks(d.children))
       }
@@ -136,7 +130,6 @@ case class MatchByBase(base: String, ano: Int, mesdia: Option[(Int, Int)] = None
   def updateAlteracao(a: Alteracao): Alteracao = {
     val baseId = a.id + "_"
     val blen = baseId.length
-    //println("updateAlteracao. a.id = " + a.id + ", baseId = " + baseId + ", blen = " + blen)
     def applyBlock(b: Block): Block = b match {
       case d: Dispositivo ⇒ {
         val oid = d.id.substring(blen)
@@ -147,9 +140,7 @@ case class MatchByBase(base: String, ano: Int, mesdia: Option[(Int, Int)] = None
             val nid2 = baseId + newId
             val n = nid2.lastIndexOf(nid)
             val rid = nid2.patch(n,oid,oid.length)
-            val dd = d overrideId (rid)
-            //println("    applyBlock: Dispositivo: id = " + d.id + ", new id = " + dd.id)
-            dd
+            d overrideId (rid)
           }
         }
         d1 replaceChildren (applyBlocks(d.children))
@@ -189,13 +180,10 @@ object MatchResult {
       }
     }
     val altIdLength = renderId(a.path).length() + 1
-    //println("fromAlteracao: a.blocks = " + a.blocks)
     val allIds =
-      a.blocks.flatMap(getIds(_)).map(s ⇒ if (s.length >= altIdLength) { s.substring(altIdLength) } else { /*println("Unexpected: altIdLength = " + altIdLength + ", s = '" + s + "'");*/ s })
-    //println("fromAlteracao: links = " + links + ", allIds = " + allIds)
+    a.blocks.flatMap(getIds(_)).map(s ⇒ if (s.length >= altIdLength) { s.substring(altIdLength) } else { s })
     val matches = URN.matchAll(links, allIds)
-    //println("fromAlteracao: matches = " + matches)
-
+    
     val mr = links.foldLeft(MatchResult())(_ + _)
     matches.foldLeft(mr)(_ + _)
   }

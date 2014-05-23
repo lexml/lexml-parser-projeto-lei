@@ -28,8 +28,6 @@ object ParserFrontEnd {
 
   val versaoParser = 1
 
-  //def validate(params : ParserParams) : Unit = parseProjetoLei(params)
-
   def parseProjetoLei(params: ParserParams): (Option[ProjetoLei], List[ParseProblem]) = {
     val ParserParams(inRTF, md) = params
     val inRTF2 = new DigestInputStream(inRTF, MessageDigest.getInstance("MD5"))
@@ -41,7 +39,6 @@ object ParserFrontEnd {
       }
       case Success(xhtml) ⇒ xhtml
     }
-    //println("xhtml = \n" + (NodeSeq fromSeq xhtml).toString)
     val blocks = Block fromNodes xhtml    
     val (mpl, msgs) = new ProjetoLeiParser(params.md.profile).fromBlocks(md copy (hashFonte = Some(inRTF2.getMessageDigest.digest())), blocks)
     (mpl.map(_.remakeEpigrafe), msgs)
@@ -54,8 +51,6 @@ object ParserFrontEnd {
       val zos = new ZipOutputStream(bos)
       zos.setLevel(9)
       zos.setComment(pl.epigrafe.asInstanceOf[Paragraph].text)
-      //val dirName = pl.metadado.zipDirName
-      //println("dirName = " + dirName)
       zos.putNextEntry(new ZipEntry( /*dirName + "/" + */ "proposicao.xml"))
       zos.write(pl.metadado.toXMLmetadadoEditor(pl).toString.getBytes("utf-8"))
       zos.closeEntry()

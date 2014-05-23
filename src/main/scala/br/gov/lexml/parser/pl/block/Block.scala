@@ -99,7 +99,7 @@ class Paragraph(val nodes: Seq[Node], val indentation: Double = 0, val centered:
 
   def cutRight(length: Int): Paragraph = splitAt(text.length - length)._1
 
-  override def toString(): String = "Paragraph(" + text + ", fechasAspas = " + fechaAspas + ")"
+  override def toString(): String = "Paragraph(" + (NodeSeq fromSeq nodes) + ", fechasAspas = " + fechaAspas + ")"
 
   def copy(nodes: Seq[Node] = nodes, indentation: Double = indentation, centered: Boolean = centered,
     abreAspas: Boolean = abreAspas, fechaAspas: Boolean = fechaAspas,
@@ -133,15 +133,10 @@ class Paragraph(val nodes: Seq[Node], val indentation: Double = 0, val centered:
         }
         res
       }
-      case None if (omissisRe.findFirstIn(text).isDefined) ⇒ {
-        //println("dispositivoIfPossible: reconhecido omissis") 
-        //logger.info("dispositivoIfPossible: omissis!")
-        List(Omissis(abreAspas, fechaAspas, notaAlteracao))
-      }
-      case None ⇒ {
-        //println("dispositivoIfPossible: nao reconhecido")
-        List(this)
-      }
+      case None if (omissisRe.findFirstIn(text).isDefined) ⇒ List(Omissis(abreAspas, fechaAspas, notaAlteracao))
+      
+      case None ⇒ List(this)
+      
     }
   }
 
@@ -277,19 +272,27 @@ object Block extends Block {
     docollect(nl, Nil)
   }
 
-  def fromNodes(nodes: List[Node]): List[Block] = {        
-    nodes.collect((n: Node) ⇒ n match {
-      case Elem(_, name, attr, _, cl @ _*) if name == "p" || name == "blockquote" ⇒ {
-        Paragraph(cl, attr.asAttrMap.withDefault(_ ⇒ "0")("indentation").toDouble,
-          attr.asAttrMap.withDefault(_ ⇒ "")("centered").equals("true"))
+  def fromNodes(nodes: List[Node]): List[Block] = {
+    nodes.flatMap((n: Node) ⇒ n match {
+      case e : Elem if e.label == "p" && !(e.child \\ "p").isEmpty => {
+        val newchilds = e.child.to[List].map {
+          case e : Elem => e
+          case x  => <p>{x}</p>
+        }
+        fromNodes(newchilds)
       }
-      case Elem(_, "table", _, _, _*) ⇒ Table(n.asInstanceOf[Elem])
+      case Elem(_, name, attr, _, cl @ _*) if name == "p" || name == "blockquote" ⇒ {
+        List(Paragraph(cl, attr.asAttrMap.withDefault(_ ⇒ "0")("indentation").toDouble,
+          attr.asAttrMap.withDefault(_ ⇒ "")("centered").equals("true")))
+      }
+      case Elem(_, "table", _, _, _*) ⇒ List(Table(n.asInstanceOf[Elem]))
       case e @ Elem(_, "ol", _, _, _*) ⇒ {
         val l1 = (e \ "li").toList.collect({ case Elem(_, "li", _, _, children @ _*) ⇒ children.toList })
-        OL(l1.map(nl ⇒ fromNodes(collectText(nl))))
+        List(OL(l1.map(nl ⇒ fromNodes(collectText(nl)))))
       }
-      case Elem(_, "img", _, _, _*) ⇒ Image
-      case Elem(_, _, _, _, _*) ⇒ Unrecognized(n.asInstanceOf[Elem])
+      case Elem(_, "img", _, _, _*) ⇒ List(Image)
+      case Elem(_, label, _, _, _*) ⇒ List(Unrecognized(n.asInstanceOf[Elem]))
+      case _ => List()
     })
   }
 
@@ -316,7 +319,7 @@ object Block extends Block {
             val (t1, t2) = t.splitAt(target - p)
             (p + len, Text(t1) :: bef, Text(t2) :: aft)
           }
-          case x => println("ops: " + x.getClass.getName + " : " + x) ; throw new RuntimeException("ops")
+          case x => throw new RuntimeException("ops")
         }
       }
     }
@@ -332,7 +335,6 @@ object Block extends Block {
         Alteracao(a1.blocks ++ a2.blocks, Nil, None) :: r
       case (a1: Alteracao, (p: Paragraph) :: (a2: Alteracao) :: r) if p.text == "" ⇒
         Alteracao(a1.blocks ++ a2.blocks, Nil, None) :: r
-      //case (a : Alteracao, b :: l) => println("agrupaAlteracoes: b.getClass = " + b.getClass.getName + ", b = " + b) ; a :: b :: l
       case (b, l) ⇒ b :: l
     }
 
@@ -395,21 +397,14 @@ object Block extends Block {
 
         case (p @ Paragraph(_, t)) :: rest if (t.startsWith("“") || t.startsWith("\"") || t.startsWith("”")) ⇒ {
           val p2 = p.cutLeft(1).withAbreAspas
-          //println("Reconhece inicio: p = " + p)
-          //println("Reconhece inicio: p2 = " + p2 + ", p2.abreAspas = " + p2.abreAspas)
           val (balt, na, rest2) = procuraFim(p2 :: rest, List[Block]())
           val balt2 = na.map(n ⇒ alteraUltimo[Block]({ case p: Paragraph ⇒ p.withNotaAlteracao(n) }, balt)).getOrElse(balt)
           val alt = Alteracao(balt2)
           reconheceInicio(rest2, alt :: acum)
         }
-        case (pp: Paragraph) :: (p @ Paragraph(_, t)) :: rest if t.length == 0 ⇒ {
-          //println("caso2: pp = " + pp)
-          reconheceInicio(pp :: rest, acum)
-        }
-        //case (pp: Paragraph) :: rest ⇒ { println("caso3: pp = " + pp); reconheceInicio(rest, pp :: acum) }
-
+        case (pp: Paragraph) :: (p @ Paragraph(_, t)) :: rest if t.length == 0 ⇒ reconheceInicio(pp :: rest, acum)
+        
         case (o @ OL(lis)) :: rest ⇒ {
-          //println("caso4: o = " + o); 
           lis.headOption.getOrElse(List()) match {
             case Nil ⇒ reconheceInicio(rest, o :: acum)
             case (p @ Paragraph(_, t)) :: tailLi ⇒ {
@@ -426,14 +421,10 @@ object Block extends Block {
             }
           }
         }
-        case b :: rest ⇒ {
-          //println("caso5: b = " + b)
-          reconheceInicio(rest, b :: acum)
-        }
-        case Nil ⇒ {
-          //println("caso6: fim")
-          acum.reverse
-        }
+        case b :: rest ⇒ reconheceInicio(rest, b :: acum)
+        
+        case Nil ⇒ acum.reverse
+        
       }
     }
     reconheceInicio(blocks, List[Block]())
@@ -492,7 +483,6 @@ object Block extends Block {
   }
   
   def organizaDispositivos(blocks: List[Block], dentroAlteracao: Boolean = false): List[Block] = {    
-    //println("organizaDispositivos: starting")
     def agrupa(b: Block, bl: List[Block]): List[Block] = {
       def spanUpToEvidenciaAlteracao(bl : List[Block], rl : List[Block] = Nil) : Option[(List[Block],List[Block])] = bl match {
         case (o: Omissis) :: bl1 ⇒ Some((o :: rl).reverse,bl1)
@@ -503,38 +493,23 @@ object Block extends Block {
       }
       
       (b, bl) match {
-        case (a1: Alteracao, (a2: Alteracao) :: r) ⇒ {
-          /*println("merged alteracoes:")
-          println("    a1 = " + a1)
-          println("    a2 = " + a2)*/
+        case (a1: Alteracao, (a2: Alteracao) :: r) ⇒
           (a1 copy (blocks = a1.blocks ++ a2.blocks)) :: r
-        }
-        case (o : Omissis, (a: Alteracao) :: rest) => {
-          /*println("merged previous omissis with alteracao:")
-          println("    a = " + a)*/
+        
+        case (o : Omissis, (a: Alteracao) :: rest) => 
           (a copy(blocks = o :: a.blocks)) :: rest
-        }
-        case (o : Omissis, (o1 : Omissis) :: rest) if !o.fechaAspas && o.notaAlteracao.isEmpty => {
-          /*println("merged two omissis:")
-          println("   o = " + o)
-          println("   o1 = " + o1)*/
+        
+        case (o : Omissis, (o1 : Omissis) :: rest) if !o.fechaAspas && o.notaAlteracao.isEmpty => 
           val abreAspas = o.abreAspas || o1.abreAspas
           val fechaAspas = o1.fechaAspas
           val notaAlteracao = o1.notaAlteracao
           agrupa(o copy (abreAspas = abreAspas, fechaAspas = fechaAspas, notaAlteracao = notaAlteracao),rest)
-        }
-        case (d : Dispositivo, (a: Alteracao) :: rest) if !hasAlteracao(d) && !hasFechaAspas(d) && hasOmissis(d) => {
-          /*println("merged previous dispositivo:")
-          println("    d = " + d)
-          println("    a = " + a)*/
+        
+        case (d : Dispositivo, (a: Alteracao) :: rest) if !hasAlteracao(d) && !hasFechaAspas(d) && hasOmissis(d) => 
           (a copy(blocks = d :: a.blocks)) :: rest
-        }        
+                
         case (a: Alteracao, bl) ⇒ spanUpToEvidenciaAlteracao(bl) match {          
           case Some((inAlt,outAlt)) => {
-            /*println("merging next blocks into alteracao:")
-            println("    a = " + a)
-            println("    inAlt = " + inAlt)
-            println("    outAlt = " + outAlt)*/
             inAlt.lastOption match {
               case Some(a1 : Alteracao) =>
                 agrupa(a copy (blocks = a.blocks ++ inAlt.init),  a1 :: outAlt)
@@ -545,9 +520,6 @@ object Block extends Block {
           }
           case _ => a :: bl
         }        
-/*        case (a: Alteracao, _) ⇒ {
-          Alteracao(organizaDispositivos(reconheceOmissisVazio2(a.blocks), true), a.path, a.pos) :: bl
-        } */
         case (d: Dispositivo, (p: Paragraph) :: bl) if (d.conteudo.isEmpty && d.subDispositivos.isEmpty && d.rotulo.isAgregador) ⇒ {
           agrupa(d copy (conteudo = Some(p)), bl)
         }
@@ -572,25 +544,17 @@ object Block extends Block {
           val d1 = d.mapConteudo(_ ⇒ Some(p1.copy(nodes = p1.nodes ++ List(Text(" ")) ++ p.nodes)))
           agrupa(d1 copy (fechaAspas = p.fechaAspas, notaAlteracao = p.notaAlteracao), bl)
         }
-        /*   case (d : Dispositivo, (p : Paragraph) :: bl) if p.text.isEmpty && !p.abreAspas &&
-                                                         !p.fechaAspas && p.notaAlteracao.isEmpty => agrupa(d,bl)*/
         case (d1: Dispositivo, bl2) ⇒ {
-          //println("organizaDispositivo: caso 4: d1 = " + d1 + ", bl2(length= " + bl2.length + ", dentroAlteraco = " + dentroAlteracao + ") = " + bl2)
-          //val (omissis,posOmissis) = bl2.span(_.isInstanceOf[Omissis])          
           spanNivel(d1.rotulo.nivel, bl2) match {
-            case (Nil, (a: Alteracao) :: bl4) ⇒ {
-              //println("organizaDispositivos: caso 4.1")
+            case (Nil, (a: Alteracao) :: bl4) ⇒ 
               agrupa(d1 copy (subDispositivos = d1.subDispositivos :+ (a copy(blocks = organizaDispositivos(reconheceOmissisVazio2(a.blocks), true)))), bl4)
-            }
-            case (nivelSuperior @ (_ :: _), resto) ⇒ {
-              //println("organizaDispositivos: caso 4.2, nivelSuperior = " + nivelSuperior)
+            
+            case (nivelSuperior @ (_ :: _), resto) ⇒ 
               val dd = nivelSuperior.foldLeft(d1)((d,a) => d copy (subDispositivos = d.subDispositivos :+ a))
               dd :: resto
-            }
-            case _ ⇒ {
-              //println("organizaDispositivos: caso 5: b = " + b)
-              (b :: bl)
-            }
+            
+            case _ ⇒ (b :: bl)
+            
           }
         }
 
@@ -632,8 +596,6 @@ object Block extends Block {
     bl.flatMap(limpa(_))
   }
 
-  //def reconheceDispositivos(blocks: List[Block]): List[Block] = blocks.flatMap(_.flatMapBlock(_.dispositivoIfPossible))
-
   def splitLi(li: List[Block]): (Option[Paragraph], List[Block]) = li match {
     case (p: Paragraph) :: r ⇒ (Some(p), r)
     case _ ⇒ (None, Nil)
@@ -642,7 +604,6 @@ object Block extends Block {
   def reconheceDispositivos(blocks: List[Block]): List[Block] = {
     val f: (List[Block], Block) ⇒ List[Block] = {
       case ((d: Dispositivo) :: prev, OL(lis)) ⇒ {
-        //println("reconheceDispositivos: Dispositivo antes de OL. d = " + d + ", ol = " + OL(lis))
         val ll = for ((li, i) ← lis.zipWithIndex) yield {
           val (p, liRest) = splitLi(li)
           p match {
@@ -654,15 +615,10 @@ object Block extends Block {
           }
 
         }
-        val r = ll.reverse.flatten ++ (d :: prev)
-        //println("reconheceDispositivos: resultado OL = " + r)
-        r
+        ll.reverse.flatten ++ (d :: prev)
       }
       case (prev, p: Paragraph) ⇒ p.dispositivoIfPossible.reverse ++ prev
-      case (prev, o: OL) ⇒ {
-        //println("OL aprecendo sozinho")
-        prev
-      }
+      case (prev, o: OL) ⇒ prev 
       case (prev, a: Alteracao) ⇒ a.mapBlocks(reconheceDispositivos) :: prev
       case (prev, x) ⇒ x :: prev
     }
@@ -738,13 +694,12 @@ object Block extends Block {
   def reconheceOmissis(blocks: List[Block]): List[Block] = blocks.mapConserve(_.mapBlock(_.recognizeOmissis))
 
   def reconheceOmissisVazio(b: Block): Block = {
-    //println("          reconheceOmissisVazio: b = " + b)
     def h(ob: Option[Block]) = ob match {
       case None ⇒ Some(Omissis())
       case Some(p: Paragraph) if p.text == "" ⇒ Some(Omissis(p.abreAspas, p.fechaAspas, p.notaAlteracao))
       case x ⇒ x
     }
-    val r = b match {
+    b match {
       case d: Dispositivo ⇒ d.rotulo match {
         case _: RotuloArtigo ⇒ d
         case _ ⇒ d.mapConteudo(h)
@@ -752,13 +707,9 @@ object Block extends Block {
       case p: Paragraph if p.text.isEmpty ⇒ Omissis(p.abreAspas, p.fechaAspas, p.notaAlteracao)
       case _ ⇒ b
     }
-    //println("          reconheceOmissisVazio: r = " + r)
-    r
-
   }
-  def reconheceOmissisVazio2(blocks: List[Block]): List[Block] = {
-    blocks.map(_.mapBlock(reconheceOmissisVazio(_)))
-  }
+  def reconheceOmissisVazio2(blocks: List[Block]): List[Block] = blocks.map(_.mapBlock(reconheceOmissisVazio(_)))
+  
   def reconheceOmissisVazio(blocks: List[Block]): List[Block] = {
     def f(b: Block): (List[Block], Boolean) = b match {
       case a: Alteracao ⇒ (List(a.copy(blocks = reconheceOmissisVazio2(a.blocks))), false)
@@ -792,7 +743,6 @@ object Block extends Block {
     def altera(bl: List[Block]): List[Block] = {
       def doit(bl: List[Block], res: List[Block]): List[Block] = bl match {
         case (d: Dispositivo) :: r if d.rotulo.isAgregador ⇒ {
-          //print("doit(1): bl.length = " + bl.length)
           val (i, rr) = buscaInicio(r)
           val prevList = d.conteudo.collect({ case p: Paragraph ⇒ p }).map(_.nodes).getOrElse(List())
           val nl = (prevList :: i.map(_.nodes)).filter(ns ⇒ !ns.text.trim.isEmpty) match {
@@ -801,14 +751,12 @@ object Block extends Block {
           }
 
           val (fa, na) = i.lastOption.map(x ⇒ (x.fechaAspas, x.notaAlteracao)).getOrElse((d.fechaAspas, d.notaAlteracao))
-          println(d.id + " -> " + prevList + " + " + i + " = " + nl)
           doit(rr,d.copy(conteudo = Some(Paragraph(nl)), fechaAspas = fa, notaAlteracao = na) :: res)
           
         }
-        case (x :: r) ⇒ { /*print("doit(2): bl.length = " + bl.length) ;*/ doit(r, x :: res) }
-        case Nil ⇒ { /*print("doit(3): bl is empty") ;*/ res.reverse }
+        case (x :: r) ⇒ doit(r, x :: res)
+        case Nil ⇒ res.reverse
       }
-      //println("altera: calling doit")
       doit(bl, Nil)
     }
     altera(blocks.map({
@@ -818,8 +766,8 @@ object Block extends Block {
     }))
   }
 
-  def identificaTitulos(blocks: List[Block], nivel: Int = 0): List[Block] = {
-    val r = blocks.map({
+  def identificaTitulos(blocks: List[Block], nivel: Int = 0): List[Block] = 
+    blocks.map({
       case b: Dispositivo ⇒ b.replaceChildren(identificaTitulos(b.children, nivel + 1))
       case b: Alteracao ⇒ b.replaceChildren(identificaTitulos(b.children, nivel + 1))
       case x ⇒ x
@@ -832,12 +780,7 @@ object Block extends Block {
       }
       case (l, x) ⇒ x :: l
     }.reverse
-    //println("identificaTitulos(" + nivel + "):")
-    //blocks.zipWithIndex.foreach({ case (b, i) ⇒ println("        (" + i + "): " + b) })
-    //println("identificaTitulos(" + nivel + "): agora é: ")
-    //r.zipWithIndex.foreach({ case (b, i) ⇒ println("        (" + i + "): " + b) })
-    r
-  }
+    
 
   def podeSerTitulo(s: String) = s.toList.find(List[Char](';', '.', ':').contains(_)).isEmpty
 

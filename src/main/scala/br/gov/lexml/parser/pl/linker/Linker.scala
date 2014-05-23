@@ -27,19 +27,9 @@ object Linker {
   
   val linkerRouter = actorOf(Props[LinkerActor].withRouter(SmallestMailboxRouter(nrOfInstances = 8, 
       supervisorStrategy = strategy )))
-             
-  /*def findLinks(text: String) = {
-    createLinkerActor()
-    val f: Future[Any] = linkerActor.get.ask(text)
-    f.as[(List[Node],Set[String])] match {
-      case None ⇒ throw new RuntimeException("Falha na chamada ao linker")
-      case Some(x) ⇒ { println("findLinks. text = " + text + ", links = " + x); x.toList }
-    }
-  }*/
+            
   
   def findLinks(ns : Seq[Node]) : (List[String],List[Node]) = {
-    //println("findLinks: ns = " + (NodeSeq fromSeq ns))
-    //createLinkerActor()
     import akka.pattern.ask
     import akka.util.Timeout
     implicit val timeout = Timeout(30 seconds) 
@@ -52,10 +42,7 @@ object Linker {
   def processaAlteracao(a: Alteracao, links: List[URN]): Alteracao = {
     val mr = MatchResult.fromAlteracao(a,links)
     val a1 = a copy (matches = Some(mr))
-    //println("processaAlteracao: a.id = " + a.id + ", mr = " + mr + ", links = " + links)
-    val a2 = mr.first.map(_.updateAlteracao(a1)).getOrElse(a1)
-    //println("processaAlteracao: a2.baseURN = " + a2.baseURN)
-    a2
+    mr.first.map(_.updateAlteracao(a1)).getOrElse(a1)
   }
 
   def getLinks(d: Dispositivo): List[URN] = d.rotulo match {
@@ -67,7 +54,6 @@ object Linker {
     def f(d: Dispositivo): Block ⇒ Block = (b: Block) ⇒ b match {
       case a: Alteracao ⇒ {
         val links = getLinks(d)
-        //println("paraCadaAlteracao.f: a.id = " + a.id + ", d.id = " + d.id + ", links = " + links + ", d.links = " + d.links)
         processaAlteracao(a, links) 
       }
       case dd: Dispositivo ⇒ dd.replaceChildren(dd.children.map(f(dd)))

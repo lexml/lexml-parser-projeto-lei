@@ -32,13 +32,14 @@ import scala.xml.Source
 import scala.xml.Source
 import scala.xml.Source
 import br.gov.lexml.parser.pl.docx.DOCXReader
+import scala.io.Codec
 
 abstract class XHTMLProcessorResult
 case object Failure extends XHTMLProcessorResult
 case class Success(result: List[Node]) extends XHTMLProcessorResult
 
 object TextUtils {
-  def fixXHTML(data: Array[Byte]) = new String(data)
+  def fixXHTML(data: Array[Byte]) = new String(data,"utf-8")
     //.replaceFirst("<!DOCTYPE (html|HTML)[^>]*>", "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"" + XHTMLProcessor.dtdUrl + "\">")
     .replaceAll("\007", "")
     .replaceAll("\037", "")
@@ -91,7 +92,7 @@ final class AbiwordConverter(val removeTemporaryFiles: Boolean = true) extends C
     try {
       //val srcPath = srcFile.getCanonicalPath
       FileUtils.writeByteArrayToFile(srcFile, srcData)
-      val cmd: Array[String] = (("/usr/bin/abiword" :: params) :+ srcFile.getPath).toArray
+      val cmd: Array[String] = (("/usr/local/bin/abiword-2.8" :: params) :+ srcFile.getPath).toArray
       logger.info("running " + cmd.mkString(" "))
       val p = Runtime.getRuntime.exec(cmd, Array[String](), srcFile.getParentFile)
       logger.info("returned from abiword")
@@ -256,11 +257,16 @@ object XHTMLProcessor extends Logging {
   def xhtmlLoader(in : Array[Byte]) : Elem = xhtmlLoader(new ByteArrayInputStream(in)) 
 	  
   def xhtmlLoader(is : InputStream) : Elem = 
-	  XhtmlParser(new BufferedSource(is)).collectFirst({ case e : Elem => e }).get
+	  XhtmlParser(new BufferedSource(is)(Codec.UTF8)).collectFirst({ case e : Elem => e }).get
 	      
-  def externalConvertToXhtml(extension: String) = (extension, (data: Array[Byte], converter : Converter) ⇒ 
-    xhtmlLoader(converter.convert(extension, data, "xhtml"))       
-  )
+  def externalConvertToXhtml(extension: String) = (extension, (data: Array[Byte], converter : Converter) ⇒ {
+    System.setProperty("file.encoding", "utf-8")
+    val converted = converter.convert(extension, data, "xhtml")
+    val r = xhtmlLoader(converted)
+    ((r \\ "html").toSeq.collect { case e : Elem => e }) . head
+    
+  })
+  
   val sourceProcessorMap: Map[String, (String, SourceProcessor)] = Map(
     ("text/plain", ("txt", (source: Array[Byte], _ : Converter) ⇒ {
       val text = fixXHTML(source)
@@ -296,13 +302,20 @@ object XHTMLProcessor extends Logging {
     convertSrcToXHTML(IOUtils.toByteArray(rtfSource), "text/rtf",converter)
 
   def selectBaseElems(root: Elem): List[Elem] = {
-    val body = (root \ "body").head.asInstanceOf[Elem]
+    val body = (root \\ "body").head.asInstanceOf[Elem]
+   
+    val belems = root.child.to[List].dropWhile ((n : Node) => n match {
+      case e : Elem => e.label != "body" 
+      case _ => true 
+    })
+      
+    
     def getAttr(n: Node, attr: String) = n match {
       case (e: Elem) ⇒ e.attributes.get(attr).map(_.text.toLowerCase)
       case x ⇒ None
     }
     def getIdOrType(n: Node) = getAttr(n, "id").orElse(getAttr(n, "type")).getOrElse("")
-    val childs = trim(body.child.toList)
+    val childs = trim(belems)
     val childs1 = childs.filter((n: Node) ⇒ { val x = getIdOrType(n) ; x != "header" && x != "footer" })      
     val (cl1, cl2) = childs1.span({ case (e: Elem) ⇒ e.label == "table"; case _ ⇒ false })
     val childs3 = (cl1 \\ "*").filter { 
@@ -313,12 +326,7 @@ object XHTMLProcessor extends Logging {
     r
   }
 
-  def chooseDivs(divs: List[Elem]) = { divs }
-  /*def getId(n: Node) = n match {
-      case (e: Elem) ⇒ e.attributes.get("id").map(_.text).getOrElse("")
-    }
-    divs.dropWhile((e: Elem) ⇒ getId(e) == "header").takeWhile((e: Elem) ⇒ getId(e) != "footer")
-  }*/
+  def chooseDivs(divs: List[Elem]) = divs
 
   val parLabels = Set("p", "h1", "h2", "h3", "h4", "blockquote")
   val isValidElem: PartialFunction[Node, Node] = (x: Node) ⇒
@@ -354,14 +362,11 @@ object XHTMLProcessor extends Logging {
     def explode(n: Node): List[Node] = n match {
       case e: Elem if explodedBlockElements.contains(e.label) ⇒ wrapText(e.child.toList).flatMap(explode)
       case e: Elem if explodedInlineElements.contains(e.label) ⇒ e.child.toList.flatMap(explode)
-      case e: Elem if e.label == "td" ⇒ {
-        val r = trim(e.child.toList) match {
-          case List(e2: Elem) if e2.label == "p" ⇒ List(e copy (child = e2.child.toList.flatMap(explode)))
-          case _ ⇒ List(e copy (child = e.child.toList.flatMap(explode)))
-        }
-//        println("explode: e = " + (NodeSeq fromSeq e) + ", r = " + (NodeSeq fromSeq r))
-        r
-      }
+      case e: Elem if e.label == "td" ⇒ 
+      	 trim(e.child.toList) match {
+            case List(e2: Elem) if e2.label == "p" ⇒ List(e copy (child = e2.child.toList.flatMap(explode)))
+            case _ ⇒ List(e copy (child = e.child.toList.flatMap(explode)))
+         }
       case e: Elem ⇒ List(e copy (child = e.child.toList.flatMap(explode)))
       case x ⇒ List(x)
     }
@@ -738,19 +743,21 @@ object XHTMLProcessor extends Logging {
       }      
       l
     }
+    
     val xhtml2 = renameHeadings(List(xhtml)).collect { case e : Elem => e }.head
+    
     val baseElems = selectBaseElems(xhtml2)
-                    
+    
     val divs = chooseDivs(baseElems)
        
     val validElems = explodeDivs(divs)
 
     val res = applySeqTo(validElems)(List[List[Node] ⇒ List[Node]](
-      debug("start"),
+      //debug("start"),
       cleanNameSpaces,
-      debug("after cleanNameSpaces"),
+      //debug("after cleanNameSpaces"),
       cleanSeqNodes,
-      debug("after cleanSeqNodes"),
+      //debug("after cleanSeqNodes"),
       _.flatMap(cleanAttributes),      
       normalizeSpace,
       cleanSpuriousSpans,      

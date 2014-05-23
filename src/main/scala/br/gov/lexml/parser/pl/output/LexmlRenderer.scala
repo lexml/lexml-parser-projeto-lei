@@ -194,7 +194,6 @@ object LexmlRenderer {
               d.conteudo.filter(!_.isInstanceOf[Omissis]).map(b ⇒ {
                 val e = b.toNodeSeq.asInstanceOf[Elem]
                 val e2 = e.copy(child = cleanTopBIs(e.child))
-                //println("render: e = " + e.toString)
                 if (d.rotulo.isAgregador) {
                   rename("NomeAgrupador", e2)
                 } else { e2 }

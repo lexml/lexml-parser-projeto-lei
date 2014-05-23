@@ -31,6 +31,8 @@ import br.gov.lexml.parser.pl.rotulo.rotuloParser
 import br.gov.lexml.parser.pl.text.normalizer
 import br.gov.lexml.parser.pl.validation.Validation
 import br.gov.lexml.parser.pl.profile.DocumentProfile
+import org.apache.commons.io.FileUtils
+import java.io.File
 
 object Caracteristicas {
   val POSSUI_TABELA_ARTICULACAO = "possui tabela na articulacao"
@@ -186,29 +188,18 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
   def doesNotMatchAnyOf(r: List[Regex]) = oneOf(r).andThen(_.isEmpty)
 
   def spanEpigrafe(bl: List[Block]): Option[(List[Block], Block, List[Block])] = {
-    //println("profile.regexProfile = " + profile.regexEpigrafe.map(_.pattern.pattern).mkString(","))
+ 
     val (pre, bl1) = bl.span(doesNotMatchAnyOf(profile.regexEpigrafe))
-    //println("pre = " + pre)
-    //println("bl1 = " + bl1.take(3))
     val pre2 = pre.filter(!isEmptyPar(_))
-    //println("pre2:")
-    //pre2.foreach(x => println("   " + x))
     val (epi, pos) = bl1.span(matchesOneOf(profile.regexEpigrafe))
-    //println("epi:")
-    //epi.foreach(x => println("   " + x))
     val pos2 = pos.dropWhile(b ⇒ matchesOneOf(profile.regexPosEpigrafe)(b) || isEmptyPar(b))
-    //println("pos2:")
-    //pos2.foreach(x => println("   " + x))
     val epi2 = epi collect { case p: Paragraph ⇒ p }
-    //println("epi2:")
-    //epi2.foreach(x => println("   " + x))
     epi2 match {
       case Nil ⇒ None
       case _ ⇒ {
         val npNodes = epi2.headOption.toList.flatMap(_.nodes) ++
           epi2.tail.flatMap(Text(" ") :: _.nodes.toList)
         val np = Paragraph(npNodes)
-        //println("np: " + np)
         Some((pre2, np, pos2))
       }
     }
@@ -219,24 +210,14 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
     val isPosEpigrafe = matchesOneOf(profile.regexPosEpigrafe)
     val isArticulacao: Block ⇒ Boolean = {
       case p: Paragraph ⇒ rotuloParser.parseRotulo(p.text) match {
-        case None ⇒ {
-          //println("rotulo nao localizado em : " + p.text) 
-          false
-        }
-        case Some((rotulo, _)) ⇒ {
-          //println("rotulo localizado: " + rotulo + ", nivel = " + rotulo.nivel + ", max = " + niveis.nivel_maximo_aceito_na_raiz)
-          rotulo.nivel <= niveis.nivel_maximo_aceito_na_raiz
-        }
+        case None ⇒ false
+        case Some((rotulo, _)) ⇒ rotulo.nivel <= niveis.nivel_maximo_aceito_na_raiz
       }
-      case x ⇒ { /*println("Something else: " + x.getClass.getName) ;*/ false }
+      case x ⇒ false
     }
     val (prePreambulo, preAmbuloAndPos) = bl.span(x ⇒ !isPreambulo(x) && !isArticulacao(x))
-    //println("prePreambulo.length = " + prePreambulo.length)
-    //println("preAmbuloAndPos.length = " + preAmbuloAndPos.length)
     val (preAmbulo1, posPreambulo) = preAmbuloAndPos.span(!isArticulacao(_))
     val preAmbulo = preAmbulo1.filter({ case p: Paragraph ⇒ !isPosEpigrafe(p); case _ ⇒ true })
-    //println("preAmbulo.length = " + preAmbulo.length)
-    //println("posPreambulo.length = " + posPreambulo.length)
     (prePreambulo, preAmbulo.collect { case p: Paragraph ⇒ p }, posPreambulo)
   }
 
@@ -245,7 +226,6 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
       case Some(p: Paragraph) ⇒ {
         import br.gov.lexml.parser.pl.linker.Linker.findLinks
         val (links, nl) = findLinks(p.nodes)
-        //println("reconheceLinks: d.id = " + d.id + ", p.text = " + p.text + ", links = " + links)
         d copy (links = links, conteudo = Some(p copy (nodes = nl)))
       }
       case _ ⇒ d
@@ -253,7 +233,6 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
     case p: Paragraph ⇒ {
       import br.gov.lexml.parser.pl.linker.Linker.findLinks
       val (links, nl) = findLinks(p.nodes)
-      //println("reconheceLinks: d.id = " + d.id + ", p.text = " + p.text + ", links = " + links)
       p copy (nodes = nl)
     }
     case x ⇒ x
@@ -337,14 +316,14 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
           spanEpigrafe(blocks) match {
             case None if !profile.epigrafeObrigatoria ⇒ (List(), Paragraph(List()), blocks)
             case Some(p @ (pre, _, _)) if profile.preEpigrafePermitida || pre.length == 0 ⇒ p
-            case r ⇒ { println("epigrafeAusente: profile: " + profile + ", r= " + r); throw ParseException(EpigrafeAusente) }
+            case r ⇒ throw ParseException(EpigrafeAusente) 
           }
         }
 
       val (ementa1, preambulo, posPreambulo) = reconhecePreambulo(posEpigrafe)
-
+      
       val ementa2 = trimEmptyPars(ementa1)
-
+      
       if (ementa2.isEmpty ||
         !(ementa2.filter(isEmptyPar).isEmpty) ||
         !ementa2.filter(!isParagraph(_)).isEmpty) {
@@ -379,7 +358,19 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
         preambulo = preambulo,
         articulacao = articulacao,
         otherCaracteristicas = otherCaracteristicas)
-      val falhas = Validation.validaEstrutura(articulacao)
+        
+      val falhas = try {
+        Validation.validaEstrutura(articulacao)
+      } catch {
+	      case e: ParseException ⇒ {
+	        logger.info("Erro de parse: " + e.errors, e)
+	        e.errors.to[Set]
+	      }
+	      case e: Exception ⇒ {
+	        logger.info("Erro de sistema: " + e.getMessage, e)
+	        Set(ErroSistema(e))
+	      }
+      }
       (Some(pl), falhas.toList)
     } catch {
       case e: ParseException ⇒ {

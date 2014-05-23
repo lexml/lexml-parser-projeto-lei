@@ -107,8 +107,8 @@ case class RotuloArtigo(num: Int, comp: Option[Int] = None, unico: Boolean = fal
   val compBase = Some(num :: comp.toList)
   val proposicao = "do"
   override def subRotulo(n: Int) = Some(RotuloParagrafo(Some(n)))
-  override def consecutivoContinuo(r: Rotulo) = {    
-    val res = r match {
+  override def consecutivoContinuo(r: Rotulo) = 
+    r match {
       case RotuloArtigo(num1, comp1, _) if num1 == num ⇒ (comp, comp1) match {
         case (None, Some(1)) ⇒ true
         case (Some(n1), Some(n2)) ⇒ n2 == n1 + 1
@@ -117,9 +117,7 @@ case class RotuloArtigo(num: Int, comp: Option[Int] = None, unico: Boolean = fal
       case RotuloArtigo(num1, comp1, _) ⇒ num1 == num + 1 && comp1.isEmpty
       case r: Rotulo ⇒ r.nivel < nivel
     }
-    //println("consecutivoContinuo: this = " + this + ", that = " + r + ", res = " + res)
-    res
-  }  
+    
   override def canBeFirst = true
 }
 
@@ -133,8 +131,8 @@ case class RotuloParagrafo(num: Option[Int] = None, comp: Option[Int] = None, un
   val compBase = Some(num.getOrElse(-1) :: comp.toList)
   val proposicao = "do"
   override def subRotulo(n: Int) = Some(RotuloInciso(n))
-  override def consecutivoContinuo(r: Rotulo) = {    
-    val res = r match {
+  override def consecutivoContinuo(r: Rotulo) =    
+    r match {
       case RotuloParagrafo(None,_,_) => false
       case RotuloParagrafo(Some(1),None,_) => num.isEmpty
       case RotuloParagrafo(Some(num1),None,_) => num.map(num1 == _+ 1).getOrElse(false)
@@ -142,9 +140,7 @@ case class RotuloParagrafo(num: Option[Int] = None, comp: Option[Int] = None, un
       case RotuloParagrafo(Some(num1),Some(comp1),_) => num.map(num1 == _).getOrElse(false) && comp.map(comp1 == _ + 1).getOrElse(false)
       case _ => false
     }
-    //println("consecutivoContinuo: this = " + this + ", that = " + r + ", res = " + res)
-    res
-  }
+  
   override val numRotulosQuandoTemUnico = 2
   override def canBeFirst = num.isEmpty && comp.isEmpty
 }

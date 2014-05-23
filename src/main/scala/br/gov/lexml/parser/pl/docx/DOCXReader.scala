@@ -155,10 +155,8 @@ object DOCXReader {
       val src = Source.fromInputStream(zis, "utf-8")
       val reader = new XMLEventReader(src)
       val events = reader.toStream
-      val pars = collectPars(events)         
-      println("pars.length=" + pars.length)
+      val pars = collectPars(events) 
       val textContents = pars.map(collectText)
-      println("textContents.length=" + textContents.length)
       val collapsed = collapseBy(textContents) {
   	  	case (l1,l2) if l1.isEmpty && l2.isEmpty => l1
   	  }      
