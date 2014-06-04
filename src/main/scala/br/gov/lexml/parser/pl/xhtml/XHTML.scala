@@ -92,7 +92,7 @@ final class AbiwordConverter(val removeTemporaryFiles: Boolean = true) extends C
     try {
       //val srcPath = srcFile.getCanonicalPath
       FileUtils.writeByteArrayToFile(srcFile, srcData)
-      val cmd: Array[String] = (("/usr/local/bin/abiword-2.8" :: params) :+ srcFile.getPath).toArray
+      val cmd: Array[String] = (("/usr/bin/abiword" :: params) :+ srcFile.getPath).toArray
       logger.info("running " + cmd.mkString(" "))
       val p = Runtime.getRuntime.exec(cmd, Array[String](), srcFile.getParentFile)
       logger.info("returned from abiword")
