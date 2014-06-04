@@ -264,7 +264,7 @@
 		<dependency>
 			<groupId>br.gov.lexml</groupId>
 			<artifactId>lexml-xml-schemas</artifactId>
-			<version>3.1.3-SNAPSHOT</version>
+			<version>3.1.2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.googlecode.kiama</groupId>
