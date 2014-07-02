@@ -197,7 +197,7 @@ object ProjetoDeDecretoLegislativoDoSenadoNoSenado extends DocumentProfile with 
   override def epigrafeHead = "PROJETO DE DECRETO LEGISLATIVO (SF)"
 } 
 
-object ProjetoDeDecretoLegislativoDaCamaraNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile {
+object ProjetoDeDecretoLegislativoDaCamaraNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with EpigrafeOpcional {
   override def urnFragTipoNorma = "projeto.decreto.legislativo;pdc"
   override def epigrafeHead = "PROJETO DE DECRETO LEGISLATIVO"
 }
