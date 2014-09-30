@@ -248,7 +248,7 @@
 		<dependency>
 			<groupId>com.typesafe.akka</groupId>
 			<artifactId>akka-actor_${scala.version}</artifactId>
-			<version>2.1.4</version>
+			<version>2.3.6</version>
 		</dependency>
 		<dependency>
 			<groupId>org.scala-lang</groupId>
@@ -265,23 +265,6 @@
 			<groupId>br.gov.lexml</groupId>
 			<artifactId>lexml-xml-schemas</artifactId>
 			<version>3.1.3</version>
-		</dependency>
-		<dependency>
-			<groupId>com.googlecode.kiama</groupId>
-			<artifactId>kiama_${scala.version}</artifactId>
-			<version>1.5.0</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.scala-lang</groupId>
-					<artifactId>scala-library</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.specs2</groupId>
-			<artifactId>specs2_${scala.version}</artifactId>
-			<version>1.13</version>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.ccil.cowan.tagsoup</groupId>
@@ -306,7 +289,7 @@
 		<dependency>
 			<groupId>org.clapper</groupId>
 			<artifactId>grizzled-slf4j_${scala.version}</artifactId>
-			<version>1.0.1</version>
+			<version>1.0.2</version>
 		</dependency>
 	</dependencies>
 	
