@@ -1,5 +1,6 @@
 package br.gov.lexml.parser.pl.profile
 import scala.util.matching.Regex
+import scala.language.postfixOps
 
 trait RegexProfile {
     def regexLocalData : List[Regex] = List()

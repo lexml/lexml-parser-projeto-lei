@@ -32,7 +32,7 @@ object ParserFrontEnd {
     val ParserParams(inRTF, md) = params
     val inRTF2 = new DigestInputStream(inRTF, MessageDigest.getInstance("MD5"))
     val xhtmlRes = XHTMLProcessor.pipeline(inRTF2, new AbiwordConverter())
-    try { params.inRTF.close() } catch { case _ ⇒ }
+    try { params.inRTF.close() } catch { case _ : Exception ⇒ }
     val xhtml = xhtmlRes match {
       case Failure ⇒ {
         throw ParseException(FalhaConversaoPrimaria)

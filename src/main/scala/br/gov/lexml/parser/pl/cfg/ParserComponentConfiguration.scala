@@ -1,6 +1,7 @@
 package br.gov.lexml.parser.pl.cfg
 
 import java.net.URLClassLoader
+import scala.language.postfixOps
 import java.net.URL
 import java.net.JarURLConnection
 import scala.collection.JavaConversions._
@@ -23,7 +24,7 @@ object ParserComponentConfiguration extends Logging {
       k.toString.toLowerCase,
       v.asInstanceOf[String])
   } catch {
-    case _ ⇒ Map()
+    case _ : Exception ⇒ Map()
   }
 
   type Configuration = Map[(String, String), Component]

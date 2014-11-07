@@ -1,6 +1,7 @@
 package br.gov.lexml.parser.pl.misc
 
 import collection.generic.CanBuildFrom
+import scala.language.higherKinds
 import scala.Option.option2Iterable
 
 object CollectionUtils {

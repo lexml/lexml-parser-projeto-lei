@@ -1,6 +1,7 @@
 package br.gov.lexml.parser.pl.rotulo
 
 import scala.util.parsing.combinator._
+import scala.language.postfixOps
 import scala.util.parsing.input.CharArrayReader
 import scala.util.matching._
 
