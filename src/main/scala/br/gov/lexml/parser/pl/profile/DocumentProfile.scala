@@ -115,6 +115,7 @@ final case class DocumentProfileOverride(base : DocumentProfile,
   override final def epigrafeTail: String = overrideEpigrafeTail.getOrElse(base.epigrafeTail)
   override final def urnFragAutoridade: String = overrideUrnFragAutoridade.getOrElse(base.urnFragAutoridade)
   override final def autoridadeEpigrafe: Option[String] = overrideAutoridadeEpigrafe.getOrElse(base.autoridadeEpigrafe)
+  final val hasOverride : Boolean = this.productIterator.exists { _.isInstanceOf[Some[_]] }
 }
 
 object DocumentProfileRegister {  

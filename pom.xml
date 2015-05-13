@@ -1,14 +1,15 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	
+
 	<groupId>br.gov.lexml.parser.pl</groupId>
 	<artifactId>lexml-parser-projeto-lei</artifactId>
 	<version>1.9.2-SNAPSHOT</version>
-	
+
 	<properties>
-		<scala.version>2.10</scala.version>
-		<scala.lib.version>${scala.version}.1</scala.lib.version>
-		
+		<scala.version>2.11</scala.version>
+		<scala.lib.version>${scala.version}.6</scala.lib.version>
+
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<!-- github server corresponds to entry in ~/.m2/settings.xml -->
@@ -21,7 +22,7 @@
 		<connection>scm:git:https://github.com/lexml/${project.artifactId}.git</connection>
 		<tag>HEAD</tag>
 	</scm>
-	
+
 	<distributionManagement>
 		<repository>
 			<id>releases</id>
@@ -35,14 +36,14 @@
 			<id>GitHub Repository</id>
 			<url>https://raw.github.com/lexml/mvn-repo/master</url>
 			<releases>
-      			<enabled>true</enabled>
-    		</releases>
+				<enabled>true</enabled>
+			</releases>
 			<snapshots>
 				<enabled>true</enabled>
 				<updatePolicy>always</updatePolicy>
 			</snapshots>
 		</repository>
-		
+
 		<repository>
 			<id>typesafe</id>
 			<name>Typesafe Repository</name>
@@ -73,15 +74,15 @@
 			<url>http://scala-tools.org/repo-snapshots</url>
 		</repository>
 	</repositories>
-	
 
-	
+
+
 	<build>
 		<sourceDirectory>src/main/scala</sourceDirectory>
 		<testSourceDirectory>src/test/scala</testSourceDirectory>
 
 		<plugins>
-		
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
@@ -99,16 +100,16 @@
 				</configuration>
 			</plugin>
 			<plugin>
-			  <groupId>org.apache.maven.plugins</groupId>
-			  <artifactId>maven-source-plugin</artifactId>
-			  <executions>
-			    <execution>
-			      <id>attach-sources</id>
-			      <goals>
-			        <goal>jar</goal>
-			      </goals>
-			    </execution>
-			  </executions>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>com.github.github</groupId>
@@ -137,8 +138,8 @@
 						<phase>deploy</phase>
 					</execution>
 				</executions>
-			</plugin>				
-		
+			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -151,7 +152,7 @@
 			<plugin>
 				<groupId>net.alchim31.maven</groupId>
 				<artifactId>scala-maven-plugin</artifactId>
-				<version>3.1.5</version>
+				<version>3.2.0</version>
 				<executions>
 					<execution>
 						<goals>
@@ -192,6 +193,11 @@
 				<version>2.4</version>
 				<configuration>
 					<archive>
+			<!-- 		    <index>true</index>
+			            <manifest>
+			                <addClasspath>true</addClasspath>
+			                <mainClass>br.gov.lexml.parser.pl.ParserMain</mainClass>
+			            </manifest> -->
 						<manifestEntries>
 							<lexml_parser_componente_nome>${groupId}/${artifactId}</lexml_parser_componente_nome>
 							<lexml_parser_componente_build>${buildNumber}</lexml_parser_componente_build>
@@ -199,6 +205,55 @@
 					</archive>
 				</configuration>
 			</plugin>
+			<!-- <plugin>
+			  <groupId>org.apache.maven.plugins</groupId>
+			  <artifactId>maven-assembly-plugin</artifactId>
+			  <configuration>
+			    <descriptors> 
+			      <descriptor>src/main/assemblies/assembly.xml</descriptor>
+			    </descriptors>
+			    <archive>
+			      <index>true</index>
+			      <manifest>
+			        <mainClass>br.gov.lexml.parser.pl.ParserMain</mainClass>
+			        <addClasspath>true</addClasspath>
+			      </manifest>
+			    </archive>
+			  </configuration>
+			  
+			  <executions>
+			    <execution>
+			      <phase>package</phase>
+			      <goals>
+			        <goal>single</goal>
+			      </goals>
+			    </execution>
+			  </executions>
+			  
+			</plugin>
+			 -->
+			<plugin>
+			  <!--groupId>org.dstovall</groupId--> <!-- not available on the central -->
+			  <groupId>com.jolira</groupId>
+			  <artifactId>onejar-maven-plugin</artifactId>
+			  <version>1.4.4</version>
+			  <executions>
+			    <execution>
+			      <phase>package</phase>
+			      <configuration>
+			        <mainClass>br.gov.lexml.parser.pl.ParserMain</mainClass>
+			        <attachToBuild>true</attachToBuild>
+			        <!-- https://code.google.com/p/onejar-maven-plugin/issues/detail?id=8 -->
+			        <!--classifier>onejar</classifier-->
+			        <filename>${project.build.finalName}-onejar.${project.packaging}</filename>
+			      </configuration>
+			      <goals>
+			        <goal>one-jar</goal>
+			      </goals>
+			    </execution>
+			  </executions>
+			</plugin>
+			
 		</plugins>
 		<resources>
 			<resource>
@@ -248,7 +303,7 @@
 		<dependency>
 			<groupId>com.typesafe.akka</groupId>
 			<artifactId>akka-actor_${scala.version}</artifactId>
-			<version>2.1.4</version>
+			<version>2.3.9</version>
 		</dependency>
 		<dependency>
 			<groupId>org.scala-lang</groupId>
@@ -258,32 +313,15 @@
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
-			<version>2.0.1</version>
+			<version>2.4</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>br.gov.lexml</groupId>
 			<artifactId>lexml-xml-schemas</artifactId>
 			<version>3.1.2</version>
 			<type>jar</type>
 			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.googlecode.kiama</groupId>
-			<artifactId>kiama_${scala.version}</artifactId>
-			<version>1.5.0</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.scala-lang</groupId>
-					<artifactId>scala-library</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.specs2</groupId>
-			<artifactId>specs2_${scala.version}</artifactId>
-			<version>1.13</version>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.ccil.cowan.tagsoup</groupId>
@@ -295,22 +333,36 @@
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
-			<version>1.2.16</version>
-			<type>jar</type>
+			<version>1.2.17</version>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.6.1</version>
+			<version>1.7.10</version>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.clapper</groupId>
 			<artifactId>grizzled-slf4j_${scala.version}</artifactId>
-			<version>1.0.1</version>
+			<version>1.0.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.scala-lang.modules</groupId>
+			<artifactId>scala-xml_2.11</artifactId>
+			<version>1.0.3</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.scala-lang.modules</groupId>
+		    <artifactId>scala-parser-combinators_2.11</artifactId>
+		    <version>1.0.3</version>
+		</dependency>
+		<dependency>
+		    <groupId>com.github.scopt</groupId>
+		    <artifactId>scopt_${scala.version}</artifactId>
+		    <version>3.3.0</version>
 		</dependency>
 	</dependencies>
-	
+
 </project>
 

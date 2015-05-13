@@ -63,6 +63,10 @@ object ParserFrontEnd {
     })
     (r, msgs)
   }  
+  
+  def main(args : Array[String]) {
+    
+  }
 }
 
 class ArticulacaoParser {
