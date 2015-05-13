@@ -28,6 +28,7 @@ object HtmlRenderer {
 		case _ : RotuloSecao => "Secao"
 		case _ : RotuloSubSecao => "SubSecao"
 		case _ : RotuloAlteracao => "Alteracao"
+    case x => throw new RuntimeException("Lexml Xml renderer. Elemento não esperado:" + x)
 	}
 	
 	def renderNumeral(num : Int) : String = {
@@ -84,7 +85,8 @@ object HtmlRenderer {
 		case RotuloSecao(num, comp) => <span class="rotuloDispositivo">SEÇÃO </span> <span class="numeroDispositivo">{renderRomano(num) + renderComp(comp)}</span>
 		case RotuloSubSecao(num, comp) => <span class="rotuloDispositivo">SUBSEÇÃO </span> <span class="numeroDispositivo">{renderRomano(num) + renderComp(comp)}</span>
 		case RotuloAlteracao(num) => <span class="rotuloDispositivo">Alteracao </span> <span class="numeroDispositivo">{num.toString}</span>	
-	} 
+    case x => throw new RuntimeException("Lexml Xml renderer. Elemento não esperado:" + x)
+  } 
 					
 	def renderCompId(n : Option[Int]) = n.map("-" + _.toString).getOrElse("")
 	
@@ -107,6 +109,7 @@ object HtmlRenderer {
 		case RotuloSecao(num, comp) => "sec%d%s" format(num,renderCompId(comp))
 		case RotuloSubSecao(num, comp) => "sub%d%s" format(num,renderCompId(comp))
 		case RotuloAlteracao(num) => "alt%d" format(num)
+    case x => throw new RuntimeException("Lexml Xml renderer. Elemento não esperado:" + x)
 	}
 	
 	def renderId(path : List[Rotulo]) : String = path.reverse.map(renderId).mkString("","_","")		

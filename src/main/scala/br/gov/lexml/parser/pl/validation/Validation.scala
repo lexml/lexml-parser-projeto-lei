@@ -1,6 +1,7 @@
 package br.gov.lexml.parser.pl.validation
 
 import br.gov.lexml.parser.pl.errors._
+import scala.language.postfixOps
 import scala.collection.immutable.Set
 import br.gov.lexml.parser.pl.output.LexmlRenderer
 import br.gov.lexml.parser.pl.block.Dispositivo

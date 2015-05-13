@@ -34,6 +34,7 @@ object LexmlRenderer {
     case _: RotuloSecao ⇒ "Secao"
     case _: RotuloSubSecao ⇒ "Subsecao"
     case _: RotuloAlteracao ⇒ "Alteracao"
+    case x => throw new RuntimeException("Lexml Xml renderer. Elemento não esperado:" + x)
   }
 
   def renderNumeral(num: Int): String = {
@@ -90,6 +91,7 @@ object LexmlRenderer {
     case RotuloSecao(num, comp) ⇒ Left("SEÇÃO " + renderRomano(num) + renderComp(comp))
     case RotuloSubSecao(num, comp) ⇒ Left("SUBSEÇÃO " + renderRomano(num) + renderComp(comp))
     case RotuloAlteracao(num) ⇒ Right("Alteracao " + num)
+    case x => throw new RuntimeException("Lexml Xml renderer. Elemento não esperado:" + x)
   }
 
   def renderRotulo(r: Rotulo): Option[String] = renderRotuloEither(r).fold((Some(_)), _ ⇒ None)
@@ -117,6 +119,7 @@ object LexmlRenderer {
     case RotuloSecao(num, comp) ⇒ "sec%d%s" format (num, renderCompId(comp))
     case RotuloSubSecao(num, comp) ⇒ "sub%d%s" format (num, renderCompId(comp))
     case RotuloAlteracao(num) ⇒ "alt%d" format (num)
+    case x => throw new RuntimeException("Lexml Xml renderer. Elemento não esperado:" + x)
   }
 
   def renderId(path: List[Rotulo]): String = path.reverse.map(renderId).mkString("", "_", "")

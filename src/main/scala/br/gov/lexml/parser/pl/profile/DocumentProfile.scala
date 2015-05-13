@@ -1,5 +1,6 @@
 package br.gov.lexml.parser.pl.profile
 import scala.util.matching.Regex
+import scala.language.postfixOps
 
 trait RegexProfile {
     def regexLocalData : List[Regex] = List()
@@ -158,7 +159,7 @@ trait DoSenadoProfile extends AutoridadeProfile {
 
 trait DaCamaraProfile extends AutoridadeProfile {
   override def urnFragAutoridade = "camara.deputados"
-  override def autoridadeEpigrafe = Some("DA CÂMARA DOS DEPUTADOS")
+  override def autoridadeEpigrafe = Some("DA CÂMARA DOS DEPUTADOS")  
 }
 
 trait DoCongressoProfile extends AutoridadeProfile {
@@ -198,7 +199,7 @@ object ProjetoDeDecretoLegislativoDoSenadoNoSenado extends DocumentProfile with 
   override def epigrafeHead = "PROJETO DE DECRETO LEGISLATIVO (SF)"
 } 
 
-object ProjetoDeDecretoLegislativoDaCamaraNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile {
+object ProjetoDeDecretoLegislativoDaCamaraNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with EpigrafeOpcional {
   override def urnFragTipoNorma = "projeto.decreto.legislativo;pdc"
   override def epigrafeHead = "PROJETO DE DECRETO LEGISLATIVO"
 }
@@ -215,17 +216,17 @@ object ProjetoDeLeiComplementarDaCamaraNoSenado extends DocumentProfile with Def
   override def epigrafeTail = " - COMPLEMENTAR"
 }
 
-object ProjetoDeLeiNaCamara extends DocumentProfile with DefaultRegexProfile with DaCamaraProfile {
+object ProjetoDeLeiNaCamara extends DocumentProfile with DefaultRegexProfile with DaCamaraProfile with EpigrafeOpcional {
   override def urnFragTipoNorma = "projeto.lei;pl"
   override def epigrafeHead = "PROJETO DE LEI"
 }
 
-object ProjetoDeLeiComplementarNaCamara extends DocumentProfile with DefaultRegexProfile with DaCamaraProfile {
+object ProjetoDeLeiComplementarNaCamara extends DocumentProfile with DefaultRegexProfile with DaCamaraProfile with EpigrafeOpcional {
   override def urnFragTipoNorma = "projeto.lei.complementar;plp"
   override def epigrafeHead = "PROJETO DE LEI COMPLEMENTAR"
 }
 
-object ProjetoDeResolucaoNaCamara extends DocumentProfile with DefaultRegexProfile with DaCamaraProfile {
+object ProjetoDeResolucaoNaCamara extends DocumentProfile with DefaultRegexProfile with DaCamaraProfile with EpigrafeOpcional {
   override def urnFragTipoNorma = "projeto.resolucao"
   override def epigrafeHead = "PROJETO DE RESOLUÇÃO"
 }

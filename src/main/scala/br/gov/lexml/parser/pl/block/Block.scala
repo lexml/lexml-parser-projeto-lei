@@ -1,6 +1,7 @@
 package br.gov.lexml.parser.pl.block
 
 import br.gov.lexml.parser.pl.rotulo._
+import scala.language.postfixOps
 import scala.xml._
 import scala.util.matching.Regex
 import br.gov.lexml.parser.pl.text.normalizer
@@ -41,6 +42,7 @@ object HasId {
     case RotuloSecao(num, comp) ⇒ "sec%d%s" format (num, renderCompId(comp))
     case RotuloSubSecao(num, comp) ⇒ "sub%d%s" format (num, renderCompId(comp))
     case RotuloAlteracao(num) ⇒ "alt%d" format (num)
+    case x => throw new RuntimeException("Lexml Xml renderer. Elemento não esperado:" + x)
   }
 
   def renderId(path: List[Rotulo]): String = path.reverse.map(renderId).mkString("", "_", "")

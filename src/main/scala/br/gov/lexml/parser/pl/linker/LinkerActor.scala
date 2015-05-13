@@ -1,5 +1,6 @@
 package br.gov.lexml.parser.pl.linker
 import akka.actor._
+import scala.language.postfixOps
 import akka.dispatch._
 import akka.event.Logging
 import java.io._
@@ -36,15 +37,16 @@ class LinkerActor extends Actor {
   }
   override def postStop() {
     for { p <- oprocess } {
-      try { p.reader.close() } catch { case _ => }
-      try { p.writer.close() } catch { case _ => }
-      try { p.process.destroy() } catch { case _ => }
+      try { p.reader.close() } catch { case _ : Exception => }
+      try { p.writer.close() } catch { case _ : Exception => }
+      try { p.process.destroy() } catch { case _ : Exception => }
     }
   }
 
   val ws = """\p{javaWhitespace}"""r
   def receive = {
-    case msg: Seq[Node] => {
+    case mmsg: Seq[_] => {
+      val msg = mmsg.collect { case x : Node => x }
       for { p <- oprocess } {
         val msgTxt = (NodeSeq fromSeq msg).toString.replaceAll("""[\n\r\f]""", "")
         p.writer.println(msgTxt)

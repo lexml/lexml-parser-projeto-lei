@@ -1,6 +1,7 @@
 package br.gov.lexml.parser.pl.linker
 
 import akka.actor._
+import scala.language.postfixOps
 import akka.actor.Props
 import br.gov.lexml.parser.pl.block._
 import br.gov.lexml.parser.pl.rotulo._
