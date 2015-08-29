@@ -3,7 +3,7 @@
 
 	<groupId>br.gov.lexml.parser.pl</groupId>
 	<artifactId>lexml-parser-projeto-lei</artifactId>
-	<version>1.9.11</version>
+	<version>1.9.12-SNAPSHOT</version>
 	
 	<properties>
 		<scala.version>2.11</scala.version>
@@ -20,7 +20,7 @@
 		<url>https://github.com/lexml/${project.artifactId}</url>
 		<developerConnection>scm:git:https://github.com/lexml/${project.artifactId}.git</developerConnection>
 		<connection>scm:git:https://github.com/lexml/${project.artifactId}.git</connection>
-		<tag>lexml-parser-projeto-lei-1.9.11</tag>
+		<tag>lexml-parser-projeto-lei-1.9.10</tag>
 	</scm>
 
 	<distributionManagement>
