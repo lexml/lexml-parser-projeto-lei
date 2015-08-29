@@ -16,3 +16,4 @@ project/plugins/project/
 /.project
 /.cache
 /target/
+/.cache-main
