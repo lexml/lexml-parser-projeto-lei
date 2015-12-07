@@ -1,20 +1,16 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>br.gov.lexml.parser.pl</groupId>
-		<artifactId>lexml-parser-projeto-lei-root</artifactId>
-		<version>2.0.0-SNAPSHOT</version>
-		<relativePath>../</relativePath>
-	</parent>
-		
-	<artifactId>lexml-parser-projeto-lei-old</artifactId>
-	
-	<build>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>br.gov.lexml.parser.pl</groupId>
+    <artifactId>lexml-parser-projeto-lei-root</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>lexml-parser-projeto-lei-errors</artifactId>
+<build>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-				<version>2.4</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -33,10 +29,9 @@
 
 	<dependencies>
 		<dependency>
-				<groupId>${project.groupId}</groupId>
-				<artifactId>lexml-parser-projeto-lei-core</artifactId>
+			<groupId>br.gov.lexml</groupId>
+			<artifactId>lexml-xml-schemas</artifactId>
 		</dependency>
-	
 		<dependency>
 			<groupId>com.typesafe.akka</groupId>
 			<artifactId>akka-actor_${scala.version}</artifactId>
@@ -60,14 +55,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>br.gov.lexml</groupId>
-			<artifactId>lexml-xml-schemas</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.ccil.cowan.tagsoup</groupId>
-			<artifactId>tagsoup</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 		</dependency>
@@ -75,11 +62,7 @@
 			<groupId>org.clapper</groupId>
 			<artifactId>grizzled-slf4j_${scala.version}</artifactId>
 		</dependency>
-		<dependency>
-		    <groupId>com.github.scopt</groupId>
-		    <artifactId>scopt_${scala.version}</artifactId>
-		</dependency>
 	</dependencies>
 
 </project>
-
+  

@@ -24,7 +24,7 @@
 		<scala.logging.version>3.1.0</scala.logging.version>
 		<grizzled.slf4j.version>1.0.2</grizzled.slf4j.version>
 		
-		<lexml.xml.schemas.version>3.1.3</lexml.xml.schemas.version>
+		<lexml.xml.schemas.version>3.1.4</lexml.xml.schemas.version>
 		<tagsoup.version>1.2.1</tagsoup.version>
 		<scopt.version>3.3.0</scopt.version>
 		
@@ -124,6 +124,41 @@
 				<version>${project.version}</version>
 			</dependency>
 			-->
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>lexml-parser-projeto-lei-core</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>lexml-parser-projeto-lei-linker</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>lexml-parser-projeto-lei-validation</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>lexml-parser-projeto-lei-output</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>lexml-parser-projeto-lei-errors</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>lexml-parser-projeto-lei-parser</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 		
 		<!--  Misc dependencies  -->     	    
 		<!-- <dependency>
@@ -361,6 +396,12 @@
 	
 	<modules>
 		<module>lexml-parser-projeto-lei-old</module>
+		<module>lexml-parser-projeto-lei-core</module>
+		<module>lexml-parser-projeto-lei-parser</module>
+		<module>lexml-parser-projeto-lei-linker</module>
+		<module>lexml-parser-projeto-lei-validation</module>
+		<module>lexml-parser-projeto-lei-output</module>
+		<module>lexml-parser-projeto-lei-errors</module>
 	</modules>
 
 </project>

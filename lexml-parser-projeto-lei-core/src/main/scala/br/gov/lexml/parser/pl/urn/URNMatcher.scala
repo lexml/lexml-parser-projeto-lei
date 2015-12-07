@@ -1,9 +1,9 @@
-package br.gov.lexml.parser.pl.linker
+package br.gov.lexml.parser.pl.urn
 
-import java.util.Date
-
-import br.gov.lexml.parser.pl.block._
-import br.gov.lexml.parser.pl.output._
+import br.gov.lexml.parser.pl.block.Alteracao
+import br.gov.lexml.parser.pl.block.Block
+import br.gov.lexml.parser.pl.block.HasId
+import br.gov.lexml.parser.pl.block.Dispositivo
 
 case class URN(ano: Int, mesdia: Option[(Int, Int)], fragment: String, urn: String) extends Ordered[URN] {
   lazy val base = urn.takeWhile(_ != '!')
