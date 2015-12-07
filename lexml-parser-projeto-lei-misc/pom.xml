@@ -5,7 +5,7 @@
     <artifactId>lexml-parser-projeto-lei-root</artifactId>
     <version>2.0.0-SNAPSHOT</version>
   </parent>
-  <artifactId>lexml-parser-projeto-lei-core</artifactId>
+  <artifactId>lexml-parser-projeto-lei-misc</artifactId>
     
 	<build>
 		<plugins>
@@ -29,20 +29,7 @@
 	</build>
 
 	<dependencies>
-		<dependency>
-			<groupId>br.gov.lexml</groupId>
-			<artifactId>lexml-xml-schemas</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>br.gov.lexml.parser.pl</groupId>
-			<artifactId>
-				lexml-parser-projeto-lei-converter-api
-			</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.typesafe.akka</groupId>
-			<artifactId>akka-actor_${scala.version}</artifactId>
-		</dependency>
+		
 		<dependency>
 			<groupId>org.scala-lang</groupId>
 			<artifactId>scala-library</artifactId>

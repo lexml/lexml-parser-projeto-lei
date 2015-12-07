@@ -1,38 +1,35 @@
 package br.gov.lexml.parser.pl.xhtml
 
-import java.io.CharArrayReader
-import java.io.FileReader
-import java.io.BufferedReader
-import org.apache.commons.io.IOUtils
-import org.apache.commons.io.filefilter.FileFilterUtils
-import java.io.FileWriter
-import java.io.BufferedWriter
-import java.io.IOException
-import java.io.FileOutputStream
-import java.io.FileInputStream
-import java.io.BufferedOutputStream
-import java.io.BufferedInputStream
-import java.io.InputStream
-import java.io.OutputStream
-import java.io.File
-import scala.xml._
-import scala.util.matching.Regex
-import grizzled.slf4j.Logging
-import org.apache.commons.io.FileUtils
-import java.io.InputStreamReader
 import java.io.ByteArrayInputStream
-import java.io.StringReader
-import scala.xml.parsing.NoBindingFactoryAdapter
-import org.apache.commons.io.filefilter.PrefixFileFilter
+import java.io.File
 import java.io.FileFilter
-import scala.xml.parsing.XhtmlParser
+import java.io.InputStream
+import java.io.InputStreamReader
+
+import scala.collection.JavaConversions
 import scala.io.BufferedSource
-import scala.xml.Source
-import scala.xml.Source
-import scala.xml.Source
-import scala.xml.Source
-import br.gov.lexml.parser.pl.docx.DOCXReader
 import scala.io.Codec
+import scala.util.matching.Regex
+import scala.xml.Elem
+import scala.xml.InputSource
+import scala.xml.MetaData
+import scala.xml.NamespaceBinding
+import scala.xml.Node
+import scala.xml.NodeSeq
+import scala.xml.NodeSeq.seqToNodeSeq
+import scala.xml.Null
+import scala.xml.Text
+import scala.xml.TopScope
+import scala.xml.UnprefixedAttribute
+import scala.xml.parsing.NoBindingFactoryAdapter
+import scala.xml.parsing.XhtmlParser
+
+import org.apache.commons.io.FileUtils
+import org.apache.commons.io.IOUtils
+import org.apache.commons.io.filefilter.PrefixFileFilter
+
+import br.gov.lexml.parser.pl.docx.DOCXReader
+import grizzled.slf4j.Logging
 
 abstract class XHTMLProcessorResult
 case object Failure extends XHTMLProcessorResult

@@ -156,6 +156,30 @@
 			
 			<dependency>
 				<groupId>${project.groupId}</groupId>
+				<artifactId>lexml-parser-projeto-lei-misc</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>lexml-parser-projeto-lei-converter-api</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>lexml-parser-projeto-lei-converter-registry</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>lexml-parser-projeto-lei-docx</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>${project.groupId}</groupId>
 				<artifactId>lexml-parser-projeto-lei-parser</artifactId>
 				<version>${project.version}</version>
 			</dependency>
@@ -402,6 +426,10 @@
 		<module>lexml-parser-projeto-lei-validation</module>
 		<module>lexml-parser-projeto-lei-output</module>
 		<module>lexml-parser-projeto-lei-errors</module>
+		<module>lexml-parser-projeto-lei-misc</module>
+		<module>lexml-parser-projeto-lei-docx</module>
+		<module>lexml-parser-projeto-lei-converter-api</module>
+		
 	</modules>
 
 </project>
