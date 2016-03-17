@@ -119,11 +119,10 @@ object Id {
 }
 
 
-case class Metadado(profile : DocumentProfile, id : Option[Id] = None, hashFonte : Option[Array[Byte]]) {	
-	lazy val urn = "urn:lex:br:" + profile.urnFragAutoridade + ":" + profile.urnFragTipoNorma + ":" + id.map(_.urnRepr).getOrElse("LEXML_URN_ID")
-	lazy val epigrafePadrao = profile.epigrafeHead + " " + 
-							  id.map(_.epigrafeRepr).getOrElse("Nº LEXML_EPIGRAFE_NUMERO de LEXML_EPIGRAFE_DATA") +
-	                          profile.epigrafeTail
+case class Metadado(profile : DocumentProfile, localidade : String = "br", id : Option[Id] = None, hashFonte : Option[Array[Byte]]) {	
+	lazy val urn = s"urn:lex:$localidade:${profile.urnFragAutoridade}:${profile.urnFragTipoNorma}:${id.map(_.urnRepr).getOrElse("LEXML_URN_ID")}"
+	lazy val epigrafePadrao = 
+	  s"${profile.epigrafeHead} ${id.map(_.epigrafeRepr).getOrElse("Nº LEXML_EPIGRAFE_NUMERO de LEXML_EPIGRAFE_DATA")}${profile.epigrafeTail}"
 		/*
 		 * val t = tipoProjetoLei match {
 				case TipoPLS() => "PROJETO DE LEI DO SENADO Nº %s de %d"
@@ -172,8 +171,5 @@ object Metadado {
 	} */
 	def renderComplemento(n : Int) : String = "-" + n.toString
 	def renderNumero(n : Int) : String = String.format(pt_BR,"%,d",n.asInstanceOf[java.lang.Integer])
-	val re1 = """^urn:lex:br(?:;([^:]+))?:([^:]*):(^[:]*): """
-	def fromURN(urn : String) = {
-	  
-	}
+	
 }

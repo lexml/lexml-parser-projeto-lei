@@ -3,7 +3,7 @@ import scala.util.matching.Regex
 import scala.language.postfixOps
 
 trait RegexProfile {
-    def regexLocalData : List[Regex] = List()
+  def regexLocalData : List[Regex] = List()
 	def regexJustificativa : List[Regex] = List()
 	def regexAnexos : List[Regex] = List()
 	def regexLegislacaoCitada : List[Regex] = List()
@@ -77,7 +77,15 @@ trait AutoridadeProfile {
   def autoridadeEpigrafe : Option[String] = None
 }
 
-trait DocumentProfile extends RegexProfile with TipoNormaProfile with AutoridadeProfile {
+trait LocalidadeProfile {
+  def urnFragLocalidade : Option[String] = None
+}
+
+trait LocalidadeBR extends LocalidadeProfile {
+  override def urnFragLocalidade = Some("br")
+}
+
+trait DocumentProfile extends RegexProfile with TipoNormaProfile with AutoridadeProfile with LocalidadeProfile {
   lazy val subTipoNorma = urnFragTipoNorma.split(";") match {
     case Array(_,st) => Some(st)
     case _ => None
@@ -99,7 +107,8 @@ final case class DocumentProfileOverride(base : DocumentProfile,
   overrideEpigrafeHead: Option[String] = None,
   overrideEpigrafeTail: Option[String] = None,
   overrideUrnFragAutoridade: Option[String] = None,
-  overrideAutoridadeEpigrafe: Option[Option[String]] = None    
+  overrideAutoridadeEpigrafe: Option[Option[String]] = None,
+  overrideUrnFragLocalidade : Option[Option[String]] = None
 ) extends DocumentProfile {
   override final def regexLocalData : List[Regex] = overrideRegexLocalData.getOrElse(base.regexLocalData)
   override final def regexJustificativa: List[Regex] = overrideRegexJustificativa.getOrElse(base.regexJustificativa)
@@ -116,19 +125,21 @@ final case class DocumentProfileOverride(base : DocumentProfile,
   override final def epigrafeTail: String = overrideEpigrafeTail.getOrElse(base.epigrafeTail)
   override final def urnFragAutoridade: String = overrideUrnFragAutoridade.getOrElse(base.urnFragAutoridade)
   override final def autoridadeEpigrafe: Option[String] = overrideAutoridadeEpigrafe.getOrElse(base.autoridadeEpigrafe)
+  override final def urnFragLocalidade : Option[String] = overrideUrnFragLocalidade.getOrElse(base.urnFragLocalidade)
   final val hasOverride : Boolean = this.productIterator.exists { _.isInstanceOf[Some[_]] }
 }
 
 object DocumentProfileRegister {  
   type Autoridade = String
   type TipoNorma = String
-  var profiles : Map[(Autoridade,TipoNorma),DocumentProfile] = Map()
-  def register(profile : DocumentProfile) = { profiles = profiles + ((profile.urnFragAutoridade,profile.urnFragTipoNorma) -> profile) }
-  def getProfile(autoridade : Autoridade, tipoNorma : TipoNorma) : Option[DocumentProfile] = profiles.get((autoridade,tipoNorma))
+  type Localidade = Option[String]
+  var profiles : Map[(Localidade,Autoridade,TipoNorma),DocumentProfile] = Map()
+  def register(profile : DocumentProfile) = { profiles = profiles + ((profile.urnFragLocalidade,profile.urnFragAutoridade,profile.urnFragTipoNorma) -> profile) }
+  def getProfile(autoridade : Autoridade, tipoNorma : TipoNorma, localidade : Option[String] = None) : Option[DocumentProfile] = profiles.get((localidade,autoridade,tipoNorma))
   def profileByAutoridadeSigla(autoridade : Autoridade, sigla : String) =
-    profiles.filterKeys({ case (aut,tn) => aut == autoridade && tn.endsWith(";" + sigla)}).values.headOption
-  def autoridades = profiles.keySet.map(_._1)
-  def tiposDeNormasPorAutoridade(autoridade : String) : Set[String] = for { (aut,tn) <- profiles.keySet ; if aut == autoridade } yield tn
+    profiles.filterKeys({ case (_,aut,tn) => aut == autoridade && tn.endsWith(";" + sigla)}).values.headOption
+  def autoridades = profiles.keySet.map(_._2)
+  def tiposDeNormasPorAutoridade(autoridade : String) : Set[String] = for { (_,aut,tn) <- profiles.keySet ; if aut == autoridade } yield tn
   def tiposDeNormas : Set[String] = profiles.keySet.map(_._2)
   def byUrnFrag(urnFrag : String) : Option[DocumentProfile] = urnFrag.split(":").toList match {
     case autoridade :: tipoNorma :: _ => getProfile(autoridade,tipoNorma)
@@ -147,29 +158,66 @@ object DocumentProfileRegister {
       ProjetoDeLeiComplementarNaCamara,
       ProjetoDeResolucaoNaCamara,
       MedidaProvisoriaNoCongresso,
-      MedidaProvisoriaFederal
+      MedidaProvisoriaFederal,
+      Lei,
+      LeiComplementar,
+      LeiDelegada,
+      DecretoLei,
+      Decreto,
+      EmendaConstitucional,
+      ProjetoDeLeiDoSenadoNoSenado
   )
   builtins foreach register
 }
 
-trait DoSenadoProfile extends AutoridadeProfile {
+trait DoSenadoProfile extends AutoridadeProfile with LocalidadeBR {
   override def urnFragAutoridade = "senado.federal"
   override def autoridadeEpigrafe = Some("DO SENADO FEDERAL")     
 }
 
-trait DaCamaraProfile extends AutoridadeProfile {
+trait DaCamaraProfile extends AutoridadeProfile with LocalidadeBR {
   override def urnFragAutoridade = "camara.deputados"
   override def autoridadeEpigrafe = Some("DA CÂMARA DOS DEPUTADOS")  
 }
 
-trait DoCongressoProfile extends AutoridadeProfile {
+trait DoCongressoProfile extends AutoridadeProfile with LocalidadeBR {
   override def urnFragAutoridade = "congresso.nacional"
   override def autoridadeEpigrafe = Some("DO CONGRESSO NACIONAL")
 }
 
-trait FederalProfile extends AutoridadeProfile {
+trait FederalProfile extends AutoridadeProfile with LocalidadeBR {
   override def urnFragAutoridade = "federal"
   override def autoridadeEpigrafe = Some("FEDERAL")  
+}
+
+object Lei extends DocumentProfile with DefaultRegexProfile with FederalProfile {
+  override def urnFragTipoNorma = "lei"
+  override def epigrafeHead = "LEI"
+}
+
+object LeiComplementar extends DocumentProfile with DefaultRegexProfile with FederalProfile {
+  override def urnFragTipoNorma = "lei.complementar"
+  override def epigrafeHead = "LEI COMPLEMENTAR"
+}
+
+object LeiDelegada extends DocumentProfile with DefaultRegexProfile with FederalProfile {
+  override def urnFragTipoNorma = "lei.delegada"
+  override def epigrafeHead = "LEI DELEGADA"
+}
+
+object DecretoLei extends DocumentProfile with DefaultRegexProfile with FederalProfile {
+  override def urnFragTipoNorma = "decreto.lei"
+  override def epigrafeHead = "DECRETO-LEI"
+}
+
+object Decreto extends DocumentProfile with DefaultRegexProfile with FederalProfile {
+  override def urnFragTipoNorma = "decreto"
+  override def epigrafeHead = "DECRETO"
+}
+
+object EmendaConstitucional extends DocumentProfile with DefaultRegexProfile with FederalProfile {
+  override def urnFragTipoNorma = "emenda.constitucional"
+  override def epigrafeHead = "EMENDA CONSTITUICIONAL"
 }
 
 object ProjetoDeLeiDoSenadoNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile  {
@@ -242,3 +290,4 @@ object MedidaProvisoriaFederal extends DocumentProfile with DefaultRegexProfile 
   override def epigrafeHead = "MEDIDA PROVISÓRIA"
   override def regexEpigrafe = super.regexEpigrafe ++ List("^medida provisoria"r)  
 }
+
