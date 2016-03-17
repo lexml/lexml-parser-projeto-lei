@@ -18,7 +18,7 @@
 		<commons.lang.version>3.3.2</commons.lang.version>
 		<commons.io.version>2.4</commons.io.version>
 		<junit.version>4.12</junit.version>
-		<typesafe.config.version>1.2.1</typesafe.config.version>
+		<typesafe.config.version>1.3.0</typesafe.config.version>
 		<scala-maven-plugin.version>3.2.1</scala-maven-plugin.version>
 		<maven-compiler-plugin>3.1</maven-compiler-plugin>
 		<scala.logging.version>3.1.0</scala.logging.version>
@@ -181,6 +181,12 @@
 			<dependency>
 				<groupId>${project.groupId}</groupId>
 				<artifactId>lexml-parser-projeto-lei-parser</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>lexml-parser-projeto-lei-config</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 		
@@ -347,8 +353,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>${maven-compiler-plugin}</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.8</source>
+					<target>1.8</target>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -429,7 +435,8 @@
 		<module>lexml-parser-projeto-lei-misc</module>
 		<module>lexml-parser-projeto-lei-docx</module>
 		<module>lexml-parser-projeto-lei-converter-api</module>
-		
+
+		<module>lexml-parser-projeto-lei-config</module>
 	</modules>
 
 </project>

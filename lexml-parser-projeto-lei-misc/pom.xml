@@ -56,6 +56,15 @@
 			<groupId>org.clapper</groupId>
 			<artifactId>grizzled-slf4j_${scala.version}</artifactId>
 		</dependency>
+		 <dependency>
+		  <groupId>org.apache.tika</groupId>
+		  <artifactId>tika-parsers</artifactId>
+		  <version>1.11</version>
+		</dependency>
+		 <dependency>
+		 	<groupId>br.gov.lexml.parser.pl</groupId>
+		 	<artifactId>lexml-parser-projeto-lei-config</artifactId>
+		 </dependency>
 	</dependencies>
 
 </project>

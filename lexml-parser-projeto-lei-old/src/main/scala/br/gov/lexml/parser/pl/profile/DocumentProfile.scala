@@ -1,5 +1,6 @@
 package br.gov.lexml.parser.pl.profile
 import scala.util.matching.Regex
+
 import scala.language.postfixOps
 import br.gov.lexml.parser.pl.metadado.BasicProfile
 import br.gov.lexml.parser.pl.metadado.AutoridadeProfile
