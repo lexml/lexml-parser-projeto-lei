@@ -49,7 +49,7 @@ case class Data(ano : Int, mes : Int, dia : Int) {
 			"janeiro","fevereiro","março","abril","maio","junho",
 			"julho","agosto","setembro","outubro","novembro","dezembro"
 			)
-	lazy val extenso = dia + " de " + nomeMes(mes-1) + " de " + ano		
+	lazy val extenso = dia + " de " + nomeMes(mes-1) + " de " + ano	
 }
 
 object Data {
@@ -58,6 +58,12 @@ object Data {
     val c = Calendar.getInstance()
     c.setTime(d)
     Data(c.get(Calendar.YEAR),c.get(Calendar.MONTH)+1,c.get(Calendar.DAY_OF_MONTH))
+  }
+  def today = fromDate(new Date())
+  val dataRe = """(\d\d\d\d)-(\d\d)-(\d\d)""".r
+  def fromString(txt : String) = txt match {
+    case dataRe(ano,mes,dia) => Some(Data(ano.toInt,mes.toInt,dia.toInt))
+    case _ => None
   }
 }
 
@@ -72,19 +78,25 @@ object Timestamp {
     import Calendar._
     Timestamp(cal.get(YEAR),cal.get(MONTH)+1,cal.get(DAY_OF_MONTH),cal.get(HOUR),cal.get(MINUTE))
   }
+  val timestampRe = """(\d\d\d\d)-(\d\d)-(\d\d)t(\d\d).(\d\d)""".r
+  def fromString(txt : String) : Option[Timestamp] = txt match {
+    case timestampRe(ano,mes,dia,hora,minuto) =>
+      Some(Timestamp(ano.toInt,mes.toInt,dia.toInt,hora.toInt,minuto.toInt))
+    case _ => None
+  }
 }
 
-case class Versao(dataEvento : Option[Data], evento : String, timestamp : Option[Timestamp]) {
+case class Versao(dataEvento : Option[Data] = None, evento : String = "leitura", timestamp : Option[Timestamp]) {
 	lazy val  urnRepr = "@" + metadadoRepr 
 	lazy val metadadoRepr = dataEvento.map(_.urnRepr).getOrElse("data.evento") + ";" + evento + timestamp.map(s => ";" + s.txt).getOrElse("")
 }
 
 object Versao {
-	def versaoInicial() = Versao(None,"leitura",Some(Timestamp.now()))
+	def versaoInicial() = Versao(timestamp = Some(Timestamp.now()))
 }
 
-case class Id(num : Int, complemento : Option[Int] = None, anoOuData : Either[Int,Data],  
-		versao : Versao) {
+case class Id(num : Int = 1, complemento : Option[Int] = None, anoOuData : Either[Int,Data] = Right(Data.today),  
+		versao : Versao = Versao.versaoInicial()) {
     lazy val anoOuDataUrn = anoOuData match {
       case Left(ano) => "%04d" format ano
       case Right(data) => data.urnRepr
@@ -93,6 +105,7 @@ case class Id(num : Int, complemento : Option[Int] = None, anoOuData : Either[In
 		complemento.map(Metadado.renderComplemento(_)).getOrElse("") + versao.urnRepr	
 	lazy val epigrafeRepr : String = "Nº " + Metadado.renderNumero(num) + complemento.map(Metadado.renderComplemento(_)).getOrElse("") + (", DE %04d" format
 		anoOuData.fold(ano => ano,data => data.ano))
+  def changeVersao(f : Versao => Versao) = copy(versao = f(versao))
 }
 
 object Id {
@@ -119,16 +132,14 @@ object Id {
 }
 
 
-case class Metadado(profile : DocumentProfile, localidade : String = "br", id : Option[Id] = None, hashFonte : Option[Array[Byte]]) {	
-	lazy val urn = s"urn:lex:$localidade:${profile.urnFragAutoridade}:${profile.urnFragTipoNorma}:${id.map(_.urnRepr).getOrElse("LEXML_URN_ID")}"
+case class Metadado(profile : DocumentProfile, localidade : Option[String] = None, autoridade : Option[String] = None, tipoNorma : Option[String] = None, id : Option[Id] = None, hashFonte : Option[Array[Byte]]) {
+  lazy val urnFragAutoridade = autoridade.getOrElse(profile.urnFragAutoridade)
+  lazy val urnFragTipoNorma = tipoNorma.getOrElse(profile.urnFragTipoNorma)
+  lazy val urnFragLocalidade = localidade.orElse(profile.urnFragLocalidade).getOrElse("br")
+	lazy val urn = s"urn:lex:$urnFragLocalidade:$urnFragAutoridade:$urnFragTipoNorma:${id.map(_.urnRepr).getOrElse("LEXML_URN_ID")}"
 	lazy val epigrafePadrao = 
 	  s"${profile.epigrafeHead} ${id.map(_.epigrafeRepr).getOrElse("Nº LEXML_EPIGRAFE_NUMERO de LEXML_EPIGRAFE_DATA")}${profile.epigrafeTail}"
-		/*
-		 * val t = tipoProjetoLei match {
-				case TipoPLS() => "PROJETO DE LEI DO SENADO Nº %s de %d"
-				case TipoPLC() => "PROJETO DE LEI DO CÂMARA DOS DEPUTADOS Nº %s de %d"
-			}
-		 */
+		
 	def toXMLmetadadoEditor(pl : ProjetoLei) : NodeSeq = ( 
 		<Proposicao>
 		<URN href={urn}/>				
@@ -158,17 +169,13 @@ case class Metadado(profile : DocumentProfile, localidade : String = "br", id : 
 	  }
 	  case None => throw new RuntimeException("%s_0_0_0_0_leitura" format (profile.subTipoNorma.getOrElse("")))		
 	}
+	def changeId(f : Id => Id) = copy(id = Some(f(id.getOrElse(Id()))))
 	
 }
 
 object Metadado {
-    lazy val pt_BR = Locale.getAvailableLocales.view.filter(_.getCountry == "BR").head
-/*	def sigla(a : Autoridade, t : TipoNorma) = (a,t) match {
-		case (ASenado,TNProjetoLei) => "PLS"
-		case (ACamaraDeputados,TNProjetoLei) => "PLC"
-		case (ASenado,TNProjetoLeiComplementar) => "PLS"
-		case (ACamaraDeputados,TNProjetoLeiComplementar) => "PLC"
-	} */
+  lazy val pt_BR = Locale.getAvailableLocales.view.filter(_.getCountry == "BR").head
+
 	def renderComplemento(n : Int) : String = "-" + n.toString
 	def renderNumero(n : Int) : String = String.format(pt_BR,"%,d",n.asInstanceOf[java.lang.Integer])
 	

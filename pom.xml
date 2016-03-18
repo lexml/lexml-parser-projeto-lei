@@ -195,7 +195,7 @@
 			    <execution>
 			      <phase>package</phase>
 			      <configuration>
-			        <mainClass>br.gov.lexml.parser.pl.ParserMain</mainClass>
+			        <mainClass>br.gov.lexml.parser.pl.fe.FECmdLine</mainClass>
 			        <attachToBuild>true</attachToBuild>
 			        <!-- https://code.google.com/p/onejar-maven-plugin/issues/detail?id=8 -->
 			        <!--classifier>onejar</classifier-->
