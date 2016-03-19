@@ -768,11 +768,15 @@ object XHTMLProcessor extends Logging {
       cleanSpecialCharacters))
     res
   }
+  
+  def pipelineWithDefaultConverter(source: Array[Byte], mimeType: String) : Option[List[Node]] = 
+    pipeline(source,mimeType,defaultConverter)
+    
   def pipeline(source: Array[Byte], mimeType: String, converter : Converter): Option[List[Node]] = 
     convertSrcToXHTML(source, mimeType,converter).map(pipelineXHTML)
   
 
-  def pipeline(rtfSource: InputStream,converter : Converter): XHTMLProcessorResult =  
+  def pipeline(rtfSource: InputStream,converter : Converter = defaultConverter): XHTMLProcessorResult =  
     pipeline(IOUtils.toByteArray(rtfSource), "text/rtf",converter) match {
       case None ⇒ Failure
       case Some(x) ⇒ Success(x)

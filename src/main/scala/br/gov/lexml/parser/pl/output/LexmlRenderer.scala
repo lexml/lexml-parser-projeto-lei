@@ -207,10 +207,7 @@ object LexmlRenderer {
 
         case a: Alteracao ⇒ {
           addBaseURN(a.baseURN)(
-            <Alteracao id={ a.id }>
-              {
-                a.matches.map(x ⇒ Comment("Matches: " + x)).getOrElse(NodeSeq.Empty)
-              }
+            <Alteracao id={ a.id }>              
               { NodeSeq fromSeq (renderBlocks(a.blocks, a.id + "_").toList) }
             </Alteracao>).toList
         }
