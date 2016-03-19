@@ -18,12 +18,13 @@ class LinkerActor extends Actor {
   //val id = "LinkerActor"
 
   import Actor._
-
-  val cmdPath = "/usr/local/bin/simplelinker"
+    
+  val skipLinker = sys.props.get("lexml.skiplinker").map(_.toBoolean).getOrElse(false)
+  val cmdPath = new File(sys.props.getOrElse("lexml.simplelinker","/usr/local/bin/simplelinker"))
 
   final class LinkerProcess() {
 
-    val process = new ProcessBuilder(cmdPath).start
+    val process = new ProcessBuilder(cmdPath.getCanonicalPath).start
 
     val reader = new BufferedReader(new InputStreamReader(process.getInputStream()))
 
@@ -33,7 +34,9 @@ class LinkerActor extends Actor {
   var oprocess: Option[LinkerProcess] = None
 
   override def preStart() {
-    oprocess = Some(new LinkerProcess())
+    if(!skipLinker && cmdPath.canExecute()) {
+      oprocess = Some(new LinkerProcess())
+    }
   }
   override def postStop() {
     for { p <- oprocess } {
@@ -45,20 +48,23 @@ class LinkerActor extends Actor {
 
   val ws = """\p{javaWhitespace}"""r
   def receive = {
-    case mmsg: Seq[_] => {
+    case mmsg: Seq[_] => {      
       val msg = mmsg.collect { case x : Node => x }
-      for { p <- oprocess } {
-        val msgTxt = (NodeSeq fromSeq msg).toString.replaceAll("""[\n\r\f]""", "")
-        p.writer.println(msgTxt)
-        p.writer.flush()
-        var l: String = p.reader.readLine()
-        if (l == null) {
-          throw new LinkerActorException("Connection to linker process down!")
-        } else {
-          val r = XhtmlParser(Source.fromString("<result>" + l + "</result>")).head.asInstanceOf[Elem]
-          val links: Set[String] = (r \\ "span").collect({ case (e: Elem) => e.attributes.find(_.prefixedKey == "xlink:href").map(_.value.text) }).flatten.toSet
-          sender ! ((r.child.toList, links))
-        }
+      oprocess match { 
+        case Some(p) =>      
+          val msgTxt = (NodeSeq fromSeq msg).toString.replaceAll("""[\n\r\f]""", "")
+          p.writer.println(msgTxt)
+          p.writer.flush()
+          var l: String = p.reader.readLine()
+          if (l == null) {
+            throw new LinkerActorException("Connection to linker process down!")
+          } else {
+            val r = XhtmlParser(Source.fromString("<result>" + l + "</result>")).head.asInstanceOf[Elem]
+            val links: Set[String] = (r \\ "span").collect({ case (e: Elem) => e.attributes.find(_.prefixedKey == "xlink:href").map(_.value.text) }).flatten.toSet
+            sender ! ((r.child.toList, links))
+          }
+        case None =>
+          sender ! ((msg,Set()))
       }
     }
     case r => log.warning("received unexpected message: {} ", r)

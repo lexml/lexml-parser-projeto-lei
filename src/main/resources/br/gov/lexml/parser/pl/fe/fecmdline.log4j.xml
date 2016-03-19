@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="ERROR" name="fecmdline-config">
+    <Properties>            
+        <Property name="PATTERN">%-5level %d [%t] %c:%M(%L): %m%n</Property>
+    </Properties>
+    <Appenders>
+        <Console name="STDERR" target="SYSTEM_ERR">
+            <PatternLayout pattern="${PATTERN}"/>
+        </Console>     
+    </Appenders>
+    <Loggers>
+        <Root level="OFF">
+            <AppenderRef ref="STDERR"/>
+        </Root>
+        <Logger name="br.gov.lexml.parser">
+        	<Level value="ERROR"/>
+        </Logger>        
+    </Loggers>
+</Configuration>
