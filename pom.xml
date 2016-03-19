@@ -200,6 +200,7 @@
 			        <!-- https://code.google.com/p/onejar-maven-plugin/issues/detail?id=8 -->
 			        <!--classifier>onejar</classifier-->
 			        <filename>${project.build.finalName}-onejar.${project.packaging}</filename>
+			        <classifier>one-jar</classifier>			        
 			      </configuration>
 			      <goals>
 			        <goal>one-jar</goal>
@@ -303,7 +304,7 @@
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
 			<version>2.4.1</version>
-			<scope>runtime</scope>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>

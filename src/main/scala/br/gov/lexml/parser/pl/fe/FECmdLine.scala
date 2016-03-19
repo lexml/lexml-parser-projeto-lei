@@ -150,9 +150,9 @@ class FECmdLineOptionParser extends scopt.OptionParser[CmdLineOpts]("parser") {
         opts.command(CmdParseArticulacao())(c => f(v,c))        
     }
 
+    val parserVersion = IOUtils.toString(getClass.getResourceAsStream("version.txt"))
   
-  
-    head("parser","1.9.11-SNAPSHOT")
+    head("LexML Parser Command-line tool",parserVersion)
     note("Opções Gerais:")
     opt[File]("log4j-configuration-xml").
       text("arquivo de configuração de log4j2. Será usado ao invés do padrão.").
