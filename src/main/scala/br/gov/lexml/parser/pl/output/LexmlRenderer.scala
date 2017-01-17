@@ -1,12 +1,11 @@
 package br.gov.lexml.parser.pl.output
 
-import br.gov.lexml.parser.pl.ProjetoLei
-import br.gov.lexml.parser.pl.block._
 import br.gov.lexml.parser.pl.metadado.Metadado
 import br.gov.lexml.parser.pl.rotulo._
-
-import scala.collection.immutable.List
+import br.gov.lexml.parser.pl.block._
+import br.gov.lexml.parser.pl.ProjetoLei
 import scala.xml._
+import scala.collection.immutable.List
 
 class LexmlRenderer {
 }
@@ -59,10 +58,14 @@ object LexmlRenderer {
   }
 
   def renderAlphaSeq(num: Int): String = {
-    val q = (num - 1) / 26
-    val r = (num - 1) % 26
-    val letter = ('a'.toInt + r).toChar.toString
-    if (num < 1) "" else if (q == 0) letter else renderAlphaSeq(q) + letter
+    def rend(n: Int): String = n match {
+      case 0 ⇒ ""
+      case _ ⇒ {
+        val nn = n - 1
+        rend(nn / 26) + ('a' + (nn % 26)).asInstanceOf[Char]
+      }
+    }
+    rend(num + 1)
   }
 
   class RenderException(msg: String) extends RuntimeException(msg)
@@ -239,6 +242,8 @@ object LexmlRenderer {
       <Ementa id="ementa">{ cleanTopBIs(renderParagraphWithoutP(pl.ementa)) }</Ementa>
       <Preambulo id="preambulo">{ NodeSeq fromSeq pl.preambulo.flatMap(p ⇒ cleanBs(p.toNodeSeq)) }</Preambulo>
     </ParteInicial>
+
+  import scala.xml.Utility.trim
 
   def render(pl: ProjetoLei): Elem = (
     <LexML xmlns="http://www.lexml.gov.br/1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.lexml.gov.br/1.0 ../xsd/lexml-br-rigido.xsd">
