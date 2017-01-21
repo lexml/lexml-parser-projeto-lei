@@ -71,7 +71,9 @@ object Validation {
       val vf = verificaTodos(vl: _*)
       def verifica(p: Path, bl: List[Block], res: Set[ParseProblem]): Set[ParseProblem] = {
         val ds = bl.collect({ case d: Dispositivo ⇒ d })
-        vf.lift(p, ds.map(_.rotulo)).getOrElse(es) | ds.foldLeft(es)({ case (s, d) ⇒ verifica(p + d.rotulo, d.subDispositivos, s) })
+        val resHere = vf.lift(p, ds.map(_.rotulo)).getOrElse(es)
+        val resSubdisps = ds.map { d => verifica(p + d.rotulo, d.subDispositivos, es) }
+        resHere | resSubdisps.foldLeft(es) { _ | _ }
       }
       verifica(Path(List()), bl, es)
     }
