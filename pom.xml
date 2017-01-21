@@ -3,11 +3,11 @@
 
 	<groupId>br.gov.lexml.parser.pl</groupId>
 	<artifactId>lexml-parser-projeto-lei</artifactId>
-	<version>1.10.2-SNAPSHOT</version>
+	<version>1.10.4-SNAPSHOT</version>
 	
 	<properties>
 		<scala.version>2.11</scala.version>
-		<scala.lib.version>${scala.version}.6</scala.lib.version>
+		<scala.lib.version>${scala.version}.7</scala.lib.version>
 		
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -115,7 +115,7 @@
 			<plugin>
 				<groupId>com.github.github</groupId>
 				<artifactId>site-maven-plugin</artifactId>
-				<version>0.11</version>
+				<version>0.12</version>
 				<configuration>
 					<message>Maven artifacts for ${project.artifactId}
 						${project.version}</message>  <!-- git commit message -->
@@ -142,18 +142,9 @@
 			</plugin>
 
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.1</version>
-				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
-				</configuration>
-			</plugin>
-			<plugin>
 				<groupId>net.alchim31.maven</groupId>
 				<artifactId>scala-maven-plugin</artifactId>
-				<version>3.2.1</version>
+				<version>3.2.2</version>
 				<executions>
 					<execution>
 						<goals>
@@ -255,6 +246,13 @@
 	</build>
 
 	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+			<scope>test</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>com.typesafe.akka</groupId>
 			<artifactId>akka-actor_${scala.version}</artifactId>

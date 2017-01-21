@@ -321,7 +321,7 @@ object Block extends Block {
             val (t1, t2) = t.splitAt(target - p)
             (p + len, Text(t1) :: bef, Text(t2) :: aft)
           }
-          case x => throw new RuntimeException("ops")
+          case x => throw new RuntimeException(s"unexpected scala.xml object class: ${x.getClass.getName}, object: ${x}")
         }
       }
     }
