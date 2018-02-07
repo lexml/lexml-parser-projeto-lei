@@ -18,3 +18,7 @@ project/plugins/project/
 /target/
 /.cache-main
 /.cache-tests
+
+# IntelliJ Idea
+.idea/
+*.iml
