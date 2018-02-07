@@ -228,6 +228,7 @@ object DocumentProfileRegister {
   val builtins = List[DocumentProfile](
       ProjetoDeLeiDoSenadoNoSenado,
       ProjetoDeLeiDaCamaraNoSenado,
+      ProjetoDeLeiDoCongressoNacional,
       PropostaEmendaConstitucionalNoSenado,
       ProjetoDeResolucaoDoSenado,
       ProjetoDeDecretoLegislativoDoSenadoNoSenado,
@@ -308,6 +309,13 @@ object ProjetoDeLeiDoSenadoNoSenado extends DocumentProfile with DefaultRegexPro
 object ProjetoDeLeiDaCamaraNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with EpigrafeOpcional {
   override def urnFragTipoNorma = "projeto.lei;plc"
   override def epigrafeHead = "PROJETO DE LEI DA CÂMARA"
+  override def regexEpigrafe = List()
+  //override def regexPosEpigrafe = List()
+}
+
+object ProjetoDeLeiDoCongressoNacional extends DocumentProfile with DefaultRegexProfile with DoCongressoProfile with EpigrafeOpcional {
+  override def urnFragTipoNorma = "projeto.lei;pln"
+  override def epigrafeHead = "PROJETO DE LEI DO CONGRESSO"
   override def regexEpigrafe = List()
   //override def regexPosEpigrafe = List()
 }
