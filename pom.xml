@@ -7,13 +7,13 @@
 	
 	<properties>
 		<scala.version>2.11</scala.version>
-		<scala.lib.version>${scala.version}.6</scala.lib.version>
+		<scala.lib.version>${scala.version}.12</scala.lib.version>
 		
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<!-- github server corresponds to entry in ~/.m2/settings.xml -->
 		<github.global.server>github</github.global.server>
-		<akka.version>2.3.6</akka.version>
+		<akka.version>2.3.16</akka.version>
 
 		<maven.javadoc.failOnError>false</maven.javadoc.failOnError>
 	</properties>
@@ -92,6 +92,7 @@
 				<configuration>
 					<detail>true</detail>
 					<allowTimestampedSnapshots>true</allowTimestampedSnapshots>
+					<tagNameFormat>@{project.version}</tagNameFormat>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -158,6 +159,8 @@
 				<configuration>
 					<sourceDir>src/main/scala</sourceDir>
 					<fork>true</fork>
+                    <scalaVersion>${scala.lib.version}</scalaVersion>
+                    <scalaCompatVersion>${scala.lib.version}</scalaCompatVersion>
 					<jvmArgs>
 						<jvmArg>-Xms1024m</jvmArg>
 						<jvmArg>-Xmx4096m</jvmArg>
@@ -268,12 +271,12 @@
 		<dependency>
 			<groupId>org.scala-lang.modules</groupId>
 			<artifactId>scala-xml_${scala.version}</artifactId>
-			<version>1.0.4</version>
+			<version>1.0.6</version>
 		</dependency>
 		<dependency>
 	    		<groupId>org.scala-lang.modules</groupId>
     			<artifactId>scala-parser-combinators_${scala.version}</artifactId>
-    			<version>1.0.4</version>
+    			<version>1.0.7</version>
 		</dependency>
 		
 		<dependency>
