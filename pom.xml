@@ -3,7 +3,7 @@
 
 	<groupId>br.gov.lexml.parser.pl</groupId>
 	<artifactId>lexml-parser-projeto-lei</artifactId>
-	<version>1.10.6-SNAPSHOT</version>
+	<version>1.10.6</version>
 	
 	<properties>
 		<scala.version>2.11</scala.version>
