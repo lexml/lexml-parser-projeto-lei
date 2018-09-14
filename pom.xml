@@ -115,34 +115,34 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<groupId>com.github.github</groupId>
-				<artifactId>site-maven-plugin</artifactId>
-				<version>0.12</version>
-				<configuration>
-					<message>Maven artifacts for ${project.artifactId}
-						${project.version}</message>  <!-- git commit message -->
-					<noJekyll>true</noJekyll>                                  <!-- disable webpage processing -->
-					<outputDirectory>${project.build.directory}/mvn-repo</outputDirectory> <!-- matches distribution management repository url above -->
-					<branch>refs/heads/master</branch>
-					<includes>
-						<include>**/*</include>
-					</includes>
-					<repositoryName>mvn-repo</repositoryName>      <!-- github repo name -->
-					<repositoryOwner>lexml</repositoryOwner>    <!-- github username -->
-					<merge>true</merge>
-				</configuration>
-				<executions>
-					<!-- run site-maven-plugin's 'site' target as part of the build's normal 
-						'deploy' phase -->
-					<execution>
-						<goals>
-							<goal>site</goal>
-						</goals>
-						<phase>deploy</phase>
-					</execution>
-				</executions>
-			</plugin>
+			<!--<plugin>-->
+				<!--<groupId>com.github.github</groupId>-->
+				<!--<artifactId>site-maven-plugin</artifactId>-->
+				<!--<version>0.12</version>-->
+				<!--<configuration>-->
+					<!--<message>Maven artifacts for ${project.artifactId}-->
+						<!--${project.version}</message>  &lt;!&ndash; git commit message &ndash;&gt;-->
+					<!--<noJekyll>true</noJekyll>                                  &lt;!&ndash; disable webpage processing &ndash;&gt;-->
+					<!--<outputDirectory>${project.build.directory}/mvn-repo</outputDirectory> &lt;!&ndash; matches distribution management repository url above &ndash;&gt;-->
+					<!--<branch>refs/heads/master</branch>-->
+					<!--<includes>-->
+						<!--<include>**/*</include>-->
+					<!--</includes>-->
+					<!--<repositoryName>mvn-repo</repositoryName>      &lt;!&ndash; github repo name &ndash;&gt;-->
+					<!--<repositoryOwner>lexml</repositoryOwner>    &lt;!&ndash; github username &ndash;&gt;-->
+					<!--<merge>true</merge>-->
+				<!--</configuration>-->
+				<!--<executions>-->
+					<!--&lt;!&ndash; run site-maven-plugin's 'site' target as part of the build's normal -->
+						<!--'deploy' phase &ndash;&gt;-->
+					<!--<execution>-->
+						<!--<goals>-->
+							<!--<goal>site</goal>-->
+						<!--</goals>-->
+						<!--<phase>deploy</phase>-->
+					<!--</execution>-->
+				<!--</executions>-->
+			<!--</plugin>-->
 
 			<plugin>
 				<groupId>net.alchim31.maven</groupId>
