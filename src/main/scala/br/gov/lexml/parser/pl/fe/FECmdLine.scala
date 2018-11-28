@@ -2,12 +2,14 @@ package br.gov.lexml.parser.pl.fe
 
 import br.gov.lexml.parser.pl.metadado.Metadado
 import java.io.File
+
 import br.gov.lexml.parser.pl.profile.Lei
 import br.gov.lexml.parser.pl.profile.OverridesData
 import br.gov.lexml.parser.pl.metadado.Data
 import br.gov.lexml.parser.pl.metadado.Timestamp
 import br.gov.lexml.parser.pl.profile.DocumentProfileRegister
 import br.gov.lexml.parser.pl.profile.DocumentProfile
+
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
 import org.apache.commons.io.IOUtils
@@ -22,8 +24,10 @@ import br.gov.lexml.parser.pl.errors.PC_ErroGeralParser
 import br.gov.lexml.parser.pl.errors.ProblemType
 import br.gov.lexml.parser.pl.errors.ErroValidacaoSchema
 import br.gov.lexml.parser.pl.ProjetoLei
+
 import scala.xml.Elem
 import br.gov.lexml.parser.pl.linker.Linker
+import org.apache.logging.log4j.core.LoggerContext
 
 abstract sealed class SourceType {
   def toByteArray : Array[Byte]
@@ -378,7 +382,8 @@ object FECmdLine {
     import java.io._
     val cfgSource = log4jConfigFile.map(f => new ConfigurationSource(new BufferedInputStream(new FileInputStream(f)),f))
                              .getOrElse(new ConfigurationSource(getClass.getResourceAsStream("fecmdline.log4j.xml")))
-    val conf = new XmlConfiguration(cfgSource)
+    val loggerContext = new LoggerContext("")
+    val conf = new XmlConfiguration(loggerContext, cfgSource)
     Configurator.initialize(conf)    
   }
   def main(args : Array[String]) = {
