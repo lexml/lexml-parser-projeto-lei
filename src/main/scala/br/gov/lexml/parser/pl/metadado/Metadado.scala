@@ -116,14 +116,20 @@ object Id {
       val num = idNum.toInt
       val comp = Option(idComp).map(_.toInt)
       val versao = {
-    	val dataEvento = idDataEvento match {
-          case "data.evento" => None
-          case _ => Some(Data(deAno.toInt,deMes.toInt,deDia.toInt))
-      	}
-      	val ts = if(tsAno == null) { None } else {
-    	  Some(Timestamp(tsAno.toInt,tsMes.toInt,tsDia.toInt,tsHora.toInt,tsMin.toInt))
-      	}
-      	Versao(dataEvento,nomeEvento,ts)
+        if (idDataEvento != null) {
+          val dataEvento = idDataEvento match {
+            case "data.evento" => None
+            case _ => Some(Data(deAno.toInt, deMes.toInt, deDia.toInt))
+          }
+          val ts = if (tsAno == null) {
+            None
+          } else {
+            Some(Timestamp(tsAno.toInt, tsMes.toInt, tsDia.toInt, tsHora.toInt, tsMin.toInt))
+          }
+          Versao(dataEvento, nomeEvento, ts)
+        } else {
+          Versao.versaoInicial()
+        }
       }
       Some(Id(num,comp,dataId,versao))
     }
