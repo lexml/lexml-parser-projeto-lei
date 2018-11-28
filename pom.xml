@@ -1,10 +1,9 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>br.gov.lexml.parser.pl</groupId>
     <artifactId>lexml-parser-projeto-lei</artifactId>
-    <version>1.10.7-SNAPSHOT</version>
+    <version>1.10.7</version>
 
     <properties>
         <scala.version>2.11</scala.version>
@@ -23,7 +22,7 @@
         <url>https://github.com/lexml/${project.artifactId}</url>
         <developerConnection>scm:git:https://github.com/lexml/${project.artifactId}.git</developerConnection>
         <connection>scm:git:https://github.com/lexml/${project.artifactId}.git</connection>
-        <tag>HEAD</tag>
+        <tag>1.10.7</tag>
     </scm>
 
     <distributionManagement>
@@ -163,7 +162,7 @@
                                         </goals>
                                     </pluginExecutionFilter>
                                     <action>
-                                        <ignore/>
+                                        <ignore />
                                     </action>
                                 </pluginExecution>
                             </pluginExecutions>
