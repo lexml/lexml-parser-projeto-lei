@@ -257,7 +257,7 @@ class FECmdLineOptionParser extends scopt.OptionParser[CmdLineOpts]("parser") {
               cmd changeMetadado {
                 _ changeId {                    
                   _ changeVersao {
-                    _.copy(dataEvento = Some(data)) 
+                    _.map(_.copy(dataEvento = Some(data)))
                   }
                 }
               }
@@ -268,7 +268,7 @@ class FECmdLineOptionParser extends scopt.OptionParser[CmdLineOpts]("parser") {
         cmd changeMetadado {
             _ changeId {                    
               _ changeVersao {
-                _.copy(evento = n) 
+                _.map(_.copy(evento = n))
               }
             }
           }
@@ -278,7 +278,7 @@ class FECmdLineOptionParser extends scopt.OptionParser[CmdLineOpts]("parser") {
           cmd changeMetadado {
             _ changeId {                    
               _ changeVersao {
-                _.copy(timestamp = Timestamp.fromString(n)) 
+                _.map(_.copy(timestamp = Timestamp.fromString(n)))
               }
             }
           }
@@ -368,8 +368,7 @@ case object TFalhaNaRenderizacao extends ProblemType(3001,"Falha na renderizaç�
 
 final case class ErroNaRenderizacao(ex: Exception) extends 
 	ParseProblem(TFalhaNaRenderizacao,
-	  Some("Erro durante a renderização do documento em XML: %s" format (
-			ErroValidacaoSchema.unchain(ex).mkString("", " => ", "")))
+	  Some("Erro durante a renderização do documento em XML: %s" format ErroValidacaoSchema.unchain(ex).mkString("", " => ", ""))
     ) 
 
 
@@ -425,9 +424,11 @@ object FECmdLine {
                 case Left(ano) => println(s"    --ano ${ano}")
                 case Right(data) => println(s"    --data ${data.urnRepr}")
               }
-              id.versao.dataEvento foreach { d => println(s"    --data-evento ${d.urnRepr}") }
-              println(s"    --tipo-evento ${id.versao.evento}")
-              id.versao.timestamp foreach { d =>  println(s"    --timestamp-evento ${d.txt}") }
+              id.versao.foreach(v => {
+                v.dataEvento foreach { d => println(s"    --data-evento ${d.urnRepr}") }
+                println(s"    --tipo-evento ${v.evento}")
+                v.timestamp foreach { d =>  println(s"    --timestamp-evento ${d.txt}") }
+              })
             }                                                                
             dumpProfile(profile)        
           }

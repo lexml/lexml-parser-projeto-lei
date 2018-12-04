@@ -31,10 +31,10 @@ object Fixer {
 	def makeRepMap(id : Id) : Map[String,String] = {
 		import id._
 		Map(
-			LEXML_METADADO_NUMERO -> (num.toString + complemento.map(Metadado.renderComplemento(_)).getOrElse(""))
+			LEXML_METADADO_NUMERO -> (num.toString + complemento.map(Metadado.renderComplemento).getOrElse(""))
 		,	LEXML_METADADO_ANO -> anoOuData.fold(x => x,data => data.ano).toString
-		,	LEXML_METADADO_VERSAO -> versao.metadadoRepr
-		,	LEXML_METADADO_COMPLEMENTO -> complemento.map(Metadado.renderComplemento(_)).getOrElse("")
+		,	LEXML_METADADO_VERSAO -> versao.map(_.metadadoRepr).getOrElse("")
+		,	LEXML_METADADO_COMPLEMENTO -> complemento.map(Metadado.renderComplemento).getOrElse("")
 		,	LEXML_EPIGRAFE_NUMERO -> Metadado.renderNumero(num)
 		,	LEXML_EPIGRAFE_DATA -> anoOuData.fold(_.toString,_.extenso)
 		,	LEXML_URN_ID -> urnRepr
@@ -96,16 +96,16 @@ object Versao {
 }
 
 case class Id(num : Int = 1, complemento : Option[Int] = None, anoOuData : Either[Int,Data] = Right(Data.today),  
-		versao : Versao = Versao.versaoInicial()) {
+		versao : Option[Versao] = None) {
     lazy val anoOuDataUrn = anoOuData match {
       case Left(ano) => "%04d" format ano
       case Right(data) => data.urnRepr
     }
 	lazy val urnRepr = anoOuDataUrn + ";" + num +
-		complemento.map(Metadado.renderComplemento(_)).getOrElse("") + versao.urnRepr	
-	lazy val epigrafeRepr : String = "Nº " + Metadado.renderNumero(num) + complemento.map(Metadado.renderComplemento(_)).getOrElse("") + (", DE %04d" format
+		complemento.map(Metadado.renderComplemento).getOrElse("") + versao.map(_.urnRepr).getOrElse("")
+	lazy val epigrafeRepr : String = "Nº " + Metadado.renderNumero(num) + complemento.map(Metadado.renderComplemento).getOrElse("") + (", DE %04d" format
 		anoOuData.fold(ano => ano,data => data.ano))
-  def changeVersao(f : Versao => Versao) = copy(versao = f(versao))
+  def changeVersao(f : Option[Versao] => Option[Versao]) = copy(versao = f(versao))
 }
 
 object Id {
@@ -126,9 +126,9 @@ object Id {
           } else {
             Some(Timestamp(tsAno.toInt, tsMes.toInt, tsDia.toInt, tsHora.toInt, tsMin.toInt))
           }
-          Versao(dataEvento, nomeEvento, ts)
+          Some(Versao(dataEvento, nomeEvento, ts))
         } else {
-          Versao.versaoInicial()
+          None
         }
       }
       Some(Id(num,comp,dataId,versao))
@@ -169,9 +169,9 @@ case class Metadado(profile : DocumentProfile, localidade : Option[String] = Non
 	  case Some(i) => {
 	    val sigla = profile.subTipoNorma.getOrElse("").toUpperCase	    
 	    val ano = i.anoOuData.fold(ano => ano.toString,data => data.ano)
-	    sigla + "_" + i.num + "_" + i.complemento.map(Metadado.renderComplemento(_)).getOrElse("") +
-	    			"_" + ano + "_" + i.versao.dataEvento.map(_.urnRepr).getOrElse("data.evento") +
-	    			"_" + i.versao.evento
+	    sigla + "_" + i.num + "_" + i.complemento.map(Metadado.renderComplemento).getOrElse("") +
+	    			"_" + ano + "_" + i.versao.map(v => v.dataEvento.map(_.urnRepr).getOrElse("data.evento") +
+	    			"_" + v.evento)
 	  }
 	  case None => throw new RuntimeException("%s_0_0_0_0_leitura" format (profile.subTipoNorma.getOrElse("")))		
 	}
