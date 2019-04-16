@@ -88,8 +88,8 @@ object LexmlRenderer {
     case RotuloSubTitulo(num, comp) ⇒ Left("SUB-TÍTULO " + renderRomano(num) + renderComp(comp))
     case RotuloCapitulo(num, comp) ⇒ Left("CAPÍTULO " + renderRomano(num) + renderComp(comp))
     case RotuloSubCapitulo(num, comp) ⇒ Left("SUB-CAPÍTULO " + renderRomano(num) + renderComp(comp))
-    case RotuloSecao(num, comp) ⇒ Left("SEÇÃO " + renderRomano(num) + renderComp(comp))
-    case RotuloSubSecao(num, comp) ⇒ Left("SUBSEÇÃO " + renderRomano(num) + renderComp(comp))
+    case RotuloSecao(num, comp) ⇒ Left("Seção " + renderRomano(num) + renderComp(comp))
+    case RotuloSubSecao(num, comp) ⇒ Left("Subseção " + renderRomano(num) + renderComp(comp))
     case RotuloAlteracao(num) ⇒ Right("Alteracao " + num)
     case x => throw new RuntimeException("Lexml Xml renderer. Elemento não esperado:" + x)
   }
