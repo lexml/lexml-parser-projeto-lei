@@ -78,7 +78,7 @@ object LexmlRenderer {
     case RotuloParagrafo(Some(num), comp, _) ⇒ Left("§ " + renderOrdinal(num) + renderComp(comp) + (if (num >= 10 || comp.isDefined) "." else ""))
     case RotuloInciso(num, comp) ⇒ Left(renderRomano(num).toUpperCase + renderComp(comp) + " –")
     case RotuloAlinea(num, comp) ⇒ Left(renderAlphaSeq(num - 1).toLowerCase + renderComp(comp) + ")")
-    case RotuloItem(num, comp) ⇒ Left(num.toString + "–")
+    case RotuloItem(num, comp) ⇒ Left(num.toString + ".")
     case RotuloPena ⇒ Left("Pena –")
     case RotuloParte(Left(_), _) ⇒ throw new RenderException("Parte sem número não suportado na renderização")
     case RotuloParte(Right(num), comp) ⇒ Left("PARTE " + renderRomano(num).toUpperCase + renderComp(comp))
