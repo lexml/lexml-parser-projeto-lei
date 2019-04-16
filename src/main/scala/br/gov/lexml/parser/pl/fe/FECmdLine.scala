@@ -154,7 +154,7 @@ class FECmdLineOptionParser extends scopt.OptionParser[CmdLineOpts]("parser") {
         opts.command(CmdParseArticulacao())(c => f(v,c))        
     }
 
-    val parserVersion = IOUtils.toString(getClass.getResourceAsStream("version.txt"))
+    val parserVersion = IOUtils.toString(getClass.getResourceAsStream("version.txt"),"utf-8")
   
     head("LexML Parser Command-line tool",parserVersion)
     note("Opções Gerais:")
@@ -506,7 +506,9 @@ object FECmdLine {
           case None => (None,List())
           case Some(pl) =>
             try { val (xml,probs) = renderAndValidaXML(pl) ; (Some(xml),probs) } catch {
-            case ex : Exception => (None,List(ErroNaRenderizacao(ex)))
+            case ex : Exception =>
+              ex.printStackTrace()
+              (None,List(ErroNaRenderizacao(ex)))
           }
         })                                   
         val falhas = falhasValidacao ++ falhasXML

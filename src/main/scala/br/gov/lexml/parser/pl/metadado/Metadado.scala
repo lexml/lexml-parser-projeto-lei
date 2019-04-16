@@ -103,8 +103,10 @@ case class Id(num : Int = 1, complemento : Option[Int] = None, anoOuData : Eithe
     }
 	lazy val urnRepr = anoOuDataUrn + ";" + num +
 		complemento.map(Metadado.renderComplemento).getOrElse("") + versao.map(_.urnRepr).getOrElse("")
-	lazy val epigrafeRepr : String = "Nº " + Metadado.renderNumero(num) + complemento.map(Metadado.renderComplemento).getOrElse("") + (", DE %04d" format
-		anoOuData.fold(ano => ano,data => data.ano))
+	lazy val epigrafeRepr : String = "Nº " + Metadado.renderNumero(num) + complemento.map(Metadado.renderComplemento).getOrElse("") + 
+	  ", DE " + anoOuData.fold(ano => "%04d" .format(ano),data => data.extenso.toUpperCase)
+
+		
   def changeVersao(f : Option[Versao] => Option[Versao]) = copy(versao = f(versao))
 }
 
