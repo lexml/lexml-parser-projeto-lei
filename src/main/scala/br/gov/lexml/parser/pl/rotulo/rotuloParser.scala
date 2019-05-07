@@ -4,6 +4,7 @@ import scala.util.parsing.combinator._
 import scala.language.postfixOps
 import scala.util.parsing.input.CharArrayReader
 import scala.util.matching._
+import br.gov.lexml.parser.pl.text.normalizer
 
 object rotuloParser {
 
@@ -25,6 +26,13 @@ object rotuloParser {
 		s.foldLeft(0)({case  (n,c) => n * 26 + (c.toInt - ('a').toInt + 1)})-1
 	}
 	
+	lazy val tipos = Seq(
+		    "artigo","paragrafo","inciso","alinea",
+		    "item", "pena", "parte", "livro",
+		    "agregador","algumRotulo", "inteiro", 
+		    "complemento", "ordinalExtenso", "numeroComposto", 
+		    "simbOrdMasc", "simbOrdFem", "ordinalOuNatural", 
+		    "ordinal", "numeroRomano")
 
 	class RotuloParsers extends Parsers with RegexParsers with ImplicitConversions {
 		lazy val eos : Parser[Unit] = Parser( (i : Input) => if (i.atEnd) {Success( (), i)} else {Failure("expected end of stream",i)})
@@ -37,6 +45,8 @@ object rotuloParser {
 
 		lazy val letterOrDigit : Parser[Char] = elem("letter or digit",isLetterOrDigit)
 
+		lazy val hyphenOrSimilar : Parser[Elem] = accept('-') | accept('–') | accept('−') | accept('—')
+		
 		def romanOrString(s : String) : Either[String,Int] = {
 			lazy val tryroman : Parser[Either[String,Int]] = (numeroRomano <~ eos) ^^ (Right(_))
 			tryroman(new CharArrayReader(s.toCharArray())) match {
@@ -54,7 +64,7 @@ object rotuloParser {
 		}
 		lazy val inteiro : Parser[Int] = ("\\d+"r) ^^ (Integer.parseInt(_))
 		lazy val lowerAlpha : Parser[Char] = elem("Alpha",c => c >= 'a' && c <= 'z')
-		lazy val complemento : Parser[Int] = '-' ~> ( lowerAlpha + ) <~ guard(fimComplemento) ^^ complementoToInteger
+		lazy val complemento : Parser[Int] = hyphenOrSimilar ~> ( lowerAlpha + ) <~ guard(fimComplemento) ^^ complementoToInteger		
 
 		lazy val fimComplemento : Parser[Unit] = (elem("fimComplemento", c => ",\\.;: ".contains(c)) ^^^ ()) | eos 
 		def ordinalExtenso(g : Genero) : Parser[(Int,Boolean)] =
@@ -88,20 +98,20 @@ object rotuloParser {
 			("art" ~> opt ("igo " | ".") ~> opt (" ")
 			 ~> (ordinalOuNatural(Masc) ~ opt(complemento)) <~ opt(".")) ^^ ( p => RotuloArtigo(p._1._1,p._2,p._1._2))
 		lazy val paragrafo1 : Parser[RotuloParagrafo] =
-			(("""§( -|\.)? ?""".r) ~> (ordinalOuNatural(Masc) ~ opt(complemento)) <~ opt(".")) ^^ {case ~((n,unico),c) => RotuloParagrafo(Some(n),c,unico) }
+			(("""§( [-–−]|\.)? ?""".r) ~> (ordinalOuNatural(Masc) ~ opt(complemento)) <~ opt(".")) ^^ {case ~((n,unico),c) => RotuloParagrafo(Some(n),c,unico) }
 		lazy val paragrafo2 : Parser[RotuloParagrafo] = ("paragrafo " ~> ordinalExtenso(Masc)) ^^ {case (num,unico) => RotuloParagrafo(Some(num),None,unico)}
 		lazy val paragrafoUnico : Parser[RotuloParagrafo] = "paragrafo unico." ^^^ RotuloParagrafo(Some(1),None,true)
 		lazy val paragrafo : Parser[RotuloParagrafo] = paragrafoUnico | paragrafo2 | paragrafo1
 
 		lazy val inciso : Parser[RotuloInciso] =
-			(numeroRomano ~ opt(complemento)) <~ (' ' ?) <~ not (')') <~ ((accept('-') | accept('–') | accept('−')) <~ rep(' ')) ^^ RotuloInciso
+			(numeroRomano ~ opt(complemento)) <~ (' ' ?) <~ not (')') <~ (hyphenOrSimilar <~ rep(' ')) ^^ RotuloInciso
 
 		lazy val alinea : Parser[RotuloAlinea] = {
 			lazy val pnum : Parser[Int] = ("[a-z]+"r) ^^ (1 + complementoToInteger(_)) | ("\\d+"r) ^^ (Integer.parseInt(_))
 			(pnum <~ opt (".")) ~ opt(complemento) <~ (" *\\)"r) ^^ RotuloAlinea
 		}
 
-		lazy val item : Parser[RotuloItem] = inteiro ~ opt(complemento) <~ (" ?[.-] ?"r) ^^ RotuloItem
+		lazy val item : Parser[RotuloItem] = inteiro ~ opt(complemento) <~ (" ?[.-–−—] ?"r) ^^ RotuloItem
 
 		lazy val pena : Parser[Rotulo] = "pena -" ^^^ RotuloPena
 
@@ -138,7 +148,7 @@ object rotuloParser {
 			case "item" => item
 			case "pena" => pena
 			case "parte" => parte
-			case "livro" => livro
+			case "livro" => livro			
 			case "agregador" => agregador
 			case "algumRotulo" => algumRotulo
 			case "inteiro" => inteiro
@@ -149,8 +159,8 @@ object rotuloParser {
 			case "simbOrdFem" => simbOrdinal (Fem)
 			case "ordinalOuNatural" => ordinalOuNatural (Masc)
 			case "ordinal" => ordinal (Masc)
-			case "numeroRomano" => numeroRomano
-		}
+			case "numeroRomano" => numeroRomano			
+		}							
 
 		lazy val pontuacao  = (" *\\."r) ~> not (".") ^^^ ()
 
@@ -176,19 +186,39 @@ object rotuloParser {
 	
 	def test(s : String) : Option[Int] = (new RotuloParsers).testComplemento(s)
 
-
 	def main(args : Array[String]) {
-		if(args.length < 2) {
-			println("usage: java br.gov.lexml.parser.pl.rotulo.RotuloParser {tipo} {texto}")
+	  println("Testing rotulos:")
+	  val (tps,inputs1) = if(args.length == 0) {
+	    val lines = {
+	      val br = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
+	      val b = Seq.newBuilder[String]
+	      var l = ""
+	      while( { l = br.readLine() ; l != null && l != "" }) {
+	        b += l
+	      }
+	      b.result()
+	    }
+	    (tipos, lines)			
+		} else if (args.length == 1) {
+		  (tipos, Seq(args(0)))
 		} else {
-			test(args(0),args(1))
+			(Seq(args(0)),args.slice(1,args.length).to[Seq])
 		}
+	  val inputs = inputs1.map(normalizer.normalize)
+	  println(s"tps = ${tps}, inputs={$inputs}")
+	  inputs.foreach { x =>
+	    println("Input: " + x)
+	    tipos.foreach { t =>
+	      println(s"  [${t}]: ${test(t,x).toString.replaceAll("[\\n\\r]"," - ")}")
+	    }
+	    println()
+	  }	  
 	}
 
 	def test(tipo : String, text : String) = {
 		    val ps = new RotuloParsers
 		    lazy val p = (ps.parserPorTipo(tipo) ~ (ps.pos ^^ ((n : Int) => text.substring(n))))
-			println(p(new CharArrayReader(text.toCharArray())))
+			p(new CharArrayReader(text.toCharArray()))
 	}
 
 }

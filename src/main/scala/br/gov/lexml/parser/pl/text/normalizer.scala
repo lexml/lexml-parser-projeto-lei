@@ -17,7 +17,10 @@ object normalizer {
 		case 'ú' => 'u'
 		case 'û' => 'u'
 		case 'ü' => 'u'
-		case 'ç' => 'c'		
+		case 'ç' => 'c'
+		case '–' => '-'
+		case '−' => '-'
+		case '—' => '-'
 		case _ => c
 	}
 }
