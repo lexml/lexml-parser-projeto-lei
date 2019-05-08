@@ -45,7 +45,8 @@ object rotuloParser {
 
 		lazy val letterOrDigit : Parser[Char] = elem("letter or digit",isLetterOrDigit)
 
-		lazy val hyphenOrSimilar : Parser[Elem] = accept('-') | accept('–') | accept('−') | accept('—')
+		lazy val hyphenOrSimilar : Parser[Elem] = 
+          "‐‑‒–—―-﹢－─━-–−—".to[Set].map(accept).reduceLeft( (x,y) => x | y)
 		
 		def romanOrString(s : String) : Either[String,Int] = {
 			lazy val tryroman : Parser[Either[String,Int]] = (numeroRomano <~ eos) ^^ (Right(_))

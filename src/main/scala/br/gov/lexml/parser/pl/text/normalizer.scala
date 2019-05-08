@@ -18,9 +18,7 @@ object normalizer {
 		case 'û' => 'u'
 		case 'ü' => 'u'
 		case 'ç' => 'c'
-		case '–' => '-'
-		case '−' => '-'
-		case '—' => '-'
+    case c if "‐‑‒–—―-﹢－─━-–−—".contains(c) => '-'
 		case _ => c
 	}
 }
