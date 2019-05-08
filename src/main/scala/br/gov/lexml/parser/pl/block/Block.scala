@@ -409,7 +409,7 @@ object Block extends Block {
     def procuraFim(blocks: List[Block], acum: List[Block]): (List[Block], Option[String], List[Block]) = {
       blocks match {
         case Nil ⇒ throw new ParseException(
-          AlteracaoSemFechaAspas.in(acum.take(2).collect({case p : Paragraph => p.text }) :_* )
+          AlteracaoSemFechaAspas.in(acum.reverse.take(3).collect({case p : Paragraph => p.text }) :_*)
         )
         case (p@Paragraph(_, t)) :: rest ⇒ {
           val oms = reFimAlteracao.findFirstMatchIn(t)

@@ -65,7 +65,7 @@ abstract sealed class ErrorOutput {
 
 final case object EO_Stderr extends ErrorOutput {
   def writeErrors(errs : Seq[ParseProblem]) = {    
-    errs.foreach(e => System.err.println(e.toString + System.lineSeparator()))
+    errs.foreach(e => System.err.println(e.desc + System.lineSeparator()))
     System.err.flush()
   }
 }
@@ -74,7 +74,7 @@ final case class EO_File(f : File) extends ErrorOutput {
   import java.io._  
   def writeErrors(errs : Seq[ParseProblem]) = {
     val w = new PrintWriter(new FileWriter(f))
-    errs.foreach(e => w.println(e.toString + System.lineSeparator()))
+    errs.foreach(e => w.println(e.desc + System.lineSeparator()))
     w.close()
   }
 }

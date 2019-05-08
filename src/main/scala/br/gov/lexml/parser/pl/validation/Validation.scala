@@ -87,16 +87,20 @@ class Validation {
     }
   }
 
-  def withContext(p: ParseProblem): ParseProblem = p.in(ctx: _*)
+  def withContext(p: ParseProblem): ParseProblem = {
+    p.in(ctx: _*)
+  }
 
   def withContext(p: Set[ParseProblem]): Set[ParseProblem] = p.map(withContext)
 
-  implicit val tcAny: ToContext[Any] = new ToContext[Any] {
-    def toContext(t: Any) = Seq()
+  val tcAny: ToContext[Any] = new ToContext[Any] {
+    def toContext(t: Any) = {
+      Seq()
+    }
   }
 
   implicit val tcString: ToContext[String] = new ToContext[String] {
-    def toContext(t: String) = Seq()
+    def toContext(t: String) = Seq(t)
   }
 
   implicit val tcBlock: ToContext[Block] = new ToContext[Block] {
@@ -113,14 +117,14 @@ class Validation {
 
   def verificaTodos[P](vl: ValidationRule[P]*)(implicit tc: ToContext[P]): ValidationRule[P] = {
     case p ⇒
-      in(tc.toContext(p)) {
+      in(p) {
         vl.map((f: ValidationRule[P]) ⇒ f.lift(p).getOrElse(es)).foldLeft(es)(_ | _)
       }
   }
 
   def paraTodoConjuntoDeIrmaos(vl: ValidationRule[(Path, List[Rotulo])]*): ValidationRule[List[Block]] = {
     case (bl: List[Block]) ⇒ {
-      val vf = verificaTodos(vl: _*)
+      val vf = verificaTodos(vl: _*)(tcAny)
 
       def verifica(p: Path, bl: List[Block], res: Set[ParseProblem]): Set[ParseProblem] = {
         val ds = bl.collect({ case d: Dispositivo ⇒ d })
@@ -141,7 +145,7 @@ class Validation {
   def paraTodoIrmaoConsecutivo(vl: ValidationRule[(Path, Rotulo, Rotulo)]*): ValidationRule[(Path, List[Rotulo])] = {
     case (pai: Path, rl: List[Rotulo]) ⇒ rl match {
       case (r1 :: (rll@(_ :: _))) ⇒ {
-        val vf = verificaTodos(vl: _*)
+        val vf = verificaTodos(vl: _*)(tcAny)
         rll.foldLeft((r1, es))({ case ((r1, s), r2) ⇒ (r2, s | vf.lift(pai, r1, r2).getOrElse(es)) })._2
       }
       case _ ⇒ es
@@ -149,7 +153,7 @@ class Validation {
   }
 
   def paraTodoParagrafo(vl: ValidationRule[Seq[Node]]*): ValidationRule[List[Block]] = {
-    val vf = verificaTodos(vl: _*)
+    val vf = verificaTodos(vl: _*)(tcAny)
 
     def rule: ValidationRule[Block] = {
       case d: Dispositivo => in(d) {
@@ -205,7 +209,7 @@ class Validation {
   }
 
   def paraTodoPaiOpcional_e_Filho(vl: ValidationRule[(Option[Block], Block)]*) = {
-    val vf = verificaTodos(vl: _*)
+    val vf = verificaTodos(vl: _*)(tcAny)
 
     def verifica(b: Block, pai: Option[Block]): Set[ParseProblem] = {
       val e1 = vf.lift((pai, b)).getOrElse(Set())
@@ -238,7 +242,7 @@ class Validation {
   }
 
   def paraTodosOsCaminhos(vl: ValidationRule[List[(Path, Block)]]*) = {
-    val vf = verificaTodos(vl: _*)
+    val vf = verificaTodos(vl: _*)(tcAny)
 
     def collectPaths(b: Block): List[(Path, Block)] = b match {
       case (d: Dispositivo) ⇒ (Path(d.path), d) :: d.subDispositivos.flatMap(collectPaths)
@@ -252,7 +256,7 @@ class Validation {
     r
   }
 
-  def paraTodo[T](vl: ValidationRule[T]*) = {
+  def paraTodo[T : ToContext](vl: ValidationRule[T]*) = {
     val vf = verificaTodos(vl: _*)
     val r: ValidationRule[List[T]] = {
       case l: List[T] => l.collect(vf).foldLeft(Set[ParseProblem]())(_ union _)
@@ -463,12 +467,12 @@ class Validation {
       somenteUmRotuloUnico,
       numeracaoContinua),
     paraTodosOsCaminhos(
-      paraTodo(niveisSubNiveisValidos, alineasSoDebaixoDeIncisos),
+      paraTodo(niveisSubNiveisValidos, alineasSoDebaixoDeIncisos)(tcAny),
       naoPodeHaverCaminhoDuplicado),
     paraTodoDispositivo(naoDevemHaverParagrafosNoMeio, somenteDispositivosComTextoValido),
     paraTodoParagrafo(naoPodeHaveOlLi),
     paraTodaAlteracao(somenteOmissisOuDispositivoEmAlteracao),
-    paraTodoPaiOpcional_e_Filho(omissisSoEmAlteracao, semTabelasPorEnquanto, noTopoSoDispositivos))
+    paraTodoPaiOpcional_e_Filho(omissisSoEmAlteracao, semTabelasPorEnquanto, noTopoSoDispositivos))(tcAny)
 
   def validaEstrutura(bl: List[Block]): Set[ParseProblem] =
     regras.lift(bl).getOrElse(es)

@@ -70,6 +70,7 @@ abstract class ParseProblem(val problemType : ProblemType, val msg : Option[Stri
 	var context : Seq[String] = Seq()
   final def message = msg.getOrElse(problemType.description)
 	def in(ctx : String*) = { context = ctx ++ context ; this }
+	lazy val desc = s"Problem type = ${problemType}, pos = ${pos}, msg = ${msg}, context=${context}"
 }
 
 object ParseProblem {
