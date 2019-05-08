@@ -9,6 +9,7 @@ import grizzled.slf4j.Logging
 import scala.language.postfixOps
 import scala.util.matching.Regex
 import scala.xml._
+import br.gov.lexml.parser.pl.errors.ParseProblem.inContext
 
 trait HasId[T] {
   val path: List[Rotulo]
@@ -408,7 +409,9 @@ object Block extends Block {
   def reconheceAlteracoes(blocks: List[Block]): List[Block] = agrupaAlteracoes {
     def procuraFim(blocks: List[Block], acum: List[Block]): (List[Block], Option[String], List[Block]) = {
       blocks match {
-        case Nil ⇒ throw new ParseException(AlteracaoSemFechaAspas)
+        case Nil ⇒ throw new ParseException(
+          AlteracaoSemFechaAspas.in(acum.take(2).collect({case p : Paragraph => p.text }) :_* )
+        )
         case (p@Paragraph(_, t)) :: rest ⇒ {
           val oms = reFimAlteracao.findFirstMatchIn(t)
           oms match {

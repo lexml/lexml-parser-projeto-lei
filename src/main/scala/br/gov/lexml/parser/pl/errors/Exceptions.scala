@@ -2,7 +2,10 @@ package br.gov.lexml.parser.pl.errors
 
 abstract class ParserException(msg : String) extends Exception(msg) with Product
 
-final case class ParseException(val errors : ParseProblem*) extends ParserException("Erros durante o parse: " + errors)
+final case class ParseException(_errors : ParseProblem*)
+	extends ParserException("Erros durante o parse: " + _errors) {
+	var errors : Seq[ParseProblem] = _errors
+}
 
 abstract class ProblemCategory(val code : Int, val description : String) {
   override final def toString() = "[" + code + ": " + description + "]"
@@ -64,7 +67,21 @@ case object TElementoNaoSuportado extends ProblemType(21,"Elemento não suportad
 
 abstract class ParseProblem(val problemType : ProblemType, val msg : Option[String], val pos : String*) {
   override final def toString() = "[" + message + " " + pos.mkString("(",",",")") + " | " + problemType + "]"
+	var context : Seq[String] = Seq()
   final def message = msg.getOrElse(problemType.description)
+	def in(ctx : String*) = { context = ctx ++ context ; this }
+}
+
+object ParseProblem {
+	def inContext[A](ctx : String*)(anything : => A) : A = {
+		try {
+			anything
+		} catch {
+			case x : ParseException =>
+				x.errors.foreach(_.in(ctx : _*))
+				throw x
+		}
+	}
 }
 
 /*

@@ -489,7 +489,7 @@ object FECmdLine {
     val pl2 = pl.remakeEpigrafe
     val res = LexmlRenderer.render(pl2)  
     val falhasXML = try { 
-      Validation.validaComSchema(res).toList
+      new Validation().validaComSchema(res).toList
     } catch {
       case _ : Exception => List()
     }

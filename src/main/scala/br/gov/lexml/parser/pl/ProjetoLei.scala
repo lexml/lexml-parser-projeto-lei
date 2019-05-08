@@ -358,9 +358,10 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
         preambulo = preambulo,
         articulacao = articulacao,
         otherCaracteristicas = otherCaracteristicas)
-        
+
+
       val falhas = try {
-        Validation.validaEstrutura(articulacao)
+        new Validation().validaEstrutura(articulacao)
       } catch {
 	      case e: ParseException ⇒ {
 	        logger.info("Erro de parse: " + e.errors, e)

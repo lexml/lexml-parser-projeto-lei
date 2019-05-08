@@ -60,7 +60,7 @@ trait DefaultRegexProfile extends RegexProfile {
     
     override def regexPreambulo: List[Regex] = super.regexPreambulo ++ List(
         "^o (congress+o nacional|senado federal) (decret[oa]|resolve|promulg[oa])"r,
-        "^[ao] president[ae] da republica"r,
+        """^[ao] president[ae] (da republica|do senado)"""r,
         "^[ao] vice-president[ae] da republica"r,
         "^as? mesas?"r
        )
