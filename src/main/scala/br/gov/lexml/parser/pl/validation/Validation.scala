@@ -106,6 +106,7 @@ class Validation {
         Seq("Na alteração '" + a.blocks.flatMap(toContext).take(1) + "'")
       case d: Dispositivo =>
         d.path.map(LexmlRenderer.renderRotulo2)
+      case x => throw new RuntimeException("toContext: bloco nao esperado: " + x)
 
     }
   }

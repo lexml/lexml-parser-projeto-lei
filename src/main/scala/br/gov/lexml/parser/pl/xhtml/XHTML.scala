@@ -41,8 +41,8 @@ case class Success(result: List[Node]) extends XHTMLProcessorResult
 object TextUtils {
   def fixXHTML(data: Array[Byte]) = new String(data,"utf-8")
     //.replaceFirst("<!DOCTYPE (html|HTML)[^>]*>", "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"" + XHTMLProcessor.dtdUrl + "\">")
-    .replaceAll("\007", "")
-    .replaceAll("\037", "")
+    .replaceAll("\u0007", "")
+    .replaceAll("\u001f", "")
     .replace(0x92: Char, '`')
     .replaceAll("&#146;", "`")
     .replace(0x202d: Char, ' ')
@@ -278,7 +278,7 @@ object XHTMLProcessor extends Logging {
         case (x :: xs) if x.trim.length == 0 ⇒ toPars(xs, s.mkString("", " ", "") :: r)
         case (x :: xs) ⇒ toPars(xs, r, x :: s)
       }
-      val pars = toPars(lines)
+      val pars = toPars(lines).reverse
       <html><body><div>{ pars.map(p ⇒ <p>{ p }</p>) }</div></body></html>
     })),
     ("application/xhtml+xml", ("xhtml", (source: Array[Byte],_ : Converter) ⇒ {

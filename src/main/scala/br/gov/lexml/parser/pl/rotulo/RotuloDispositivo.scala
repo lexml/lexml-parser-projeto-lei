@@ -14,14 +14,13 @@ sealed abstract class Rotulo extends AnyRef with Ordered[Rotulo] {
 
   def subRotulo(n: Int): Option[Rotulo] = None
 
-  final def compare(r: Rotulo) = (nivel.compare(r.nivel)) match {
-    case 0 ⇒ (compBase, r.compBase) match {
-      case (Some(l1), Some(l2)) ⇒ l1.zip(l2).map({ case (x, y) ⇒ x.compare(y) }).find(_ != 0).getOrElse(0)
-      case _ if super.equals(r) ⇒ 0
-      case _ ⇒ -1
-    }
-    case x ⇒ x
+  final def compare(r: Rotulo) =  {
+      val ord = implicitly[Ordering[Iterable[Int]]]
+      ord.compare((nivel :: compBase.getOrElse(List())).to[Iterable],
+        (r.nivel :: r.compBase.getOrElse(List())).to[Iterable]
+      )
   }
+
 
   final override lazy val hashCode: Int = {
     compBase match {

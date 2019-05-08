@@ -3,13 +3,15 @@ package br.gov.lexml.parser.pl.docx
 import scala.io.Source
 import scala.xml.pull._
 import br.gov.lexml.parser.pl.misc.XMLStreamUtils._
+
 import scala.annotation.tailrec
 import br.gov.lexml.parser.pl.misc.CollectionUtils._
+import br.gov.lexml.parser.pl.util.Entities
 
 
 object DOCXReader {
   type Elem = (String,String)
-  
+
   final case class TextStyle(bold : Boolean = false, italics : Boolean = false, 
     subscript : Boolean = false, superscript : Boolean = false) {
     import scala.xml._
@@ -58,8 +60,8 @@ object DOCXReader {
     }
     intersperse0(Nil, as).reverse
   }
-  def breakText(style : TextStyle, ev : EvText) : IndexedSeq[Segment] = {
-    val txt = ev.text.
+  def breakText(style : TextStyle, text : String) : IndexedSeq[Segment] = {
+    val txt = text.
     			replaceAll("[\\u00A0\\s]"," ").    			
     			replaceAll("\\s\\s+"," ")        		
     val hd = if(txt.startsWith(" ")) { IndexedSeq(Space) } else { IndexedSeq() }    			
@@ -112,7 +114,10 @@ object DOCXReader {
     case (ev : EvElemEnd,Some(e))
     	if e == tab => ctx.add(Tab)
     case (ev : EvElemEnd,_) => ctx.leave()  
-    case (ev : EvText,_) => ctx.add(breakText(ctx.style,ev):_*)
+    case (ev : EvText,_) => ctx.add(breakText(ctx.style,ev.text):_*)
+    case (ev : EvEntityRef,_) =>
+      br.gov.lexml.parser.pl.util.Entities.entities.get(ev.entity).
+        map(c => ctx.add(breakText(ctx.style,"" + c):_*)).getOrElse(ctx)
     case _ => ctx
   }
   
@@ -155,14 +160,15 @@ object DOCXReader {
       val src = Source.fromInputStream(zis, "utf-8")
       val reader = new XMLEventReader(src)
       val events = reader.toStream
-      val pars = collectPars(events) 
+      val pars = collectPars(events)
       val textContents = pars.map(collectText)
       val collapsed = collapseBy(textContents) {
   	  	case (l1,l2) if l1.isEmpty && l2.isEmpty => l1
-  	  }      
+  	  }
+      val ps = collapsed.map(segs => <p>{segs.flatMap(_.toXML)}</p>)
       Some(<html>
         <body>
-         {collapsed.map(segs => <p>{segs.flatMap(_.toXML)}</p>)}
+         {ps}
       	</body>
       </html>)      
     } else {      

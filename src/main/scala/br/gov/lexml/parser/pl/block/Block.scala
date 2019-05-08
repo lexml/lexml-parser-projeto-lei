@@ -372,9 +372,11 @@ object Block extends Block {
         if (target >= (p + len)) {
           (p + len, n :: bef, aft)
         } else n match {
-          case Text(t) ⇒ {
-            val (t1, t2) = t.splitAt(target - p)
-            (p + len, Text(t1) :: bef, Text(t2) :: aft)
+          case a : scala.xml.Atom[_] ⇒ a.data match {
+            case t : String =>
+              val (t1, t2) = t.splitAt(target - p)
+              (p + len, Text(t1) :: bef, Text(t2) :: aft)
+            case x => throw new RuntimeException(s"unexpected scala.xml object class: ${x.getClass.getName}, object: ${x}")
           }
           case Elem(pref, label, attrs, scope, cl@_*) ⇒ {
             val (cl1, cl2) = splitAt(target - p, List(cl: _*))
@@ -382,10 +384,7 @@ object Block extends Block {
             val e2 = Elem(pref, label, attrs, scope, true, cl2: _*)
             (p + len, e1 :: bef, e2 :: aft)
           }
-          case PCData(t) => {
-            val (t1, t2) = t.splitAt(target - p)
-            (p + len, Text(t1) :: bef, Text(t2) :: aft)
-          }
+
           case x => throw new RuntimeException(s"unexpected scala.xml object class: ${x.getClass.getName}, object: ${x}")
         }
       }
@@ -505,7 +504,9 @@ object Block extends Block {
             }
           }
         }
-        case b :: rest ⇒ reconheceInicio(rest, b :: acum)
+        case b :: rest ⇒ {
+          reconheceInicio(rest, b :: acum)
+        }
 
         case Nil ⇒ acum.reverse
 
