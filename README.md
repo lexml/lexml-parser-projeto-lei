@@ -6,7 +6,7 @@ Parser LexML de documentos normativos
 Para compilar:
 ```bash
 cd lexml-parser-projeto-lei
-mvn install -nsu
+mvn compile -nsu
 ```
 
 Para testar:
@@ -16,7 +16,9 @@ mvn test
 
 Para rodar (interface linha de comando):
 ```bash
-mvn scala:run -DmainClass=br.gov.lexml.parser.pl.fe.FECmdLine
+cd lexml-parser-projeto-lei
+mvn package
+java -jar target/lexml-parser-projeto-lei-VERSAO-onejar.jar [args....]
 ```
 
 Nota 1: para alguns formatos de entrada, pode ser necessário o Abiword.
