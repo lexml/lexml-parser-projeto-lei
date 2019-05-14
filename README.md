@@ -14,5 +14,7 @@ Para testar:
 mvn test
 ```
 
-Para rodar:
-_(em breve)_
+Para rodar (interface linha de comando):
+```bash
+mvn scala:run -DscalaClassName=br.gov.lexml.parser.pl.fe.FECmdLine
+```
