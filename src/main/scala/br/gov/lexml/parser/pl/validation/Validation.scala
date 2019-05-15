@@ -110,6 +110,7 @@ class Validation {
         Seq("Na alteração '" + a.blocks.flatMap(toContext).take(1) + "'")
       case d: Dispositivo =>
         d.path.map(LexmlRenderer.renderRotulo2)
+      case o: Omissis => Seq("No omissis " + o)
       case x => throw new RuntimeException("toContext: bloco nao esperado: " + x)
 
     }
@@ -329,6 +330,7 @@ class Validation {
 
   val niveisSubNiveisValidos: ValidationRule[(Path, Block)] = {
     case (Path(rl@(x :: y :: _)), bl) if !niveis.nivelSubNivelValido(y, x) => {
+      println(s"niveisSubNiveisInvalidos (1) x=${x}, y=${y}, tail=${rl.tail.tail}, bl=${bl}")
       in(bl) {
         Set(withContext(PosicaoInvalida(Path(rl).txt).in()))
       }
@@ -350,6 +352,7 @@ class Validation {
 
     {
       case (Path(rl), bl) if check2(rl) ⇒
+        println(s"alineasSoDebaixoDeIncisos (2) rl=${rl}, bl=${bl}")
         in(bl) {
           Set(withContext(PosicaoInvalida(Path(rl).txt)))
         }

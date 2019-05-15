@@ -45,8 +45,9 @@ object rotuloParser {
 
 		lazy val letterOrDigit : Parser[Char] = elem("letter or digit",isLetterOrDigit)
 
+		lazy val hyphenCases = "‐‑‒–—―-－─━–−—" 
 		lazy val hyphenOrSimilar : Parser[Elem] = 
-          "‐‑‒–—―-﹢－─━-–−—".to[Set].map(accept).reduceLeft( (x,y) => x | y)
+          hyphenCases.to[Set].map(accept).reduceLeft( (x,y) => x | y)
 		
 		def romanOrString(s : String) : Either[String,Int] = {
 			lazy val tryroman : Parser[Either[String,Int]] = (numeroRomano <~ eos) ^^ (Right(_))
@@ -99,7 +100,7 @@ object rotuloParser {
 			("art" ~> opt ("igo " | ".") ~> opt (" ")
 			 ~> (ordinalOuNatural(Masc) ~ opt(complemento)) <~ opt(".")) ^^ ( p => RotuloArtigo(p._1._1,p._2,p._1._2))
 		lazy val paragrafo1 : Parser[RotuloParagrafo] =
-			(("""§( [-–−]|\.)? ?""".r) ~> (ordinalOuNatural(Masc) ~ opt(complemento)) <~ opt(".")) ^^ {case ~((n,unico),c) => RotuloParagrafo(Some(n),c,unico) }
+			((("""§( ["""  + hyphenCases + """]|\.)? ?""").r) ~> (ordinalOuNatural(Masc) ~ opt(complemento)) <~ opt(".")) ^^ {case ~((n,unico),c) => RotuloParagrafo(Some(n),c,unico) }
 		lazy val paragrafo2 : Parser[RotuloParagrafo] = ("paragrafo " ~> ordinalExtenso(Masc)) ^^ {case (num,unico) => RotuloParagrafo(Some(num),None,unico)}
 		lazy val paragrafoUnico : Parser[RotuloParagrafo] = "paragrafo unico." ^^^ RotuloParagrafo(Some(1),None,true)
 		lazy val paragrafo : Parser[RotuloParagrafo] = paragrafoUnico | paragrafo2 | paragrafo1
@@ -112,7 +113,9 @@ object rotuloParser {
 			(pnum <~ opt (".")) ~ opt(complemento) <~ (" *\\)"r) ^^ RotuloAlinea
 		}
 
-		lazy val item : Parser[RotuloItem] = inteiro ~ opt(complemento) <~ (" ?[.-–−—] ?"r) ^^ RotuloItem
+		lazy val item : Parser[RotuloItem] = ( 		    
+		    (inteiro ~ opt(complemento)) <~ opt(elem(' ')) <~ (hyphenOrSimilar | opt(elem('.'))) <~ opt(elem(' ')) 
+		    ) ^^ RotuloItem
 
 		lazy val pena : Parser[Rotulo] = "pena -" ^^^ RotuloPena
 
