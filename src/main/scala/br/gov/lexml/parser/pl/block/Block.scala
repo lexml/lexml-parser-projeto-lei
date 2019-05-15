@@ -110,7 +110,7 @@ class Paragraph(val nodes: Seq[Node], val indentation: Double = 0, val centered:
 
   lazy val text: String = normalizer.normalize(unormalizedText)
 
-  lazy val unormalizedText: String = (NodeSeq fromSeq nodes).text
+  lazy val unormalizedText: String = (NodeSeq fromSeq nodes).text.trim
 
   def splitAt(p: Int): (Paragraph, Paragraph) = {
     val (nodes1, nodes2) = Block.splitAt(p, nodes)
@@ -478,21 +478,24 @@ object Block extends Block {
     def reconheceInicio(blocks: List[Block], acum: List[Block]): List[Block] = {
       blocks match {
 
-        case (p@Paragraph(_, t)) :: rest if (t.startsWith("“") || t.startsWith("\"") || t.startsWith("”")) ⇒ {
-          val p2 = p.cutLeft(1).withAbreAspas
+        case (p@Paragraph(_, t)) :: rest if (t.startsWith("“") || t.startsWith("\"") || t.startsWith("”")) ⇒ {          
+          val l = p.nodes.text.takeWhile(_.isWhitespace).size + 1
+          val p2 = p.cutLeft(l).withAbreAspas
           val (balt, na, rest2) = procuraFim(p2 :: rest, List[Block]())
           val balt2 = na.map(n ⇒ alteraUltimo[Block]({ case p: Paragraph ⇒ p.withNotaAlteracao(n) }, balt)).getOrElse(balt)
           val alt = Alteracao(balt2)
           reconheceInicio(rest2, alt :: acum)
         }
-        case (pp: Paragraph) :: (p@Paragraph(_, t)) :: rest if t.length == 0 ⇒ reconheceInicio(pp :: rest, acum)
+        case (pp: Paragraph) :: (p@Paragraph(_, t)) :: rest if t.length == 0 ⇒          
+          reconheceInicio(pp :: rest, acum)
 
-        case (o@OL(lis)) :: rest ⇒ {
+        case (o@OL(lis)) :: rest ⇒ {          
           lis.headOption.getOrElse(List()) match {
             case Nil ⇒ reconheceInicio(rest, o :: acum)
             case (p@Paragraph(_, t)) :: tailLi ⇒ {
               if (t.startsWith("“") || t.startsWith("\"") || t.startsWith("”")) {
-                val p2 = p.cutLeft(1).withAbreAspas
+                val l = p.nodes.text.takeWhile(_.isWhitespace).size + 1
+                val p2 = p.cutLeft(l).withAbreAspas
                 val o2 = OL((p2 :: tailLi) :: lis.tail)
                 val (balt, na, rest2) = procuraFim(o2 :: rest, List[Block]())
                 val balt2 = na.map(n ⇒ alteraUltimo[Block]({ case p: Paragraph ⇒ p.withNotaAlteracao(n) }, balt)).getOrElse(balt)
@@ -504,7 +507,7 @@ object Block extends Block {
             }
           }
         }
-        case b :: rest ⇒ {
+        case b :: rest ⇒ {          
           reconheceInicio(rest, b :: acum)
         }
 

@@ -266,8 +266,20 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
     case _ ⇒ true
   }
 
+  def trimParagraphs(b : Block) = b match {
+    case p : Paragraph =>
+      val t = p.nodes.text
+      val start = t.takeWhile(_.isWhitespace).size
+      val end = t.reverse.takeWhile(_.isWhitespace).size
+      val p1 = if (end > 0) { p.cutRight(end) } else { p }
+      val p2 = if (start > 0) { p.cutLeft(start) } else { p }
+      p2
+    case x => x
+  }
+  
   def parseArticulacao(bl: List[Block], useLinker: Boolean = true): List[Block] = {
-    val articulacao1 = bl
+    //Trim paragraphs
+    val articulacao1 = bl.map(trimParagraphs)
     //printArticulacao(articulacao1,1)
     val articulacao2 = trimEmptyPars(articulacao1)
     //printArticulacao(articulacao2,2)
