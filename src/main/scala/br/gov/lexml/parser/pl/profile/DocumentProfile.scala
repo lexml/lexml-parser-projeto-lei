@@ -94,6 +94,50 @@ trait DocumentProfile extends RegexProfile with TipoNormaProfile with Autoridade
       DocumentProfileOverride(this).replaceOverrides(o)
 }
 
+object DocumentProfile {
+  import com.typesafe.config.Config
+  import scala.collection.JavaConverters._
+  def fromConfig(config : Config) : DocumentProfile = {
+    val regexConf = config.getConfig("input.regex")
+    def regex(key : String) = regexConf.getStringList(key).asScala.to[List].map(_.r)
+    def optString(key : String) : Option[String] = 
+        if (config.getIsNull(key) || config.getString(key).isEmpty()) { None } else { Some(config.getString(key)) }
+    DocumentProfileData(
+      regexLocalData = regex("local-data"),
+    	regexJustificativa = regex("justificativa"),
+    	regexAnexos = regex("anexos"),
+    	regexLegislacaoCitada = regex("legislacao-citada"),
+    	regexAssinatura = regex("assinatura"),
+    	regexEpigrafe = regex("epigrafe"),
+    	regexPosEpigrafe = regex("pos-epigrafe"),
+    	epigrafeObrigatoria = config.getBoolean("input.epigrafe-obrigatoria"),
+    	preEpigrafePermitida = config.getBoolean("input.pre-epigrafe-permitida"),
+    	regexPreambulo = regex("preambulo"),
+    	urnFragTipoNorma = config.getString("urn-frag-tipo-norma"),
+      urnFragAutoridade = config.getString("urn-frag-autoridade"),
+      urnFragLocalidade = optString("urn-frag-localidade")
+    )
+  }
+}
+
+final case class DocumentProfileData(
+      override val regexLocalData : List[Regex],
+    	override val regexJustificativa : List[Regex],
+    	override val regexAnexos : List[Regex],
+    	override val regexLegislacaoCitada : List[Regex],
+    	override val regexAssinatura : List[Regex],
+    	override val regexEpigrafe : List[Regex],
+    	override val regexPosEpigrafe : List[Regex],
+    	override val epigrafeObrigatoria : Boolean,
+    	override val preEpigrafePermitida : Boolean,
+    	override val regexPreambulo : List[Regex],
+    	override val urnFragTipoNorma : String,
+      override val urnFragAutoridade : String,
+      override val urnFragLocalidade : Option[String]
+    ) extends DocumentProfile {
+  val epigrafeHead : String = ""  
+}
+
 trait Overrides {
   val overrideRegexLocalData: Option[List[Regex]]
   val overrideRegexJustificativa: Option[List[Regex]]
