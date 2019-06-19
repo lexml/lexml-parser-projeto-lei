@@ -245,15 +245,23 @@ object LexmlRenderer {
 
   import scala.xml.Utility.trim
 
-  def render(pl: ProjetoLei): Elem = (
-    <LexML xmlns="http://www.lexml.gov.br/1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.lexml.gov.br/1.0 ../xsd/lexml-br-rigido.xsd">
-      <!--       xsi:schemaLocation="http://www.lexml.gov.br/1.0 http://projeto.lexml.gov.br/esquemas/lexml-br-rigido.xsd" > -->
-      { renderMetadado(pl.metadado) }
-      <ProjetoNorma>
+  def render(pl: ProjetoLei): Elem = {
+    val norma =  (  
         <Norma>
           { renderParteInicial(pl) }
           { renderArticulacao(pl.articulacao) }
         </Norma>
-      </ProjetoNorma>
+      )
+    //FIXME: tirar o comentário para habilitar
+    val encloseInProjetoNorma = true //pl.metadado.isProjetoNorma 		
+    val inner = if (encloseInProjetoNorma) {
+      <ProjetoNorma>{norma}</ProjetoNorma>
+    } else { norma }
+    (        
+    <LexML xmlns="http://www.lexml.gov.br/1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.lexml.gov.br/1.0 ../xsd/lexml-br-rigido.xsd">
+      <!--       xsi:schemaLocation="http://www.lexml.gov.br/1.0 http://projeto.lexml.gov.br/esquemas/lexml-br-rigido.xsd" > -->
+      { renderMetadado(pl.metadado) }
+      { inner }      
     </LexML>)
+  }
 }

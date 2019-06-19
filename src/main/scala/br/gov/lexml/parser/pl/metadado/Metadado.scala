@@ -103,11 +103,12 @@ case class Id(num : Int = 1, complemento : Option[Int] = None, anoOuData : Eithe
     }
 	lazy val urnRepr = anoOuDataUrn + ";" + num +
 		complemento.map(Metadado.renderComplemento).getOrElse("") + versao.map(_.urnRepr).getOrElse("")
-	lazy val epigrafeRepr : String = "Nº " + Metadado.renderNumero(num) + complemento.map(Metadado.renderComplemento).getOrElse("") + 
+	lazy val epigrafeRepr : String = "Nº " + numeroComplementoRepr + 
 	  ", DE " + anoOuData.fold(ano => "%04d" .format(ano),data => data.extenso.toUpperCase)
 
 		
   def changeVersao(f : Option[Versao] => Option[Versao]) = copy(versao = f(versao))
+  lazy val numeroComplementoRepr = Metadado.renderNumero(num) + complemento.map(Metadado.renderComplemento).getOrElse("")
 }
 
 object Id {
@@ -145,8 +146,8 @@ case class Metadado(profile : DocumentProfile, localidade : Option[String] = Non
   lazy val urnFragTipoNorma = tipoNorma.getOrElse(profile.urnFragTipoNorma)
   lazy val urnFragLocalidade = localidade.orElse(profile.urnFragLocalidade).getOrElse("br")
 	lazy val urn = s"urn:lex:$urnFragLocalidade:$urnFragAutoridade:$urnFragTipoNorma:${id.map(_.urnRepr).getOrElse("LEXML_URN_ID")}"
-	lazy val epigrafePadrao = 
-	  s"${profile.epigrafeHead} ${id.map(_.epigrafeRepr).getOrElse("Nº LEXML_EPIGRAFE_NUMERO de LEXML_EPIGRAFE_DATA")}${profile.epigrafeTail}"
+  val isProjetoNorma = profile.isProjetoNorma
+	//lazy val epigrafePadrao = "" //FIXME: EPIGRAFE
 		
 	def toXMLmetadadoEditor(pl : ProjetoLei) : NodeSeq = ( 
 		<Proposicao>
@@ -178,7 +179,28 @@ case class Metadado(profile : DocumentProfile, localidade : Option[String] = Non
 	  case None => throw new RuntimeException("%s_0_0_0_0_leitura" format (profile.subTipoNorma.getOrElse("")))		
 	}
 	def changeId(f : Id => Id) = copy(id = Some(f(id.getOrElse(Id()))))
-	
+	def epigrafePadrao : String = {	  
+	  val t = id match { 
+	    case None => profile.epigrafeSemIdTemplate
+	    case Some(sid) =>
+	      var tp = profile.epigrafeTemplate
+	      tp = tp.add("numeroComComplemento",sid.numeroComplementoRepr)
+	      tp = sid.anoOuData match {
+	        case Left(ano) => 
+	          tp.add("ano",ano)
+	            .add("dataExtenso",ano)
+	        case Right(dt) =>
+	          tp.add("ano",dt.ano)
+	            .add("dataExtenso",dt.extenso.toUpperCase)	          
+	      }
+        tp = tp.add("epigrafeRepr",sid.epigrafeRepr)
+        tp
+	  }
+    t.add("epigrafeHead",profile.epigrafeHead)
+     .add("epigrafeTail",profile.epigrafeTail)
+     
+     .render().get
+	}
 }
 
 object Metadado {

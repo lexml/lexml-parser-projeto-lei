@@ -54,9 +54,9 @@ case class ProjetoLei(
       <articulacao>{ NodeSeq fromSeq (articulacao.flatMap(_.toNodeSeq)) }</articulacao>
     </projetolei>
 
-  lazy val remakeEpigrafe: ProjetoLei =
+  lazy val remakeEpigrafe: ProjetoLei = {    
     this.copy(epigrafe = Paragraph(Text(metadado.epigrafePadrao)))
-
+  }
   lazy val dispositivoCount = {
     def count(b: Block): Int = b match {
       case d: Dispositivo ⇒ 1 + d.subDispositivos.map(count(_)).sum

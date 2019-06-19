@@ -481,6 +481,7 @@ object FECmdLine {
     }
     println(s"   --prof-epigrafe-head '${epigrafeHead}'")
     println(s"   --prof-epigrafe-tail '${epigrafeTail}'")
+    //FIXME: adicionar suporte a template de epígrafe
     println("")
   }
 

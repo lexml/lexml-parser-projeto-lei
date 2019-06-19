@@ -248,6 +248,11 @@
             <artifactId>scopt_${scala.version}</artifactId>
             <version>3.7.1</version>
         </dependency>
+        <dependency>
+          <groupId>org.clapper</groupId>
+        	<artifactId>scalasti_${scala.version}</artifactId>
+        <version>3.0.1</version>
+        </dependency>
     </dependencies>
 
 </project>

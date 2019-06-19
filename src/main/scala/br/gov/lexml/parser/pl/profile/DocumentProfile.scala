@@ -70,6 +70,17 @@ trait TipoNormaProfile {
   def urnFragTipoNorma : String
   def epigrafeHead : String  
   def epigrafeTail : String = ""
+  val isProjetoNorma : Boolean = false
+    
+  import org.clapper.scalasti._
+    
+  def epigrafeTemplateCode : String = """<epigrafeHead> <epigrafeRepr> <epigrafeTail>"""
+  def epigrafeSemIdTemplateCode : String = """<epigrafeHead> Nº LEXML_EPIGRAFE_NUMERO de LEXML_EPIGRAFE_DATA <epigrafeTail>"""
+  
+  final lazy val epigrafeTemplate = ST(epigrafeTemplateCode)
+
+  final lazy val epigrafeSemIdTemplate = ST(epigrafeSemIdTemplateCode)
+
 }
 
 trait AutoridadeProfile {
@@ -255,7 +266,8 @@ object DocumentProfileRegister {
       ResolucaoDaCamara,
       ResolucaoDoCongresso,
       ResolucaoDoSenado,
-      ProjetoDeLeiDoSenadoNoSenado
+      ProjetoDeLeiDoSenadoNoSenado,
+      ConstituicaoFederal
   )
   builtins foreach register
 }
@@ -280,6 +292,19 @@ trait FederalProfile extends AutoridadeProfile with LocalidadeBR {
   override def autoridadeEpigrafe = Some("FEDERAL")  
 }
 
+trait ConstituicaoProfile extends TipoNormaProfile {
+  override def urnFragTipoNorma = "constituicao"
+  override def epigrafeHead = "CONSTITUICAO"
+  override def epigrafeTail = ""
+  override def epigrafeTemplateCode : String = """CONSTITUIÇÃO"""
+  override def epigrafeSemIdTemplateCode : String = """CONSTITUIÇÃO"""    
+}
+
+trait ConstituicaoFederalProfile extends ConstituicaoProfile with FederalProfile {     
+  override def epigrafeTemplateCode : String = """CONSTITUIÇÃO DA REPÚBLICA FEDERATIVA DO BRASIL"""
+  override def epigrafeSemIdTemplateCode : String = """CONSTITUIÇÃO DA REPÚBLICA FEDERATIVA DO BRASIL"""    
+}
+
 trait NormaProfile extends DocumentProfile with DefaultRegexProfile
 
 trait ResolucaoProfile extends NormaProfile {
@@ -291,7 +316,7 @@ trait ResolucaoProfile extends NormaProfile {
 trait DecretoLegislativoProfile extends NormaProfile {
   override def urnFragTipoNorma = "decreto.legislativo"
   override def epigrafeHead = "DECRETO LEGISLATIVO"
-  override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List("^decreto"r)
+  override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List("^decreto"r)   
 }
 
 trait NormaFederalProfile extends NormaProfile with FederalProfile
@@ -324,120 +349,165 @@ object Decreto extends NormaFederalProfile {
   override def urnFragTipoNorma = "decreto"
   override def epigrafeHead = "DECRETO"
   override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List("^decreto"r)
+  override def epigrafeTemplateCode : String = """DECRETO Nº <numeroComComplemento>, DE <dataExtenso>"""    
+  //FIXME: Decreto não numerado  
 }
 
-object DecretoLegislativoFederal extends DecretoLegislativoProfile with FederalProfile
+object DecretoLegislativoFederal extends DecretoLegislativoProfile with FederalProfile {
+  override def epigrafeTemplateCode : String = """DECRETO LEGISLATIVO Nº <numeroComComplemento>, DE <ano>"""
+}
 
-object DecretoLegislativoDoCongresso extends DecretoLegislativoProfile with DoCongressoProfile
+object DecretoLegislativoDoCongresso extends DecretoLegislativoProfile with DoCongressoProfile {
+  override def epigrafeTemplateCode : String = """DECRETO LEGISLATIVO Nº <numeroComComplemento>, DE <ano>-CN"""
+} 
 
 object EmendaConstitucional extends DocumentProfile with DefaultRegexProfile with FederalProfile {
   override def urnFragTipoNorma = "emenda.constitucional"
   override def epigrafeHead = "EMENDA CONSTITUCIONAL"
   override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List("^emenda constitucional"r)
+  override def epigrafeTemplateCode : String = """EMENDA CONSTITUCIONAL Nº <numeroComComplemento>"""
 }
 
 object ResolucaoDaCamara extends ResolucaoProfile with DaCamaraProfile
 
-object ResolucaoDoCongresso extends ResolucaoProfile with DoCongressoProfile
+object ResolucaoDoCongresso extends ResolucaoProfile with DoCongressoProfile {
+    override def epigrafeTemplateCode : String = """RESOLUCAO Nº <numeroComComplemento>, DE <ano>-CN"""
+}
 
-object ResolucaoDoSenado extends ResolucaoProfile with DoSenadoProfile
+object ResolucaoDoSenado extends ResolucaoProfile with DoSenadoProfile {
+  override def epigrafeTemplateCode : String = """RESOLUCAO Nº <numeroComComplemento>, DE <ano>"""
+}
 
-object ProjetoDeLeiDoSenadoNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile  {
+trait ProjetoNorma {
+  self : TipoNormaProfile =>
+    override val isProjetoNorma = true
+}
+
+object ProjetoDeLeiDoSenadoNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with ProjetoNorma  {
   override def urnFragTipoNorma = "projeto.lei;pls"
   override def epigrafeHead = "PROJETO DE LEI DO SENADO"
 }
 
-object ProjetoDeLeiDaCamaraNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with EpigrafeOpcional {
+object ProjetoDeLeiDaCamaraNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with EpigrafeOpcional  with ProjetoNorma {
   override def urnFragTipoNorma = "projeto.lei;plc"
   override def epigrafeHead = "PROJETO DE LEI DA CÂMARA"
   override def regexEpigrafe = List()
   //override def regexPosEpigrafe = List()
 }
 
-object ProjetoDeLeiDoCongressoNacional extends DocumentProfile with DefaultRegexProfile with DoCongressoProfile with EpigrafeOpcional {
+object ProjetoDeLeiDoCongressoNacional extends DocumentProfile with DefaultRegexProfile with DoCongressoProfile with EpigrafeOpcional  with ProjetoNorma{
   override def urnFragTipoNorma = "projeto.lei;pln"
   override def epigrafeHead = "PROJETO DE LEI DO CONGRESSO"
   override def regexEpigrafe = List()
   //override def regexPosEpigrafe = List()
 }
 
-object PropostaEmendaConstitucionalNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile {
+object PropostaEmendaConstitucionalNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile  with ProjetoNorma {
   override def urnFragTipoNorma = "proposta.emenda.constitucional;pec"
   override def epigrafeHead = "PROPOSTA DE EMENDA CONSTITUCIONAL"
 }
 
-object ProjetoDeResolucaoDoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile {
+object ProjetoDeResolucaoDoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile  with ProjetoNorma {
   override def urnFragTipoNorma = "projeto.resolucao;prs"
   override def epigrafeHead = "PROJETO DE RESOLUÇÃO DO SENADO"
 }
 
-object ProjetoDeDecretoLegislativoDoSenadoNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with PreEpigrafeProibida with EpigrafeOpcional {
+object ProjetoDeDecretoLegislativoDoSenadoNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with PreEpigrafeProibida with EpigrafeOpcional  with ProjetoNorma {
   override def urnFragTipoNorma = "projeto.decreto.legislativo;pds"
   override def epigrafeHead = "PROJETO DE DECRETO LEGISLATIVO (SF)"
 } 
 
-object ProjetoDeDecretoLegislativoDaCamaraNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with EpigrafeOpcional {
+object ProjetoDeDecretoLegislativoDaCamaraNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with EpigrafeOpcional  with ProjetoNorma {
   override def urnFragTipoNorma = "projeto.decreto.legislativo;pdc"
   override def epigrafeHead = "PROJETO DE DECRETO LEGISLATIVO"
 }
 
-object ProjetoDeDecretoLegislativoDaCamaraNovaNomenclatura extends DocumentProfile with DefaultRegexProfile with DaCamaraProfile with EpigrafeOpcional {
+object ProjetoDeDecretoLegislativoDaCamaraNovaNomenclatura extends DocumentProfile with DefaultRegexProfile with DaCamaraProfile with EpigrafeOpcional  with ProjetoNorma {
   override def urnFragTipoNorma = "projeto.decreto.legislativo;pdl"
   override def epigrafeHead = "PROJETO DE DECRETO LEGISLATIVO"
 }
 
-object ProjetoDeDecretoLegislativoDoSenadoNovaNomenclatura extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with EpigrafeOpcional {
+object ProjetoDeDecretoLegislativoDoSenadoNovaNomenclatura extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with EpigrafeOpcional  with ProjetoNorma {
   override def urnFragTipoNorma = "projeto.decreto.legislativo;pdl"
   override def epigrafeHead = "PROJETO DE DECRETO LEGISLATIVO"
 }
 
-object ProjetoDeLeiComplementarDoSenadoNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile {
+object ProjetoDeLeiComplementarDoSenadoNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile  with ProjetoNorma {
   override def urnFragTipoNorma = "projeto.lei.complementar;pls"
   override def epigrafeHead = "PROJETO DE LEI DO SENADO"
   override def epigrafeTail = " - COMPLEMENTAR"
 }
 
-object ProjetoDeLeiComplementarDaCamaraNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with EpigrafeOpcional {
+object ProjetoDeLeiComplementarDaCamaraNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with EpigrafeOpcional  with ProjetoNorma {
   override def urnFragTipoNorma = "projeto.lei.complementar;plc"
   override def epigrafeHead = "PROJETO DE LEI DA CÂMARA"
   override def epigrafeTail = " - COMPLEMENTAR"
 }
 
-object ProjetoDeLeiNaCamara extends DocumentProfile with DefaultRegexProfile with DaCamaraProfile with EpigrafeOpcional {
+object ProjetoDeLeiNaCamara extends DocumentProfile with DefaultRegexProfile with DaCamaraProfile with EpigrafeOpcional  with ProjetoNorma {
   override def urnFragTipoNorma = "projeto.lei;pl"
   override def epigrafeHead = "PROJETO DE LEI"
 }
 
-object ProjetoDeLeiNovaNomenclatura extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with EpigrafeOpcional {
+object ProjetoDeLeiNovaNomenclatura extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with EpigrafeOpcional  with ProjetoNorma {
   override def urnFragTipoNorma: String = "projeto.lei;pl"
   override def epigrafeHead: String = "PROJETO DE LEI"
 }
 
-object ProjetoDeLeiComplementarNovaNomenclatura extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with EpigrafeOpcional {
+object ProjetoDeLeiComplementarNovaNomenclatura extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile with EpigrafeOpcional  with ProjetoNorma {
   override def urnFragTipoNorma = "projeto.lei.complementar;plp"
   override def epigrafeHead = "PROJETO DE LEI COMPLEMENTAR"
 }
 
 
-object ProjetoDeLeiComplementarNaCamara extends DocumentProfile with DefaultRegexProfile with DaCamaraProfile with EpigrafeOpcional {
+object ProjetoDeLeiComplementarNaCamara extends DocumentProfile with DefaultRegexProfile with DaCamaraProfile with EpigrafeOpcional  with ProjetoNorma {
   override def urnFragTipoNorma = "projeto.lei.complementar;plp"
   override def epigrafeHead = "PROJETO DE LEI COMPLEMENTAR"
 }
 
-object ProjetoDeResolucaoNaCamara extends DocumentProfile with DefaultRegexProfile with DaCamaraProfile with EpigrafeOpcional {
+object ProjetoDeResolucaoNaCamara extends DocumentProfile with DefaultRegexProfile with DaCamaraProfile with EpigrafeOpcional  with ProjetoNorma {
   override def urnFragTipoNorma = "projeto.resolucao"
   override def epigrafeHead = "PROJETO DE RESOLUÇÃO"
 }
 
-object MedidaProvisoriaNoCongresso extends DocumentProfile with DefaultRegexProfile with DoCongressoProfile {
+object MedidaProvisoriaNoCongresso extends DocumentProfile with DefaultRegexProfile with DoCongressoProfile  with ProjetoNorma {
   override def urnFragTipoNorma = "medida.provisoria;mpv"
   override def epigrafeHead = "MEDIDA PROVISÓRIA"
   override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List("^medida provisoria"r)
+  //FIXME: Medida Provisória com Sequencial
 }
 
 object MedidaProvisoriaFederal extends DocumentProfile with DefaultRegexProfile with FederalProfile {
   override def urnFragTipoNorma = "medida.provisoria"
   override def epigrafeHead = "MEDIDA PROVISÓRIA"
   override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List("^medida provisoria"r)
+  //FIXME: Medida Provisória com Sequencial  
 }
 
+object ConstituicaoFederal extends DocumentProfile with ConstituicaoFederalProfile with DefaultRegexProfile {
+  trait DefaultRegexProfile extends RegexProfile {
+	override def regexLocalData: List[Regex] = super.regexLocalData ++ List(
+	      "^sala da sessao"r,
+	      "^sala das sessoes"r,
+	      "^sala das comissoes"r,
+	      "^sala da comissao"r,
+	      "^camara dos deputados"r,
+	      "^senado federal"r,
+	      "^brasilia,"r
+	)
+	override def regexJustificativa: List[Regex] = List()
+	override def regexAnexos: List[Regex] = super.regexAnexos ++ List(
+	    "^anexo"r,
+	    "a n e x o"r
+	)
+	override def regexLegislacaoCitada: List[Regex] = List()	
+	override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List(
+	         """^constituicao (da republica federativa|federal) do brasil"""r          
+    )
+        
+    override def regexPreambulo: List[Regex] = super.regexPreambulo ++ List(
+        "^o (congress+o nacional|senado federal) (decret[oa]|resolve|promulg[oa])"r,
+        "^a assembleia constituinte"r
+       )
+}
+}
