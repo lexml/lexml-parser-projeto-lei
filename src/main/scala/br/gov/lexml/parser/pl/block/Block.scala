@@ -394,7 +394,7 @@ object Block extends Block {
     (bef.reverse, aft.reverse)
   }
 
-  val reFimAlteracao = """ *(?:\((ac|nr)\))? *(?:”|“|")\.? *(?:\((ac|nr)\)\.?)?$""".r
+  val reFimAlteracao = """ *(?:\((ac|nr)\))? *(?:”|“|"|'')(?: *\((ac|nr)\))?\.?$""".r
 
   def agrupaAlteracoes(blocks: List[Block]): List[Block] =
     blocks.foldRight[List[Block]](Nil) {
@@ -478,7 +478,7 @@ object Block extends Block {
     def reconheceInicio(blocks: List[Block], acum: List[Block]): List[Block] = {
       blocks match {
 
-        case (p@Paragraph(_, t)) :: rest if (t.startsWith("“") || t.startsWith("\"") || t.startsWith("”")) ⇒ {          
+        case (p@Paragraph(_, t)) :: rest if (t.startsWith("“") || t.startsWith("\"") || t.startsWith("”") || t.startsWith("''")) ⇒ {          
           val l = p.nodes.text.takeWhile(_.isWhitespace).size + 1
           val p2 = p.cutLeft(l).withAbreAspas
           val (balt, na, rest2) = procuraFim(p2 :: rest, List[Block]())
