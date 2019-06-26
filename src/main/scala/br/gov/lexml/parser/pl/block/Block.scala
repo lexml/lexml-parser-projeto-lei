@@ -394,7 +394,7 @@ object Block extends Block {
     (bef.reverse, aft.reverse)
   }
 
-  val reFimAlteracao = """ *(?:\((ac|nr)\))? *(?:”|“|"|'')(?: *\((ac|nr)\))?\.?$""".r
+  val reFimAlteracao = """ *(?:\((ac|nr)\))? *(?:”|“|"|'')(?: *\((ac|nr)\.?\))$""".r
 
   def agrupaAlteracoes(blocks: List[Block]): List[Block] =
     blocks.foldRight[List[Block]](Nil) {
@@ -415,7 +415,7 @@ object Block extends Block {
           val oms = reFimAlteracao.findFirstMatchIn(t)
           oms match {
             case None ⇒ procuraFim(rest, p :: acum)
-            case Some(m) ⇒ {
+            case Some(m) ⇒ {              
               val len = m.end - m.start
               val na = if (m.group(1) == null) {
                 if (m.group(2) == null) {
