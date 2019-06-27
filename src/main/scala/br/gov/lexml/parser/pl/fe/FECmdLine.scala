@@ -73,7 +73,9 @@ final case object EO_Stderr extends ErrorOutput {
 final case class EO_File(f : File) extends ErrorOutput {
   import java.io._  
   def writeErrors(errs : Seq[ParseProblem]) = {
-    val w = new PrintWriter(new FileWriter(f))
+    val w = new PrintWriter(
+        new OutputStreamWriter(
+            new FileOutputStream(f),"utf-8"))
     errs.foreach(e => w.println(e.desc + System.lineSeparator()))
     w.close()
   }

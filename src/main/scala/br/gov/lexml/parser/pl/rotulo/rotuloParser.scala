@@ -194,7 +194,7 @@ object rotuloParser {
 	  println("Testing rotulos:")
 	  val (tps,inputs1) = if(args.length == 0) {
 	    val lines = {
-	      val br = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
+	      val br = new java.io.BufferedReader(new java.io.InputStreamReader(System.in,"utf-8"))
 	      val b = Seq.newBuilder[String]
 	      var l = ""
 	      while( { l = br.readLine() ; l != null && l != "" }) {

@@ -62,7 +62,7 @@ final class DOCXConverter(otherConverter : Converter) extends Converter {
 	  (srcExtension,dstExtension) match {
 	    case ("docx","xhtml") =>  
 	      DOCXReader.readDOCX(new ByteArrayInputStream(srcData)).
-	      		get.toString.getBytes	      
+	      		get.toString.getBytes("utf-8")   
 	    
 	    case _ => otherConverter.convert(srcExtension,srcData,dstExtension)
 	  }
@@ -272,7 +272,8 @@ object XHTMLProcessor extends Logging {
       val text = fixXHTML(source)
 
       import scala.collection.JavaConversions._
-      val lines = IOUtils.readLines(new InputStreamReader(new ByteArrayInputStream(text))).toList
+      val lines = IOUtils.readLines(new InputStreamReader(
+          new ByteArrayInputStream(text),"utf-8")).toList
       def toPars(l: List[String], r: List[String] = Nil, s: List[String] = Nil): List[String] = l match {
         case Nil ⇒ s match { case Nil ⇒ r; case _ ⇒ s.mkString("", " ", "") :: r }
         case (x :: xs) if x.trim.length == 0 ⇒ toPars(xs, s.mkString("", " ", "") :: r)

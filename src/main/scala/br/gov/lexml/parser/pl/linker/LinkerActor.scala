@@ -26,9 +26,9 @@ class LinkerActor extends Actor {
 
     val process = new ProcessBuilder(cmdPath.getCanonicalPath).start
 
-    val reader = new BufferedReader(new InputStreamReader(process.getInputStream()))
+    val reader = new BufferedReader(new InputStreamReader(process.getInputStream(),"utf-8"))
 
-    val writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(process.getOutputStream())), true)
+    val writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(process.getOutputStream(),"utf-8")), true)
   }
 
   var oprocess: Option[LinkerProcess] = None
