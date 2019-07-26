@@ -62,7 +62,8 @@ trait DefaultRegexProfile extends RegexProfile {
         "^o (congress+o nacional|senado federal) (decret[oa]|resolve|promulg[oa])"r,
         """^[ao] president[ae] (da republica|do senado)"""r,
         "^[ao] vice-president[ae] da republica"r,
-        "^as? mesas?"r
+        "^as? mesas?"r,
+        """^faco saber que [oa] president[ea] da republica""".r
        )
 }
 
