@@ -394,28 +394,38 @@ object Block extends Block {
     (bef.reverse, aft.reverse)
   }
 
-  val reFimAlteracao = """ *(?:\((ac|nr)\))? *(?:”|“|"|'')(?: *\((ac|nr)\.?\))$""".r
+  val reFimAlteracao = """ *(?:\((ac|nr)\))? *(?:”|“|"|'')(?: *\((ac|nr)\.?\))?$""".r
 
   def agrupaAlteracoes(blocks: List[Block]): List[Block] =
     blocks.foldRight[List[Block]](Nil) {
       case (a1: Alteracao, (a2: Alteracao) :: r) ⇒
+        logger.trace(s"agrupaAlteracoes: case (1): a1=${a1}, a2={$a2}, r={$r}")
         Alteracao(a1.blocks ++ a2.blocks, Nil, None) :: r
       case (a1: Alteracao, (p: Paragraph) :: (a2: Alteracao) :: r) if p.text == "" ⇒
+        logger.trace(s"agrupaAlteracoes: case (2): a1=${a1}, p=${p}, a2={$a2}, r={$r}")
         Alteracao(a1.blocks ++ a2.blocks, Nil, None) :: r
-      case (b, l) ⇒ b :: l
+      case (b, l) ⇒
+        logger.trace(s"agrupaAlteracoes: case (3): b=${b}, l=${l}")
+        b :: l
     }
 
   def reconheceAlteracoes(blocks: List[Block]): List[Block] = agrupaAlteracoes {
     def procuraFim(blocks: List[Block], acum: List[Block]): (List[Block], Option[String], List[Block]) = {
+      logger.trace(s"reconheceAlteracoes.procuraFim: blocks = ${blocks}, acum=${acum}")
       blocks match {
-        case Nil ⇒ throw new ParseException(
-          AlteracaoSemFechaAspas.in(acum.reverse.take(3).collect({case p : Paragraph => p.text }) :_*)
-        )
+        case Nil ⇒
+          logger.trace(s"reconheceAlteracoes.procuraFim: case (1): alteracao sem fecha aspas acum.reverse = ${acum.reverse}")
+          throw new ParseException(
+            AlteracaoSemFechaAspas.in(acum.reverse.take(3).collect({case p : Paragraph => p.text }) :_*)
+          )
         case (p@Paragraph(_, t)) :: rest ⇒ {
           val oms = reFimAlteracao.findFirstMatchIn(t)
+          logger.trace(s"reconheceAlteracoes.procuraFim: case (2): p={$p}, t={$t}, oms = ${oms}")          
           oms match {
-            case None ⇒ procuraFim(rest, p :: acum)
-            case Some(m) ⇒ {              
+            case None ⇒
+              logger.trace("reconheceAlteracoes.procuraFim: case (2,1)")
+              procuraFim(rest, p :: acum)
+            case Some(m) ⇒ {                            
               val len = m.end - m.start
               val na = if (m.group(1) == null) {
                 if (m.group(2) == null) {
@@ -429,40 +439,45 @@ object Block extends Block {
               }
               val p2 = p.cutRight(len).withFechaAspas
               val acum2 = p2 :: acum
+              logger.trace(s"reconheceAlteracoes.procuraFim: case (2,2), m=${m}, len=${len}, na=${na}, p2=${p2}, acum2=${acum2}")
               (acum2.reverse, na, rest)
             }
           }
         }
-        case (o@OL(lis)) :: rest ⇒ lis.lastOption.getOrElse(Nil) match {
-          case Nil ⇒ procuraFim(rest, o :: acum)
-          case lastLi ⇒ lastLi.last match {
-            case p@Paragraph(_, t) ⇒ {
-              val oms = reFimAlteracao.findFirstMatchIn(t)
-              oms match {
-                case None ⇒ procuraFim(rest, o :: acum)
-                case Some(m) ⇒ {
-                  val len = m.end - m.start
-                  val na = if (m.group(1) == null) {
-                    if (m.group(2) == null) {
-                      None
+        case (o@OL(lis)) :: rest ⇒
+          logger.trace(s"reconheceAlteracoes.procuraFim: case (2,3), list=${lis}, rest=${rest}")
+          lis.lastOption.getOrElse(Nil) match {
+            case Nil ⇒ procuraFim(rest, o :: acum)
+            case lastLi ⇒ lastLi.last match {
+              case p@Paragraph(_, t) ⇒ {
+                val oms = reFimAlteracao.findFirstMatchIn(t)
+                oms match {
+                  case None ⇒ procuraFim(rest, o :: acum)
+                  case Some(m) ⇒ {
+                    val len = m.end - m.start
+                    val na = if (m.group(1) == null) {
+                      if (m.group(2) == null) {
+                        None
+                      }
+                      else {
+                        Some(m.group(2))
+                      }
+                    } else {
+                      Some(m.group(1))
                     }
-                    else {
-                      Some(m.group(2))
-                    }
-                  } else {
-                    Some(m.group(1))
+                    val p2 = p.cutRight(len).withFechaAspas
+                    val lastLi2 = lastLi.init :+ p2
+                    val lis2 = lis.init :+ lastLi2
+                    val acum2 = OL(lis2) :: acum
+                    (acum2.reverse, na, rest)
                   }
-                  val p2 = p.cutRight(len).withFechaAspas
-                  val lastLi2 = lastLi.init :+ p2
-                  val lis2 = lis.init :+ lastLi2
-                  val acum2 = OL(lis2) :: acum
-                  (acum2.reverse, na, rest)
                 }
-              }
             }
           }
         }
-        case b :: rest ⇒ procuraFim(rest, b :: acum)
+        case b :: rest ⇒
+          logger.trace(s"reconheceAlteracoes.procuraFim: case (3), b=${b}, rest=${rest}")
+          procuraFim(rest, b :: acum)
       }
     }
 
@@ -478,18 +493,22 @@ object Block extends Block {
     def reconheceInicio(blocks: List[Block], acum: List[Block]): List[Block] = {
       blocks match {
 
-        case (p@Paragraph(_, t)) :: rest if (t.startsWith("“") || t.startsWith("\"") || t.startsWith("”") || t.startsWith("''")) ⇒ {          
+        case (p@Paragraph(_, t)) :: rest if (t.startsWith("“") || t.startsWith("\"") || t.startsWith("”") || t.startsWith("''")) ⇒ {
+          logger.trace(s"reconheceInicio: caso (1): t = ${t}")
           val l = p.nodes.text.takeWhile(_.isWhitespace).size + 1
           val p2 = p.cutLeft(l).withAbreAspas
           val (balt, na, rest2) = procuraFim(p2 :: rest, List[Block]())
           val balt2 = na.map(n ⇒ alteraUltimo[Block]({ case p: Paragraph ⇒ p.withNotaAlteracao(n) }, balt)).getOrElse(balt)
           val alt = Alteracao(balt2)
+          logger.trace(s"reconheceInicio: caso (1,a): rest2 = ${rest2}, alt={$alt}, acum={$acum}")
           reconheceInicio(rest2, alt :: acum)
         }
-        case (pp: Paragraph) :: (p@Paragraph(_, t)) :: rest if t.length == 0 ⇒          
+        case (pp: Paragraph) :: (p@Paragraph(_, t)) :: rest if t.length == 0 ⇒        
+          logger.trace(s"reconheceInicio: caso (2): pp=${pp}, rest=${rest}, acum=${acum}")
           reconheceInicio(pp :: rest, acum)
 
-        case (o@OL(lis)) :: rest ⇒ {          
+        case (o@OL(lis)) :: rest ⇒ {
+          logger.trace(s"reconheceInicio: caso (3): list={$lis}, rest=${rest}")
           lis.headOption.getOrElse(List()) match {
             case Nil ⇒ reconheceInicio(rest, o :: acum)
             case (p@Paragraph(_, t)) :: tailLi ⇒ {
@@ -500,18 +519,24 @@ object Block extends Block {
                 val (balt, na, rest2) = procuraFim(o2 :: rest, List[Block]())
                 val balt2 = na.map(n ⇒ alteraUltimo[Block]({ case p: Paragraph ⇒ p.withNotaAlteracao(n) }, balt)).getOrElse(balt)
                 val alt = Alteracao(balt2)
+                logger.trace(s"reconheceInicio: caso (3,a): rest2={$rest2}, alt=${alt}, acum=${acum}")
                 reconheceInicio(rest2, alt :: acum)
               } else {
+                logger.trace(s"reconheceInicio: caso (3,b): o={$o}, acum=${acum}")
                 reconheceInicio(rest, o :: acum)
               }
             }
           }
         }
         case b :: rest ⇒ {          
+          logger.trace(s"reconheceInicio: caso (4): b={$b}, rest=${rest}")
           reconheceInicio(rest, b :: acum)
         }
 
-        case Nil ⇒ acum.reverse
+        case Nil ⇒
+          val res = acum.reverse
+          logger.trace(s"reconheceInicio: caso (5): res={$res}")
+          res
 
       }
     }
