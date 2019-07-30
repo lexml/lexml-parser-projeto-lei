@@ -89,7 +89,28 @@ object niveis {
       , subsecao -> Set (artigo)
       , alteracao -> agrupadores
   )
+  val niveisSubNiveisTrans = {    
+    var m : Map[Int,Set[Int]] = Map()
+    var visited : Set[Int] = Set()   
+    def visit(nivel : Int) : Set[Int] = {
+      m.get(nivel) match {
+        case None if visited(nivel) =>
+          throw new RuntimeException("Error: circular reference for " + nivel)
+        case None =>
+          val l = niveisSubNiveis.getOrElse(nivel,Set())
+          visited = visited + nivel
+          val ll = ((l - alteracao).flatMap(visit))
+          val res = ll ++ l
+          m = m + (nivel -> res)
+          res
+        case Some(res) => res
+      }
+    }
+    niveisSubNiveis.keys.foreach(visit)
+    m
+  }
   def nivelSubNivelValido(r : Rotulo, sr : Rotulo) = niveisSubNiveis.get(r.nivel).map(s => s.contains(sr.nivel)).getOrElse(false)
+  def nivelSubNivelValidoTrans(r : Rotulo, sr : Rotulo) = niveisSubNiveisTrans.get(r.nivel).map(s => s.contains(sr.nivel)).getOrElse(false)
 }
 
 trait WithNumComp extends Rotulo {

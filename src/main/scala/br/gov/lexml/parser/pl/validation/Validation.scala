@@ -329,12 +329,18 @@ class Validation {
   }
 
   val niveisSubNiveisValidos: ValidationRule[(Path, Block)] = {
-    case (Path(rl@(x :: y :: _)), bl) if !niveis.nivelSubNivelValido(y, x) => {
-      println(s"niveisSubNiveisInvalidos (1) x=${x}, y=${y}, tail=${rl.tail.tail}, bl=${bl}")
-      in(bl) {
-        Set(withContext(PosicaoInvalida(Path(rl).txt).in()))
+    case (Path(rl@(x :: y :: xs)), bl) 
+      if xs.exists(_.isInstanceOf[RotuloAlteracao]) && !niveis.nivelSubNivelValidoTrans(y, x) => {       
+        in(bl) {
+          Set(withContext(PosicaoInvalida(Path(rl).txt).in()))
+        }
       }
-    }
+    case (Path(rl@(x :: y :: xs)), bl) 
+      if !xs.exists(_.isInstanceOf[RotuloAlteracao]) && !niveis.nivelSubNivelValido(y, x) => {      
+        in(bl) {
+          Set(withContext(PosicaoInvalida(Path(rl).txt).in()))
+        }
+      }
   }
 
   def alineasSoDebaixoDeIncisos: ValidationRule[(Path, Block)] = {
