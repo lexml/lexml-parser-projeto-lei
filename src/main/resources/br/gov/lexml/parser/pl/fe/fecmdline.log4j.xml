@@ -9,11 +9,12 @@
         </Console>     
     </Appenders>
     <Loggers>
-        <Root level="OFF">
-            <AppenderRef ref="STDERR"/>
+        <Root level="WARN">
+            <AppenderRef ref="STDERR"/>            
         </Root>
-        <Logger name="br.gov.lexml.parser">
-        	<Level value="ERROR"/>
-        </Logger>        
+          
+        <Logger name="br.gov.lexml.schema.validator.Validador$MyLSResourceResolver" level="OFF" additivity="false">
+        	
+        </Logger>      
     </Loggers>
 </Configuration>
