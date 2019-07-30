@@ -96,9 +96,9 @@ trait TipoNormaProfile {
   def epigrafeTemplateCode : String = """<epigrafeHead> <epigrafeRepr> <epigrafeTail>"""
   def epigrafeSemIdTemplateCode : String = """<epigrafeHead> Nº LEXML_EPIGRAFE_NUMERO de LEXML_EPIGRAFE_DATA <epigrafeTail>"""
   
-  final lazy val epigrafeTemplate = ST(epigrafeTemplateCode)
+  final def epigrafeTemplate = ST(epigrafeTemplateCode)
 
-  final lazy val epigrafeSemIdTemplate = ST(epigrafeSemIdTemplateCode)
+  final def epigrafeSemIdTemplate = ST(epigrafeSemIdTemplateCode)
 
   final def tipoNormaProfileAsMap : Map[String,Any] = Map(
       "urnFragTipoNorma" -> urnFragTipoNorma,
@@ -573,9 +573,8 @@ object ConstituicaoFederal extends DocumentProfile with ConstituicaoFederalProfi
 	         """^constituicao (da republica federativa|federal) do brasil"""r          
     )
        
-  override def regexPreambulo: List[Regex] = super.regexPreambulo ++ List(
-        "^o (congress+o nacional|senado federal) (decret[oa]|resolve|promulg[oa])"r,
-        "^a assembleia constituinte"r,
-        "^nos, representantes do povo brasileiro.*promulgamos.*a seguinte constituicao da republica"r
+  override def regexPreambulo: List[Regex] = List(
+        "^preambulo$"r
        )
+  override def epigrafeTemplateCode : String = """Constituição da República Federativa do Brasil."""
 }

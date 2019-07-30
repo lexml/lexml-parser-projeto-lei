@@ -395,12 +395,13 @@ object FECmdLine {
       
       opts.cmd match {
         case cmd : CmdParse =>      
-          val md = cmd.metadado
-          val profile0 = DocumentProfileRegister.getProfile(md.urnFragAutoridade,md.urnFragTipoNorma).getOrElse(Lei)
+          val md0 = cmd.metadado
+          val profile0 = DocumentProfileRegister.getProfile(md0.urnFragAutoridade,md0.urnFragTipoNorma).getOrElse(Lei)
           val profile = cmd.overrides match {
             case None => profile0
             case Some(o) => profile0 + o
           }         
+          val md = md0.copy(profile = profile)
                 
           if(verbose || cmd.showInfo) {
             println("Opções de I/O:")
