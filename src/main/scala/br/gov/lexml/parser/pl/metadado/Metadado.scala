@@ -151,8 +151,9 @@ case class Metadado(profile : DocumentProfile, localidade : Option[String] = Non
 		
 	def toXMLmetadadoEditor(pl : ProjetoLei) : NodeSeq = ( 
 		<Proposicao>
-		<URN href={urn}/>				
-		<Ementa>{(NodeSeq fromSeq pl.ementa.asInstanceOf[Paragraph].nodes).text }</Ementa>
+		<URN href={urn}/>
+    {pl.ementa.map({ x =>				
+		  <Ementa>{(NodeSeq fromSeq x.asInstanceOf[Paragraph].nodes).text }</Ementa> }).getOrElse(NodeSeq.Empty) }
 		<VersaoParser>{ParserComponentConfiguration.componentBuildNumber("br.gov.lexml.parser.pl","parser-projeto-lei",
 		    			getClass).map(_.toString).getOrElse("")}</VersaoParser>
 		<HashFonte alg="SHA-1">{hashFonte.map(_.map(b => "%02x".format(b.toInt&0xff)).mkString("","","")).getOrElse("")}</HashFonte>
