@@ -43,13 +43,13 @@ object Caracteristicas {
 }
 
 case class ProjetoLei(
-  metadado: Metadado, preEpigrafe: List[Block], epigrafe: Block, ementa: Block,
+  metadado: Metadado, preEpigrafe: List[Block], epigrafe: Block, ementa: Option[Block],
   preambulo: List[Paragraph], articulacao: List[Block], otherCaracteristicas: Map[String, Boolean] = Map()) extends Logging {
   import ProjetoLei._
   lazy val toNodeSeq: NodeSeq =
     <projetolei>
       <preEpigrafe>{ NodeSeq fromSeq (preEpigrafe.flatMap(_.toNodeSeq)) }</preEpigrafe>
-      <ementa>{ ementa.toNodeSeq }</ementa>
+			{ementa.map(x => <ementa>{x.toNodeSeq}</ementa>).getOrElse(NodeSeq.Empty) }      
       <preambulo>{ NodeSeq fromSeq preambulo.flatMap(_.toNodeSeq) }</preambulo>
       <articulacao>{ NodeSeq fromSeq (articulacao.flatMap(_.toNodeSeq)) }</articulacao>
     </projetolei>
@@ -319,7 +319,6 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
     }
   }
   def fromBlocks(metadado: Metadado, blocks: List[Block]): (Option[ProjetoLei], List[ParseProblem]) = {
-    
     try {
       val (preEpigrafe, epigrafe, posEpigrafe) =
         if (profile.regexEpigrafe.isEmpty) {
@@ -336,13 +335,17 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
       
       val ementa2 = trimEmptyPars(ementa1)
       
-      if (ementa2.isEmpty ||
-        !(ementa2.filter(isEmptyPar).isEmpty) ||
-        !ementa2.filter(!isParagraph(_)).isEmpty) {
-        throw ParseException(EmentaAusente)
-      }
-
-      val ementa = Block.joinParagraphs(ementa2)(0)
+      val ementa = if (
+            ementa2.isEmpty ||
+            !(ementa2.filter(isEmptyPar).isEmpty) ||
+            !ementa2.filter(!isParagraph(_)).isEmpty) {
+              if (profile.ementaAusente) { None } else { 
+                throw ParseException(EmentaAusente)
+              }
+          } else {
+            Some(Block.joinParagraphs(ementa2)(0))
+          }
+      
       val ms = Marcadores(profile)
       val elementos = ms.span(posPreambulo)
       if (!elementos.contains(Articulacao)) {
@@ -366,32 +369,27 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
         metadado = metadado,
         preEpigrafe = preEpigrafe,
         epigrafe = epigrafe,
-        ementa = reconheceLinks(ementa),
+        ementa = ementa.map(reconheceLinks),
         preambulo = preambulo,
         articulacao = articulacao,
         otherCaracteristicas = otherCaracteristicas)
-
 
       val falhas = try {
         new Validation().validaEstrutura(articulacao)
       } catch {
 	      case e: ParseException ⇒ {
-	        logger.info("Erro de parse: " + e.errors, e)
 	        e.errors.to[Set]
 	      }
 	      case e: Exception ⇒ {
-	        logger.info("Erro de sistema: " + e.getMessage, e)
 	        Set(ErroSistema(e))
 	      }
       }
       (Some(pl), falhas.toList)
     } catch {
       case e: ParseException ⇒ {
-        logger.info("Erro de parse: " + e.errors, e)
         (None, e.errors.toList)
       }
       case e: Exception ⇒ {
-        logger.info("Erro de sistema: " + e.getMessage, e)
         (None, List(ErroSistema(e)))
       }
     }

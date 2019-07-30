@@ -177,7 +177,7 @@ object HtmlRenderer {
 				</div>
             	<div class="ementa" id="div_ementa">
 					<p class="rotuloElemento" id="rotulo_ementa">Ementa:</p>
-					<p class="conteudoElemento" id="conteudo_ementa">{pl.ementa.toNodeSeq}</p>	
+					{pl.ementa.map(x => <p class="conteudoElemento" id="conteudo_ementa">{x.toNodeSeq}</p>).getOrElse(NodeSeq.Empty)}	
 				</div>
 				<div class="preambulo" id="div_preambulo">
 					<p class="rotuloElemento" id="rotulo_preambulo">Preâmbulo:</p>

@@ -239,7 +239,7 @@ object LexmlRenderer {
   def renderParteInicial(pl: ProjetoLei): NodeSeq =
     <ParteInicial>
       <Epigrafe id="epigrafe">{ renderParagraphWithoutP(pl.epigrafe) }</Epigrafe>
-      <Ementa id="ementa">{ cleanTopBIs(renderParagraphWithoutP(pl.ementa)) }</Ementa>
+		  {pl.ementa.map(x => <Ementa id="ementa">{ cleanTopBIs(renderParagraphWithoutP(x)) }</Ementa>).getOrElse(NodeSeq.Empty)}
       <Preambulo id="preambulo">{ NodeSeq fromSeq pl.preambulo.flatMap(p ⇒ cleanBs(p.toNodeSeq)) }</Preambulo>
     </ParteInicial>
 

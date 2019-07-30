@@ -13,6 +13,20 @@ trait RegexProfile {
 	def epigrafeObrigatoria : Boolean = true
 	def preEpigrafePermitida : Boolean = true
 	def regexPreambulo : List[Regex] = List()
+	def ementaAusente : Boolean = false
+	final def regProfileAsMap : Map[String,Any] = Map(
+	    "localData" -> regexLocalData.map(_.pattern.pattern()),
+	    "justificacativa" -> regexJustificativa.map(_.pattern.pattern()),
+	    "anexos" -> regexAnexos.map(_.pattern.pattern()),
+	    "legislacaoCitada" -> regexLegislacaoCitada.map(_.pattern.pattern()),
+	    "assinatura" -> regexAssinatura.map(_.pattern.pattern()),
+	    "epigrafe" -> regexEpigrafe.map(_.pattern.pattern()),
+	    "posEpigrafe" -> regexPosEpigrafe.map(_.pattern.pattern()),
+	    "preambulo" -> regexPreambulo.map(_.pattern.pattern()),
+	    "epigrafeObrigatoria" -> epigrafeObrigatoria,
+	    "preEpigrafePermitida" -> preEpigrafePermitida,
+	    "ementaAusente" -> ementaAusente	    
+	    )
 }
 
 trait EpigrafeOpcional extends RegexProfile {
@@ -21,6 +35,10 @@ trait EpigrafeOpcional extends RegexProfile {
 
 trait PreEpigrafeProibida extends RegexProfile {
   override def preEpigrafePermitida = false
+}
+
+trait EmentaAusente extends RegexProfile {
+  override def ementaAusente = true
 }
 
 
@@ -82,15 +100,30 @@ trait TipoNormaProfile {
 
   final lazy val epigrafeSemIdTemplate = ST(epigrafeSemIdTemplateCode)
 
+  final def tipoNormaProfileAsMap : Map[String,Any] = Map(
+      "urnFragTipoNorma" -> urnFragTipoNorma,
+      "epigrafeHead" -> epigrafeHead,
+      "epigrafeTail" -> epigrafeTail,
+      "isProjetoNorma" -> isProjetoNorma,
+      "epigrafeTemplateCode" -> epigrafeTemplateCode,
+      "epigrafeSemIdTemplateCode" -> epigrafeSemIdTemplateCode	    
+	    )
 }
 
 trait AutoridadeProfile {
   def urnFragAutoridade : String
   def autoridadeEpigrafe : Option[String] = None
+  final def autoridadeProfileAsMap : Map[String,Any] = Map(
+      "urnFragAutoridade" -> urnFragAutoridade,
+      "autoridadeEpigrafe" -> autoridadeEpigrafe	    
+	    )
 }
 
 trait LocalidadeProfile {
   def urnFragLocalidade : Option[String] = None
+  final def localidadeProfileAsMap : Map[String,Any] = Map(
+      "urnFragLocalidaed" -> urnFragLocalidade	    
+	    )
 }
 
 trait LocalidadeBR extends LocalidadeProfile {
@@ -104,6 +137,31 @@ trait DocumentProfile extends RegexProfile with TipoNormaProfile with Autoridade
   }
   def +(o : Overrides): DocumentProfileOverride =
       DocumentProfileOverride(this).replaceOverrides(o)
+  final def asMap : Map[String,Any] = Map(
+     "tipoNorma" -> tipoNormaProfileAsMap,
+     "autoridade" -> autoridadeProfileAsMap,
+     "localidade" -> localidadeProfileAsMap,
+     "regex" -> regProfileAsMap
+  )
+  override def toString() = {
+    val sw = new java.io.StringWriter()
+    val pw = new java.io.PrintWriter(sw)    
+    pw.println(super.toString() + ":")
+    def printMap(m : Map[String,Any], indent : String) {
+      m.foreach { case (k,v) =>
+        pw.print(indent + k + ":")
+        v match {
+          case mm : Map[String,Any] =>
+            pw.println()
+            printMap(mm,indent + "  ")
+          case _ => pw.println(" " + v)
+        }
+      }
+    }
+    printMap(asMap,"  ")
+    pw.close()
+    sw.toString()
+  }
 }
 
 trait Overrides {
@@ -237,6 +295,16 @@ object DocumentProfileRegister {
     case autoridade :: tipoNorma :: _ => getProfile(autoridade,tipoNorma)
     case _ => None
   }   
+  
+  def dumpProfiles(pw : java.io.PrintWriter = new java.io.PrintWriter(System.err)) {
+      profiles.to[Vector].sortBy { case (x,y) => x }.foreach { 
+      case ((loc,aut,tn),prof) =>
+        System.err.println(s"localidade: ${loc}, autoridade=${aut}, tipoNorma: ${tn}")
+        System.err.println(prof)
+        System.err.println()
+    }
+  }
+  
   val builtins: List[DocumentProfile] = List[DocumentProfile](
       ProjetoDeLeiDoSenadoNoSenado,
       ProjetoDeLeiDaCamaraNoSenado,
@@ -301,7 +369,7 @@ trait ConstituicaoProfile extends TipoNormaProfile {
   override def epigrafeSemIdTemplateCode : String = """CONSTITUIÇÃO"""    
 }
 
-trait ConstituicaoFederalProfile extends ConstituicaoProfile with FederalProfile {     
+trait ConstituicaoFederalProfile extends ConstituicaoProfile with FederalProfile with EmentaAusente {     
   override def epigrafeTemplateCode : String = """CONSTITUIÇÃO DA REPÚBLICA FEDERATIVA DO BRASIL"""
   override def epigrafeSemIdTemplateCode : String = """CONSTITUIÇÃO DA REPÚBLICA FEDERATIVA DO BRASIL"""    
 }
@@ -485,8 +553,7 @@ object MedidaProvisoriaFederal extends DocumentProfile with DefaultRegexProfile 
   //FIXME: Medida Provisória com Sequencial  
 }
 
-object ConstituicaoFederal extends DocumentProfile with ConstituicaoFederalProfile with DefaultRegexProfile {
-  trait DefaultRegexProfile extends RegexProfile {
+object ConstituicaoFederal extends DocumentProfile with ConstituicaoFederalProfile with DefaultRegexProfile {  
 	override def regexLocalData: List[Regex] = super.regexLocalData ++ List(
 	      "^sala da sessao"r,
 	      "^sala das sessoes"r,
@@ -502,13 +569,13 @@ object ConstituicaoFederal extends DocumentProfile with ConstituicaoFederalProfi
 	    "a n e x o"r
 	)
 	override def regexLegislacaoCitada: List[Regex] = List()	
-	override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List(
+	override def regexEpigrafe: List[Regex] = List(
 	         """^constituicao (da republica federativa|federal) do brasil"""r          
     )
-        
-    override def regexPreambulo: List[Regex] = super.regexPreambulo ++ List(
+       
+  override def regexPreambulo: List[Regex] = super.regexPreambulo ++ List(
         "^o (congress+o nacional|senado federal) (decret[oa]|resolve|promulg[oa])"r,
-        "^a assembleia constituinte"r
+        "^a assembleia constituinte"r,
+        "^nos, representantes do povo brasileiro.*promulgamos.*a seguinte constituicao da republica"r
        )
-}
 }
