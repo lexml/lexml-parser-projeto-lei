@@ -181,6 +181,7 @@ trait Overrides {
   val overrideUrnFragAutoridade: Option[String]
   val overrideAutoridadeEpigrafe: Option[Option[String]]
   val overrideUrnFragLocalidade : Option[Option[String]]
+  val overrideEmentaAusente : Option[Boolean]
 }
 
 final case class OverridesData(
@@ -199,7 +200,8 @@ final case class OverridesData(
   overrideEpigrafeTail: Option[String] = None,
   overrideUrnFragAutoridade: Option[String] = None,
   overrideAutoridadeEpigrafe: Option[Option[String]] = None,
-  overrideUrnFragLocalidade : Option[Option[String]] = None
+  overrideUrnFragLocalidade : Option[Option[String]] = None,
+  overrideEmentaAusente : Option[Boolean] = None
 ) extends Overrides
 
 final case class DocumentProfileOverride(base : DocumentProfile,
@@ -218,7 +220,8 @@ final case class DocumentProfileOverride(base : DocumentProfile,
   overrideEpigrafeTail: Option[String] = None,
   overrideUrnFragAutoridade: Option[String] = None,
   overrideAutoridadeEpigrafe: Option[Option[String]] = None,
-  overrideUrnFragLocalidade : Option[Option[String]] = None
+  overrideUrnFragLocalidade : Option[Option[String]] = None,
+  overrideEmentaAusente : Option[Boolean] = None
 ) extends DocumentProfile with Overrides {
   override def regexLocalData : List[Regex] = overrideRegexLocalData.getOrElse(base.regexLocalData)
   override def regexJustificativa: List[Regex] = overrideRegexJustificativa.getOrElse(base.regexJustificativa)
@@ -236,6 +239,8 @@ final case class DocumentProfileOverride(base : DocumentProfile,
   override def urnFragAutoridade: String = overrideUrnFragAutoridade.getOrElse(base.urnFragAutoridade)
   override def autoridadeEpigrafe: Option[String] = overrideAutoridadeEpigrafe.getOrElse(base.autoridadeEpigrafe)
   override def urnFragLocalidade : Option[String] = overrideUrnFragLocalidade.getOrElse(base.urnFragLocalidade)
+  override def ementaAusente : Boolean = overrideEmentaAusente.getOrElse(base.ementaAusente)
+  
   val hasOverride : Boolean = this.productIterator.exists { _.isInstanceOf[Some[_]] }
   
   override def +(o : Overrides): DocumentProfileOverride = copy(
@@ -254,7 +259,8 @@ final case class DocumentProfileOverride(base : DocumentProfile,
     overrideEpigrafeTail = o.overrideEpigrafeTail.orElse(overrideEpigrafeTail),
     overrideUrnFragAutoridade = o.overrideUrnFragAutoridade.orElse(overrideUrnFragAutoridade),
     overrideAutoridadeEpigrafe = o.overrideAutoridadeEpigrafe.orElse(overrideAutoridadeEpigrafe),
-    overrideUrnFragLocalidade  = o.overrideUrnFragLocalidade .orElse(overrideUrnFragLocalidade)
+    overrideUrnFragLocalidade  = o.overrideUrnFragLocalidade .orElse(overrideUrnFragLocalidade),
+    overrideEmentaAusente = o.overrideEmentaAusente.orElse(overrideEmentaAusente)
   )
   
   def replaceOverrides(o : Overrides): DocumentProfileOverride = copy(
@@ -273,7 +279,8 @@ final case class DocumentProfileOverride(base : DocumentProfile,
     overrideEpigrafeTail = o.overrideEpigrafeTail,
     overrideUrnFragAutoridade = o.overrideUrnFragAutoridade,
     overrideAutoridadeEpigrafe = o.overrideAutoridadeEpigrafe,
-    overrideUrnFragLocalidade  = o.overrideUrnFragLocalidade
+    overrideUrnFragLocalidade  = o.overrideUrnFragLocalidade,
+    overrideEmentaAusente = o.overrideEmentaAusente
   )
 }
 
