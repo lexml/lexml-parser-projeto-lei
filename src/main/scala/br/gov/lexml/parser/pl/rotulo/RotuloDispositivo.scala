@@ -43,14 +43,15 @@ trait RotuloDispositivo {
   val isAgregador = false
 }
 
-trait RotuloAgregador {
-  val isDispositivo = false
-  val isAgregador = true
-}
-
 trait PodeSerUnico {
   val unico: Boolean
   val numRotulosQuandoTemUnico = 1
+}
+
+trait RotuloAgregador extends PodeSerUnico {
+  override final val numRotulosQuandoTemUnico = 1
+  val isDispositivo = false
+  val isAgregador = true
 }
 
 object niveis {
@@ -226,7 +227,7 @@ trait WithEitherNumComp extends Rotulo {
   }
 }
 
-case class RotuloParte(num: Either[String, Int], comp: Option[Int] = None) 
+case class RotuloParte(num: Either[String, Int], comp: Option[Int] = None, unico: Boolean = false) 
 extends Rotulo with RotuloAgregador with NoMatterContinuity with WithEitherNumComp {
   val nivel = niveis.parte
   override lazy val toNodeSeq = <RotuloParte num={ num.fold(x ⇒ x, x ⇒ x.toString) } comp={ comp.mkString("", "", "") }/>
@@ -234,49 +235,49 @@ extends Rotulo with RotuloAgregador with NoMatterContinuity with WithEitherNumCo
   val compBase = num.fold(_ ⇒ None, n ⇒ Some(n :: comp.toList))
   val proposicao = "da"  
 }
-case class RotuloLivro(num: Either[String, Int], comp: Option[Int] = None) extends Rotulo with RotuloAgregador with NoMatterContinuity with WithEitherNumComp {
+case class RotuloLivro(num: Either[String, Int], comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with NoMatterContinuity with WithEitherNumComp {
   val nivel = niveis.livro
   override lazy val toNodeSeq = <RotuloLivro num={ num.fold(x ⇒ x, x ⇒ x.toString) } comp={ comp.mkString("", "", "") }/>
   val elemLabel = "Livro"
   val compBase = num.fold(_ ⇒ None, n ⇒ Some(n :: comp.toList))
   val proposicao = "do"
 }
-case class RotuloTitulo(num: Int, comp: Option[Int] = None) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloTitulo] {
+case class RotuloTitulo(num: Int, comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloTitulo] {
   val nivel = niveis.titulo
   override lazy val toNodeSeq = <RotuloTitulo num={ num.toString } comp={ comp.mkString("", "", "") }/>
   val elemLabel = "Titulo"
   val compBase = Some(num :: comp.toList)
   val proposicao = "do"
 }
-case class RotuloSubTitulo(num: Int, comp: Option[Int] = None) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloSubTitulo] {
+case class RotuloSubTitulo(num: Int, comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloSubTitulo] {
   val nivel = niveis.subtitulo
   override lazy val toNodeSeq = <RotuloSubtitulo num={ num.toString } comp={ comp.mkString("", "", "") }/>
   val elemLabel = "SubTitulo"
   val compBase = Some(num :: comp.toList)
   val proposicao = "do"
 }
-case class RotuloCapitulo(num: Int, comp: Option[Int] = None) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloCapitulo] {
+case class RotuloCapitulo(num: Int, comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloCapitulo] {
   val nivel = niveis.capitulo
   override lazy val toNodeSeq = <RotuloCapitulo num={ num.toString } comp={ comp.mkString("", "", "") }/>
   val elemLabel = "Capitulo"
   val compBase = Some(num :: comp.toList)
   val proposicao = "do"
 }
-case class RotuloSubCapitulo(num: Int, comp: Option[Int] = None) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloSubCapitulo] {
+case class RotuloSubCapitulo(num: Int, comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloSubCapitulo] {
   val nivel = niveis.subcapitulo
   override lazy val toNodeSeq = <RotuloSubCapitulo num={ num.toString } comp={ comp.mkString("", "", "") }/>
   val elemLabel = "SubCapitulo"
   val compBase = Some(num :: comp.toList)
   val proposicao = "do"
 }
-case class RotuloSecao(num: Int, comp: Option[Int] = None) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloSecao] {
+case class RotuloSecao(num: Int, comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloSecao] {
   val nivel = niveis.secao
   override lazy val toNodeSeq = <RotuloSecao num={ num.toString } comp={ comp.mkString("", "", "") }/>
   val elemLabel = "Secao"
   val compBase = Some(num :: comp.toList)
   val proposicao = "da"
 }
-case class RotuloSubSecao(num: Int, comp: Option[Int] = None) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloSubSecao] {
+case class RotuloSubSecao(num: Int, comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloSubSecao] {
   val nivel = niveis.subsecao
   override lazy val toNodeSeq = <RotuloSubSecao num={ num.toString } comp={ comp.mkString("", "", "") }/>
   val elemLabel = "SubSecao"

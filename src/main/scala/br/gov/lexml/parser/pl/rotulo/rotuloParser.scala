@@ -130,8 +130,8 @@ object rotuloParser {
 		}
 
 		lazy val agregador : Parser[Rotulo] = {
-			lazy val tipo : Parser[(Int,Option[Int]) => Rotulo] = (
-				  "livro" ^^^ ((n : Int, c : Option[Int]) => RotuloLivro(Right(n),c))
+			lazy val tipo : Parser[(Int,Option[Int],Boolean) => Rotulo] = (
+				  "livro" ^^^ ((n : Int, c : Option[Int],un : Boolean) => RotuloLivro(Right(n),c,un))
 				| "titulo" ^^^ RotuloTitulo
 				| "subtitulo" ^^^ RotuloSubTitulo
 				| "capitulo" ^^^ RotuloCapitulo
@@ -139,7 +139,13 @@ object rotuloParser {
 				| "secao" ^^^ RotuloSecao
 				| "subsecao" ^^^ RotuloSubSecao
 			)
-			(tipo <~ ' ') ~ (("unico" ^^^ 1) | ("unica" ^^^ 1) | numeroRomano) ~ opt(complemento) ^^ { case ~(~(t,n),c) => t (n,c) }
+			lazy val numParser : Parser[(Int,Boolean)] = 
+			  ("unico" ^^^ (1,true)) | ("unica" ^^^ (1,true)) | (numeroRomano ~ success (false)) ^^ {
+			  case ~(a,b) => (a,b)
+			}
+			
+			(tipo <~ ' ') ~ numParser ~ opt(complemento) ^^ 
+			  { case ~(~(t,(n,v)),c) => t (n,c,v) }
 		}
 
 		lazy val algumRotulo : Parser[Rotulo] = ( artigo | paragrafo | inciso | alinea | item | pena | parte | livro | agregador ) <~ " *-? *".r

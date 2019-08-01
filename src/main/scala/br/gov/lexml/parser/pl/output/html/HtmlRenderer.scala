@@ -62,6 +62,18 @@ object HtmlRenderer {
 		rend(num+1)		
 	}
 
+	private implicit class Unico(un : Boolean) {
+    def unicoChar = if (un) { "u" } else { " " }
+    def unicoMajStr(alt : => String) : String =
+      if(un) { "ÚNICO" } else { alt }
+    def unicaMajStr(alt : => String) : String =
+      if(un) { "ÚNICA" } else { alt }
+    def unicoMinStr(alt : => String) : String =
+      if(un) { "Único" } else { alt }
+    def unicaMinStr(alt : => String) : String =
+      if(un) { "Única" } else { alt }
+  }
+	
 	class RenderException(msg : String) extends RuntimeException(msg)			
 	
 	def renderRotulo(r : Rotulo) : NodeSeq = r match {	
@@ -74,16 +86,16 @@ object HtmlRenderer {
 		case RotuloAlinea(num, comp) => <span class="rotuloDispositivo">Alínea </span> <span class="numeroDispositivo">{renderAlphaSeq(num-1).toLowerCase + renderComp(comp)})</span>
 		case RotuloItem(num,comp) => <span class="rotuloDispositivo">Item </span> <span class="numeroDispositivo">{num.toString} –</span>
 		case RotuloPena => <span class="rotuloDispositivo">Pena –</span>
-		case RotuloParte(Left(_),_) => throw new RenderException("Parte sem número não suportado na renderização")
-		case RotuloParte(Right(num),comp) => <span class="rotuloDispositivo">PARTE </span> <span class="numeroDispositivo">{renderRomano(num).toUpperCase + renderComp(comp)}</span>
-		case RotuloLivro(Left(_),_) => throw new RenderException("Livro sem número não suportado na renderização")
-		case RotuloLivro(Right(num),comp) => <span class="rotuloDispositivo">LIVRO </span><span class="numeroDispositivo">{renderRomano(num).toUpperCase + renderComp(comp)}</span>
-		case RotuloTitulo(num, comp) => <span class="rotuloDispositivo">TÍTULO </span><span class="numeroDispositivo">{renderRomano(num) + renderComp(comp)}</span>
-		case RotuloSubTitulo(num, comp) => <span class="rotuloDispositivo">SUB-TÍTULO </span> <span class="numeroDispositivo">{renderRomano(num) + renderComp(comp)}</span>
-		case RotuloCapitulo(num, comp) => <span class="rotuloDispositivo">CAPÍTULO </span> <span class="numeroDispositivo">{renderRomano(num) + renderComp(comp)}</span>
-		case RotuloSubCapitulo(num, comp) => <span class="rotuloDispositivo">SUB-CAPÍTULO </span> <span class="numeroDispositivo">{renderRomano(num) + renderComp(comp)}</span>
-		case RotuloSecao(num, comp) => <span class="rotuloDispositivo">SEÇÃO </span> <span class="numeroDispositivo">{renderRomano(num) + renderComp(comp)}</span>
-		case RotuloSubSecao(num, comp) => <span class="rotuloDispositivo">SUBSEÇÃO </span> <span class="numeroDispositivo">{renderRomano(num) + renderComp(comp)}</span>
+		case RotuloParte(Left(_),_, _) => throw new RenderException("Parte sem número não suportado na renderização")
+		case RotuloParte(Right(num),comp,unica) => <span class="rotuloDispositivo">PARTE </span> <span class="numeroDispositivo">{unica.unicaMajStr(renderRomano(num).toUpperCase + renderComp(comp))}</span>
+		case RotuloLivro(Left(_),_, _) => throw new RenderException("Livro sem número não suportado na renderização")
+		case RotuloLivro(Right(num),comp,unico) => <span class="rotuloDispositivo">LIVRO </span><span class="numeroDispositivo">{unico.unicoMajStr(renderRomano(num).toUpperCase + renderComp(comp))}</span>
+		case RotuloTitulo(num, comp,unico) => <span class="rotuloDispositivo">TÍTULO </span><span class="numeroDispositivo">{unico.unicoMajStr(renderRomano(num) + renderComp(comp))}</span>
+		case RotuloSubTitulo(num, comp,unico) => <span class="rotuloDispositivo">SUB-TÍTULO </span> <span class="numeroDispositivo">{unico.unicoMajStr(renderRomano(num) + renderComp(comp))}</span>
+		case RotuloCapitulo(num, comp,unico) => <span class="rotuloDispositivo">CAPÍTULO </span> <span class="numeroDispositivo">{unico.unicoMajStr(renderRomano(num) + renderComp(comp))}</span>
+		case RotuloSubCapitulo(num, comp,unico) => <span class="rotuloDispositivo">SUB-CAPÍTULO </span> <span class="numeroDispositivo">{unico.unicoMajStr(renderRomano(num) + renderComp(comp))}</span>
+		case RotuloSecao(num, comp,unica) => <span class="rotuloDispositivo">SEÇÃO </span> <span class="numeroDispositivo">{unica.unicaMajStr(renderRomano(num) + renderComp(comp))}</span>
+		case RotuloSubSecao(num, comp,unica) => <span class="rotuloDispositivo">SUBSEÇÃO </span> <span class="numeroDispositivo">{unica.unicaMajStr(renderRomano(num) + renderComp(comp))}</span>
 		case RotuloAlteracao(num) => <span class="rotuloDispositivo">Alteracao </span> <span class="numeroDispositivo">{num.toString}</span>	
     case x => throw new RuntimeException("Lexml Xml renderer. Elemento não esperado:" + x)
   } 
@@ -98,16 +110,16 @@ object HtmlRenderer {
 		case RotuloAlinea(num, comp) => "ali%d%s" format(num,renderCompId(comp))
 		case RotuloItem(num,comp) => "ite%d%s" format(num,renderCompId(comp))
 		case RotuloPena => "pena"
-		case RotuloParte(Left(_),_) => throw new RenderException("Parte sem número não suportado na renderização")
-		case RotuloParte(Right(num),comp) => "prt%d%s" format(num,renderCompId(comp))
-		case RotuloLivro(Left(_),_) => throw new RenderException("Livro sem número não suportado na renderização")
-		case RotuloLivro(Right(num),comp) => "liv%d%s" format(num,renderCompId(comp))
-		case RotuloTitulo(num, comp) => "tit%d%s" format(num,renderCompId(comp))
-		case RotuloSubTitulo(num, comp) => throw new RenderException("Sub-título não suportado pelo parser")
-		case RotuloCapitulo(num, comp) => "cap%d%s" format(num,renderCompId(comp))
-		case RotuloSubCapitulo(num, comp) => throw new RenderException("Sub-capítulo não suportado pelo parser")
-		case RotuloSecao(num, comp) => "sec%d%s" format(num,renderCompId(comp))
-		case RotuloSubSecao(num, comp) => "sub%d%s" format(num,renderCompId(comp))
+		case RotuloParte(Left(_),_, _) => throw new RenderException("Parte sem número não suportado na renderização")
+		case RotuloParte(Right(num),comp,unica) => "prt%d%s%s" format(num,unica.unicoChar,renderCompId(comp))
+		case RotuloLivro(Left(_),_, _) => throw new RenderException("Livro sem número não suportado na renderização")
+		case RotuloLivro(Right(num),comp,unico) => "liv%d%s%s" format(num,unico.unicoChar,renderCompId(comp))
+		case RotuloTitulo(num, comp,unico) => "tit%d%s%s" format(num,unico.unicoChar,renderCompId(comp))
+		case RotuloSubTitulo(num, comp, _) => throw new RenderException("Sub-título não suportado pelo parser")
+		case RotuloCapitulo(num, comp,unico) => "cap%d%s%s" format(num,unico.unicoChar,renderCompId(comp))
+		case RotuloSubCapitulo(num, comp, _) => throw new RenderException("Sub-capítulo não suportado pelo parser")
+		case RotuloSecao(num, comp,unica) => "sec%d%s%s" format(num,unica.unicoChar,renderCompId(comp))
+		case RotuloSubSecao(num, comp,unica) => "sub%d%s%s" format(num,unica.unicoChar,renderCompId(comp))
 		case RotuloAlteracao(num) => "alt%d" format(num)
     case x => throw new RuntimeException("Lexml Xml renderer. Elemento não esperado:" + x)
 	}

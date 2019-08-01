@@ -24,6 +24,10 @@ class IdRenderException(msg: String) extends Exception(msg)
 object HasId {
   def renderCompId(n: Option[Int]): String = n.map(n ⇒ "-" + (n + 1).toString).getOrElse("")
 
+  private implicit class Unico(un : Boolean) {
+    def unicoChar = if (un) { "u" } else { " " }
+  }
+  
   def renderId(r: Rotulo): String = r match {
     case RotuloArtigo(num, comp, unico) ⇒ "art%d%s%s" format(num, if (num == 1 && unico) {
       "u"
@@ -40,16 +44,16 @@ object HasId {
     case RotuloAlinea(num, comp) ⇒ "ali%d%s" format(num, renderCompId(comp))
     case RotuloItem(num, comp) ⇒ "ite%d%s" format(num, renderCompId(comp))
     case RotuloPena ⇒ "pena"
-    case RotuloParte(Left(_), _) ⇒ throw new IdRenderException("Parte sem número não suportado na renderização")
-    case RotuloParte(Right(num), comp) ⇒ "prt%d%s" format(num, renderCompId(comp))
-    case RotuloLivro(Left(_), _) ⇒ throw new IdRenderException("Livro sem número não suportado na renderização")
-    case RotuloLivro(Right(num), comp) ⇒ "liv%d%s" format(num, renderCompId(comp))
-    case RotuloTitulo(num, comp) ⇒ "tit%d%s" format(num, renderCompId(comp))
-    case RotuloSubTitulo(num, comp) ⇒ throw new IdRenderException("Sub-título não suportado pelo parser")
-    case RotuloCapitulo(num, comp) ⇒ "cap%d%s" format(num, renderCompId(comp))
-    case RotuloSubCapitulo(num, comp) ⇒ throw new IdRenderException("Sub-capítulo não suportado pelo parser")
-    case RotuloSecao(num, comp) ⇒ "sec%d%s" format(num, renderCompId(comp))
-    case RotuloSubSecao(num, comp) ⇒ "sub%d%s" format(num, renderCompId(comp))
+    case RotuloParte(Left(_), _,_) ⇒ throw new IdRenderException("Parte sem número não suportado na renderização")
+    case RotuloParte(Right(num), comp,unico) ⇒ "prt%d%s%s" format(num,unico.unicoChar,renderCompId(comp))
+    case RotuloLivro(Left(_), _,_) ⇒ throw new IdRenderException("Livro sem número não suportado na renderização")
+    case RotuloLivro(Right(num), comp,unico) ⇒ "liv%d%s%s" format(num,unico.unicoChar, renderCompId(comp))
+    case RotuloTitulo(num, comp,unico) ⇒ "tit%d%s%s" format(num, unico.unicoChar,renderCompId(comp))
+    case RotuloSubTitulo(num, comp,_) ⇒ throw new IdRenderException("Sub-título não suportado pelo parser")
+    case RotuloCapitulo(num, comp,unico) ⇒ "cap%d%s%s" format(num, unico.unicoChar,renderCompId(comp))
+    case RotuloSubCapitulo(num, comp,_) ⇒ throw new IdRenderException("Sub-capítulo não suportado pelo parser")
+    case RotuloSecao(num, comp,unico) ⇒ "sec%d%s%s" format(num, unico.unicoChar,renderCompId(comp))
+    case RotuloSubSecao(num, comp,unico) ⇒ "sub%d%s%s" format(num, unico.unicoChar,renderCompId(comp))
     case RotuloAlteracao(num) ⇒ "alt%d" format num
     case x => throw new RuntimeException("Lexml Xml renderer. Elemento não esperado:" + x)
   }

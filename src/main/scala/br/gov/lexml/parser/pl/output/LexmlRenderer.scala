@@ -70,6 +70,18 @@ object LexmlRenderer {
 
   class RenderException(msg: String) extends RuntimeException(msg)
 
+  private implicit class Unico(un : Boolean) {
+    def unicoChar = if (un) { "u" } else { " " }
+    def unicoMajStr(alt : => String) : String =
+      if(un) { "ÚNICO" } else { alt }
+    def unicaMajStr(alt : => String) : String =
+      if(un) { "ÚNICA" } else { alt }
+    def unicoMinStr(alt : => String) : String =
+      if(un) { "Único" } else { alt }
+    def unicaMinStr(alt : => String) : String =
+      if(un) { "Única" } else { alt }
+  }
+  
   def renderRotuloEither(r: Rotulo): Either[String, String] = r match {
     case RotuloArtigo(1, None, true) ⇒ Left("Artigo único. ")
     case RotuloArtigo(num, comp, _) ⇒ Left("Art. " + renderOrdinal(num) + renderComp(comp) + (if (num >= 10 || comp.isDefined) "." else ""))
@@ -80,16 +92,16 @@ object LexmlRenderer {
     case RotuloAlinea(num, comp) ⇒ Left(renderAlphaSeq(num - 1).toLowerCase + renderComp(comp) + ")")
     case RotuloItem(num, comp) ⇒ Left(num.toString + ".")
     case RotuloPena ⇒ Left("Pena –")
-    case RotuloParte(Left(_), _) ⇒ throw new RenderException("Parte sem número não suportado na renderização")
-    case RotuloParte(Right(num), comp) ⇒ Left("PARTE " + renderRomano(num).toUpperCase + renderComp(comp))
-    case RotuloLivro(Left(_), _) ⇒ throw new RenderException("Livro sem número não suportado na renderização")
-    case RotuloLivro(Right(num), comp) ⇒ Left("LIVRO " + renderRomano(num).toUpperCase + renderComp(comp))
-    case RotuloTitulo(num, comp) ⇒ Left("TÍTULO " + renderRomano(num) + renderComp(comp))
-    case RotuloSubTitulo(num, comp) ⇒ Left("SUB-TÍTULO " + renderRomano(num) + renderComp(comp))
-    case RotuloCapitulo(num, comp) ⇒ Left("CAPÍTULO " + renderRomano(num) + renderComp(comp))
-    case RotuloSubCapitulo(num, comp) ⇒ Left("SUB-CAPÍTULO " + renderRomano(num) + renderComp(comp))
-    case RotuloSecao(num, comp) ⇒ Left("Seção " + renderRomano(num) + renderComp(comp))
-    case RotuloSubSecao(num, comp) ⇒ Left("Subseção " + renderRomano(num) + renderComp(comp))
+    case RotuloParte(Left(_), _, _) ⇒ throw new RenderException("Parte sem número não suportado na renderização")
+    case RotuloParte(Right(num), comp,unica) ⇒ Left("PARTE " + unica.unicaMajStr(renderRomano(num).toUpperCase + renderComp(comp)))
+    case RotuloLivro(Left(_), _, _) ⇒ throw new RenderException("Livro sem número não suportado na renderização")
+    case RotuloLivro(Right(num), comp,unico) ⇒ Left("LIVRO " + unico.unicoMajStr(renderRomano(num).toUpperCase + renderComp(comp)))
+    case RotuloTitulo(num, comp, unico) ⇒ Left("TÍTULO " + unico.unicoMajStr(renderRomano(num) + renderComp(comp)))
+    case RotuloSubTitulo(num, comp, unico) ⇒ Left("SUB-TÍTULO " + unico.unicoMajStr(renderRomano(num) + renderComp(comp)))
+    case RotuloCapitulo(num, comp, unico) ⇒ Left("CAPÍTULO " + unico.unicoMajStr(renderRomano(num) + renderComp(comp)))
+    case RotuloSubCapitulo(num, comp, unico) ⇒ Left("SUB-CAPÍTULO " + unico.unicoMajStr(renderRomano(num) + renderComp(comp)))
+    case RotuloSecao(num, comp, unica) ⇒ Left("Seção " + unica.unicaMinStr(renderRomano(num) + renderComp(comp)))
+    case RotuloSubSecao(num, comp, unica) ⇒ Left("Subseção " + unica.unicaMinStr(renderRomano(num) + renderComp(comp)))
     case RotuloAlteracao(num) ⇒ Right("Alteracao " + num)
     case x => throw new RuntimeException("Lexml Xml renderer. Elemento não esperado:" + x)
   }
@@ -100,6 +112,8 @@ object LexmlRenderer {
 
   def renderCompId(n: Option[Int]) = n.map(n ⇒ "-" + (n + 1).toString).getOrElse("")
 
+  
+  
   def renderId(r: Rotulo): String = r match {
     case RotuloArtigo(num, comp, unico) ⇒ "art%d%s%s" format (num, if (num == 1 && unico) { "u" } else { "" }, renderCompId(comp))
     case RotuloParagrafo(None, _, _) ⇒ "cpt"
@@ -108,16 +122,16 @@ object LexmlRenderer {
     case RotuloAlinea(num, comp) ⇒ "ali%d%s" format (num, renderCompId(comp))
     case RotuloItem(num, comp) ⇒ "ite%d%s" format (num, renderCompId(comp))
     case RotuloPena ⇒ "pena"
-    case RotuloParte(Left(_), _) ⇒ throw new RenderException("Parte sem número não suportado na renderização")
-    case RotuloParte(Right(num), comp) ⇒ "prt%d%s" format (num, renderCompId(comp))
-    case RotuloLivro(Left(_), _) ⇒ throw new RenderException("Livro sem número não suportado na renderização")
-    case RotuloLivro(Right(num), comp) ⇒ "liv%d%s" format (num, renderCompId(comp))
-    case RotuloTitulo(num, comp) ⇒ "tit%d%s" format (num, renderCompId(comp))
-    case RotuloSubTitulo(num, comp) ⇒ throw new RenderException("Sub-título não suportado pelo parser")
-    case RotuloCapitulo(num, comp) ⇒ "cap%d%s" format (num, renderCompId(comp))
-    case RotuloSubCapitulo(num, comp) ⇒ throw new RenderException("Sub-capítulo não suportado pelo parser")
-    case RotuloSecao(num, comp) ⇒ "sec%d%s" format (num, renderCompId(comp))
-    case RotuloSubSecao(num, comp) ⇒ "sub%d%s" format (num, renderCompId(comp))
+    case RotuloParte(Left(_), _,_) ⇒ throw new RenderException("Parte sem número não suportado na renderização")
+    case RotuloParte(Right(num), comp,unico) ⇒ "prt%d%s%s" format (num, unico.unicoChar, renderCompId(comp))
+    case RotuloLivro(Left(_), _,_) ⇒ throw new RenderException("Livro sem número não suportado na renderização")
+    case RotuloLivro(Right(num), comp,unico) ⇒ "liv%d%s%s" format (num, renderCompId(comp))
+    case RotuloTitulo(num, comp,unico) ⇒ "tit%d%s" format (num, unico.unicoChar, renderCompId(comp))
+    case RotuloSubTitulo(num, comp,_) ⇒ throw new RenderException("Sub-título não suportado pelo parser")
+    case RotuloCapitulo(num, comp,unico) ⇒ "cap%d%s" format (num, unico.unicoChar, renderCompId(comp))
+    case RotuloSubCapitulo(num, comp,_) ⇒ throw new RenderException("Sub-capítulo não suportado pelo parser")
+    case RotuloSecao(num, comp,unico) ⇒ "sec%d%s" format (num, unico.unicoChar, renderCompId(comp))
+    case RotuloSubSecao(num, comp,unico) ⇒ "sub%d%s" format (num, unico.unicoChar, renderCompId(comp))
     case RotuloAlteracao(num) ⇒ "alt%d" format (num)
     case x => throw new RuntimeException("Lexml Xml renderer. Elemento não esperado:" + x)
   }
