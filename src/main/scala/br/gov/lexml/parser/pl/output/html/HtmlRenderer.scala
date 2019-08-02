@@ -63,7 +63,7 @@ object HtmlRenderer {
 	}
 
 	private implicit class Unico(un : Boolean) {
-    def unicoChar = if (un) { "u" } else { " " }
+    def unicoChar = if (un) { "u" } else { "" }
     def unicoMajStr(alt : => String) : String =
       if(un) { "ÚNICO" } else { alt }
     def unicaMajStr(alt : => String) : String =

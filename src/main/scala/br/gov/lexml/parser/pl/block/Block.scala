@@ -25,7 +25,7 @@ object HasId {
   def renderCompId(n: Option[Int]): String = n.map(n ⇒ "-" + (n + 1).toString).getOrElse("")
 
   private implicit class Unico(un : Boolean) {
-    def unicoChar = if (un) { "u" } else { " " }
+    def unicoChar = if (un) { "u" } else { "" }
   }
   
   def renderId(r: Rotulo): String = r match {
