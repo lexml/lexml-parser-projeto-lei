@@ -296,6 +296,9 @@ object DocumentProfileRegister {
       DecretoLegislativoDoCongresso,
       DecretoLegislativoFederal,
       EmendaConstitucional,
+      RegimentoComumCongresso,
+      RegimentoInternoCamara,
+      RegimentoInternoSenado,
       ResolucaoDaCamara,
       ResolucaoDoCongresso,
       ResolucaoDoSenado,
@@ -336,6 +339,18 @@ trait DecretoLegislativoProfile extends NormaProfile {
   override def urnFragTipoNorma = "decreto.legislativo"
   override def epigrafeHead = "DECRETO LEGISLATIVO"
   override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List("^decreto"r)
+}
+
+trait RegimentoInternoProfile extends NormaProfile {
+  override def urnFragTipoNorma = "regimento.interno"
+  override def epigrafeHead = "REGIMENTO INTERNO"
+  override def regexEpigrafe : List[Regex] = super.regexEpigrafe ++ List("^regimento *interno"r)
+}
+
+trait RegimentoComumProfile extends NormaProfile {
+  override def urnFragTipoNorma = "regimento.comum"
+  override def epigrafeHead = "REGIMENTO COMUM"
+  override def regexEpigrafe : List[Regex] = super.regexEpigrafe ++ List("^regimento *comum"r)
 }
 
 trait NormaFederalProfile extends NormaProfile with FederalProfile
@@ -385,6 +400,12 @@ object ResolucaoDaCamara extends ResolucaoProfile with DaCamaraProfile
 object ResolucaoDoCongresso extends ResolucaoProfile with DoCongressoProfile
 
 object ResolucaoDoSenado extends ResolucaoProfile with DoSenadoProfile
+
+object RegimentoInternoSenado extends RegimentoInternoProfile with DoSenadoProfile
+
+object RegimentoInternoCamara extends RegimentoInternoProfile with DaCamaraProfile
+
+object RegimentoComumCongresso extends RegimentoComumProfile with DoCongressoProfile
 
 object ProjetoDeLeiDoSenadoNoSenado extends DocumentProfile with DefaultRegexProfile with DoSenadoProfile  {
   override def urnFragTipoNorma = "projeto.lei;pls"
