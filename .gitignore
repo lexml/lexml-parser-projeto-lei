@@ -22,3 +22,6 @@ project/plugins/project/
 # IntelliJ Idea
 .idea/
 *.iml
+
+#VIM
+*.swp

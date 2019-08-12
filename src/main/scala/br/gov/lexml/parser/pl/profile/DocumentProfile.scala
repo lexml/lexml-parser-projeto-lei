@@ -339,6 +339,9 @@ object DocumentProfileRegister {
       DecretoLegislativoDoCongresso,
       DecretoLegislativoFederal,
       EmendaConstitucional,
+      RegimentoComumCongresso,
+      RegimentoInternoCamara,
+      RegimentoInternoSenado,
       ResolucaoDaCamara,
       ResolucaoDoCongresso,
       ResolucaoDoSenado,
@@ -394,6 +397,14 @@ trait DecretoLegislativoProfile extends NormaProfile {
   override def epigrafeHead = "DECRETO LEGISLATIVO"
   override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List("^decreto"r)   
 }
+
+trait RegimentoInternoProfile extends NormaProfile {
+  override def urnFragTipoNorma = "regimento.interno"
+  override def epigrafeHead = "REGIMENTO INTERNO"
+  override def regexEpigrafe : List[Regex] = super.regexEpigrafe ++ List("^regimento *interno"r)
+  override def ementaAusente = true
+}
+
 
 trait NormaFederalProfile extends NormaProfile with FederalProfile
 
@@ -452,6 +463,21 @@ object ResolucaoDoCongresso extends ResolucaoProfile with DoCongressoProfile {
 
 object ResolucaoDoSenado extends ResolucaoProfile with DoSenadoProfile {
   override def epigrafeTemplateCode : String = """RESOLUCAO Nº <numeroComComplemento>, DE <ano>"""
+}
+
+object RegimentoInternoSenado extends RegimentoInternoProfile with DoSenadoProfile {
+  override def epigrafeTemplateCode : String = """REGIMENTO INTERNO DO SENADO FEDERAL"""
+  override def epigrafeSemIdTemplateCode : String = """REGIMENTO INTERNO DO SENADO FEDERAL"""
+}
+
+object RegimentoInternoCamara extends RegimentoInternoProfile with DaCamaraProfile {
+  override def epigrafeTemplateCode : String = """REGIMENTO INTERNO DA CÂMARA DOS DEPUTADOS"""
+  override def epigrafeSemIdTemplateCode : String = """REGIMENTO INTERNO DA CÂMARA DOS DEPUTADOS"""
+}
+
+object RegimentoComumCongresso extends RegimentoInternoProfile with DoCongressoProfile {
+  override def epigrafeTemplateCode : String = """REGIMENTO COMUM DO CONGRESSO NACIONAL"""
+  override def epigrafeSemIdTemplateCode : String = """REGIMENTO COMUM DO CONGRESSO NACIONAL"""
 }
 
 trait ProjetoNorma {
