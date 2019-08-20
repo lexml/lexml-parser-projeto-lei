@@ -22,15 +22,23 @@ import br.gov.lexml.parser.pl.errors.ParseProblem.inContext
 
 final case class Path(rl: List[Rotulo]) extends Ordered[Path] {
   import LexmlRenderer.{ renderRotulo2 ⇒ render }
-  def mkTexto(rl: List[Rotulo]): String = rl match {
-    case Nil ⇒ ""
-    case r1 :: rll ⇒ rll match {
-      case r2 :: _ ⇒ render(r1).toLowerCase + " " + r2.proposicao + " " + mkTexto(rll)
-      case Nil ⇒ render(r1).toLowerCase
+  def mkTexto(rl: List[Rotulo]): String = {    
+    def mkTexto1(rl : List[Rotulo]) : String = {    
+      rl match {  
+        case Nil ⇒ ""
+        case r1 :: rll ⇒ rll match {
+          case r2 :: _ if r1.isDispositivo && r2.isAgregador => render(r1) + " (" + r2.proposicaoEm + " " + mkTexto1(rll) + ")"
+          case r2 :: _ ⇒ render(r1) + " " + r2.proposicao + " " + mkTexto1(rll)
+          case Nil ⇒ render(r1)
+        }
+      }
     }
+    val rl1 = rl.reverse
+    
+    mkTexto1(rl1)
   }
 
-  lazy val txt = { mkTexto(rl.toList) }
+  lazy val txt = { mkTexto(rl) }
 
   override def toString(): String = txt
 
@@ -428,7 +436,12 @@ class Validation {
           List()
         }
         l2 = todosOsPares(rl).collect {
-          case (r1, r2) if !ordemInvertida(r1, r2) && !r1.consecutivoContinuo(r2) => DispositivosDescontinuos((p + r1).txt, (p + r2).txt)
+          case (r1, r2) if !ordemInvertida(r1, r2) && !r1.consecutivoContinuo(r2) =>
+            println("r1 = " + r1)
+            println("r2 = " + r2)
+            println(s"ordemInvertida(r1,r2) = ${ordemInvertida(r1,r2)}")
+            println(s"r1.consecutivoContinuo(r2) = ${r1.consecutivoContinuo(r2)}")
+            DispositivosDescontinuos((p + r1).txt, (p + r2).txt)
         }
         e <- l1 ++ l2
       } yield {

@@ -11,6 +11,7 @@ sealed abstract class Rotulo extends AnyRef with Ordered[Rotulo] {
   val isAgregador: Boolean
   val compBase: Option[List[Int]]
   val proposicao: String
+  val proposicaoEm : String
 
   def subRotulo(n: Int): Option[Rotulo] = None
 
@@ -127,11 +128,12 @@ case class RotuloArtigo(num: Int, comp: Option[Int] = None, unico: Boolean = fal
   val elemLabel = "Artigo"
   val compBase = Some(num :: comp.toList)
   val proposicao = "do"
+  val proposicaoEm = "no"
   override def subRotulo(n: Int) = Some(RotuloParagrafo(Some(n)))
   override def consecutivoContinuo(r: Rotulo) = 
     r match {
       case RotuloArtigo(num1, comp1, _) if num1 == num ⇒ (comp, comp1) match {
-        case (None, Some(1)) ⇒ true
+        case (None, Some(0)) ⇒ true
         case (Some(n1), Some(n2)) ⇒ n2 == n1 + 1
         case _ ⇒ false
       }
@@ -151,6 +153,7 @@ case class RotuloParagrafo(num: Option[Int] = None, comp: Option[Int] = None, un
   val elemLabel = num match { case Some(_) ⇒ "Paragrafo"; case _ ⇒ "Caput" }
   val compBase = Some(num.getOrElse(-1) :: comp.toList)
   val proposicao = "do"
+  val proposicaoEm = "no"
   override def subRotulo(n: Int) = Some(RotuloInciso(n))
   override def consecutivoContinuo(r: Rotulo) =    
     r match {
@@ -190,6 +193,7 @@ case class RotuloInciso(num: Int, comp: Option[Int] = None) extends Rotulo with 
   val elemLabel = "Inciso"
   val compBase = Some(num :: comp.toList)
   val proposicao = "do"
+  val proposicaoEm = "no"
   override def subRotulo(n: Int) = Some(RotuloAlinea(n))
 }
 case class RotuloAlinea(num: Int, comp: Option[Int] = None) extends Rotulo with RotuloDispositivo with HasRegularContinuity[RotuloAlinea] {
@@ -198,6 +202,7 @@ case class RotuloAlinea(num: Int, comp: Option[Int] = None) extends Rotulo with 
   val elemLabel = "Alinea"
   val compBase = Some(num :: comp.toList)
   val proposicao = "da"
+  val proposicaoEm = "na"
   override def subRotulo(n: Int) = Some(RotuloItem(n))
 }
 case class RotuloItem(num: Int, comp: Option[Int] = None) extends Rotulo with RotuloDispositivo with HasRegularContinuity[RotuloItem] {
@@ -206,6 +211,7 @@ case class RotuloItem(num: Int, comp: Option[Int] = None) extends Rotulo with Ro
   val elemLabel = "Item"
   val compBase = Some(num :: comp.toList)
   val proposicao = "do"
+  val proposicaoEm = "no"
 }
 
 case object RotuloPena extends Rotulo with RotuloDispositivo {
@@ -214,6 +220,7 @@ case object RotuloPena extends Rotulo with RotuloDispositivo {
   val elemLabel = "Pena"
   val compBase = Some(List())
   val proposicao = "da"
+  val proposicaoEm = "na"
   override def canBeFirst = true
 }
 
@@ -233,7 +240,8 @@ extends Rotulo with RotuloAgregador with NoMatterContinuity with WithEitherNumCo
   override lazy val toNodeSeq = <RotuloParte num={ num.fold(x ⇒ x, x ⇒ x.toString) } comp={ comp.mkString("", "", "") }/>
   val elemLabel = "Parte"
   val compBase = num.fold(_ ⇒ None, n ⇒ Some(n :: comp.toList))
-  val proposicao = "da"  
+  val proposicao = "da" 
+  val proposicaoEm = "na"
 }
 case class RotuloLivro(num: Either[String, Int], comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with NoMatterContinuity with WithEitherNumComp {
   val nivel = niveis.livro
@@ -241,6 +249,7 @@ case class RotuloLivro(num: Either[String, Int], comp: Option[Int] = None, unico
   val elemLabel = "Livro"
   val compBase = num.fold(_ ⇒ None, n ⇒ Some(n :: comp.toList))
   val proposicao = "do"
+  val proposicaoEm = "no"
 }
 case class RotuloTitulo(num: Int, comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloTitulo] {
   val nivel = niveis.titulo
@@ -248,6 +257,7 @@ case class RotuloTitulo(num: Int, comp: Option[Int] = None, unico: Boolean = fal
   val elemLabel = "Titulo"
   val compBase = Some(num :: comp.toList)
   val proposicao = "do"
+  val proposicaoEm = "no"
 }
 case class RotuloSubTitulo(num: Int, comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloSubTitulo] {
   val nivel = niveis.subtitulo
@@ -255,6 +265,7 @@ case class RotuloSubTitulo(num: Int, comp: Option[Int] = None, unico: Boolean = 
   val elemLabel = "SubTitulo"
   val compBase = Some(num :: comp.toList)
   val proposicao = "do"
+  val proposicaoEm = "no"
 }
 case class RotuloCapitulo(num: Int, comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloCapitulo] {
   val nivel = niveis.capitulo
@@ -262,6 +273,7 @@ case class RotuloCapitulo(num: Int, comp: Option[Int] = None, unico: Boolean = f
   val elemLabel = "Capitulo"
   val compBase = Some(num :: comp.toList)
   val proposicao = "do"
+  val proposicaoEm = "no"
 }
 case class RotuloSubCapitulo(num: Int, comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloSubCapitulo] {
   val nivel = niveis.subcapitulo
@@ -269,6 +281,7 @@ case class RotuloSubCapitulo(num: Int, comp: Option[Int] = None, unico: Boolean 
   val elemLabel = "SubCapitulo"
   val compBase = Some(num :: comp.toList)
   val proposicao = "do"
+  val proposicaoEm = "no"
 }
 case class RotuloSecao(num: Int, comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloSecao] {
   val nivel = niveis.secao
@@ -276,6 +289,7 @@ case class RotuloSecao(num: Int, comp: Option[Int] = None, unico: Boolean = fals
   val elemLabel = "Secao"
   val compBase = Some(num :: comp.toList)
   val proposicao = "da"
+  val proposicaoEm = "na"
 }
 case class RotuloSubSecao(num: Int, comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloSubSecao] {
   val nivel = niveis.subsecao
@@ -283,6 +297,7 @@ case class RotuloSubSecao(num: Int, comp: Option[Int] = None, unico: Boolean = f
   val elemLabel = "SubSecao"
   val compBase = Some(num :: comp.toList)
   val proposicao = "da"
+  val proposicaoEm = "na"
 }
 
 case class RotuloAlteracao(num: Int) extends Rotulo with NoMatterContinuity {
@@ -293,6 +308,7 @@ case class RotuloAlteracao(num: Int) extends Rotulo with NoMatterContinuity {
   val isAgregador = false
   val compBase = Some(List(num))
   val proposicao = "da"
+  val proposicaoEm = "na"
   override def canBeFirst = num == 1
 }
 

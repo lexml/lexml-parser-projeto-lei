@@ -401,7 +401,7 @@ trait DecretoLegislativoProfile extends NormaProfile {
 trait RegimentoInternoProfile extends NormaProfile {
   override def urnFragTipoNorma = "regimento.interno"
   override def epigrafeHead = "REGIMENTO INTERNO"
-  override def regexEpigrafe : List[Regex] = super.regexEpigrafe ++ List("^regimento *interno"r)
+  override def regexEpigrafe : List[Regex] = List("^regimento *(interno|comum)$"r)
   override def ementaAusente = true
 }
 
