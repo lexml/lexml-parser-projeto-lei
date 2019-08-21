@@ -202,8 +202,12 @@ case class RotuloAlinea(num: Int, comp: Option[Int] = None) extends Rotulo with 
   val elemLabel = "Alinea"
   val compBase = Some(num :: comp.toList)
   val proposicao = "da"
-  val proposicaoEm = "na"
+  val proposicaoEm = "na"  
   override def subRotulo(n: Int) = Some(RotuloItem(n))
+  override def consecutivoContinuo(r: Rotulo) = r match { 
+    case rr: RotuloAlinea if (num == 'j'.toInt - 'a'.toInt + 1) && (rr.num == num + 2) => rr.comp.isEmpty
+    case _ => super.consecutivoContinuo(r)      
+  }
 }
 case class RotuloItem(num: Int, comp: Option[Int] = None) extends Rotulo with RotuloDispositivo with HasRegularContinuity[RotuloItem] {
   val nivel = niveis.item
