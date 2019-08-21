@@ -147,11 +147,11 @@ trait DocumentProfile extends RegexProfile with TipoNormaProfile with Autoridade
     val sw = new java.io.StringWriter()
     val pw = new java.io.PrintWriter(sw)    
     pw.println(super.toString() + ":")
-    def printMap(m : Map[String,Any], indent : String) {
+    def printMap(m : Map[_,Any], indent : String) {
       m.foreach { case (k,v) =>
         pw.print(indent + k + ":")
         v match {
-          case mm : Map[String,Any] =>
+          case mm : Map[_,Any] =>
             pw.println()
             printMap(mm,indent + "  ")
           case _ => pw.println(" " + v)

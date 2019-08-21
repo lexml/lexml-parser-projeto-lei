@@ -726,7 +726,7 @@ object XHTMLProcessor extends Logging {
       })
       (s1, x)
     }
-    transformTextWith(cleanit)()
+    transformTextWith(cleanit)(())
   }
 
   def applySeq[T](fs: Seq[T ⇒ T]) =

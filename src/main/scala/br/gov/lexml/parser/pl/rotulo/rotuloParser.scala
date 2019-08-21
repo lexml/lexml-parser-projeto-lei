@@ -5,6 +5,7 @@ import scala.language.postfixOps
 import scala.util.parsing.input.CharArrayReader
 import scala.util.matching._
 import br.gov.lexml.parser.pl.text.normalizer
+import scala.language.existentials
 
 object rotuloParser {
 
@@ -68,14 +69,14 @@ object rotuloParser {
 		lazy val lowerAlpha : Parser[Char] = elem("Alpha",c => c >= 'a' && c <= 'z')
 		lazy val complemento : Parser[Int] = hyphenOrSimilar ~> ( lowerAlpha + ) <~ guard(fimComplemento) ^^ complementoToInteger		
 
-		lazy val fimComplemento : Parser[Unit] = (elem("fimComplemento", c => ",\\.;: ".contains(c)) ^^^ ()) | eos 
+		lazy val fimComplemento : Parser[Unit] = (elem("fimComplemento", c => ",\\.;: ".contains(c)) ^^^ (() : Unit)) | eos 
 		def ordinalExtenso(g : Genero) : Parser[(Int,Boolean)] =
 			( "unic" ^^^ (1,true)  | "primeir" ^^^ (1,false) | "segund" ^^^ (2,false) | "terceir" ^^^ (3,false)
 			  | "quart" ^^^ (4,false) | "quint" ^^^ (5,false) | "sext" ^^^ (6,false) | "setim" ^^^ (7,false)
 			  | "oitav" ^^^ (8,false) | "non" ^^^ (9,false) ) <~ g.select("o","a")
 		lazy val numeroComposto : Parser[Int] =
 			("\\d{1,3}+((\\.\\d\\d\\d)+|\\d*)"r) ^^ ((s : String) => { Integer.parseInt(s.toList.filter(c => c != '.').mkString("")) })
-		def simbOrdinal(g : Genero) : Parser[Unit] = g.select("[oº°˚]"r,"[aª]"r) ~> not(letter | digit) ~> success()
+		def simbOrdinal(g : Genero) : Parser[Unit] = g.select("[oº°˚]"r,"[aª]"r) ~> not(letter | digit) ~> success(())
 		def ordinalOuNatural(g : Genero) : Parser[(Int,Boolean)] = ordinalExtenso(g) | ((numeroComposto <~ opt(simbOrdinal(g))) ^^ ((_ : Int,false)))
 		def ordinal(g : Genero) : Parser[(Int,Boolean)] = ordinalExtenso(g) | ((numeroComposto <~ simbOrdinal(g))) ^^ ((_ : Int,false))
 
@@ -172,7 +173,7 @@ object rotuloParser {
 			case "numeroRomano" => numeroRomano			
 		}							
 
-		lazy val pontuacao  = (" *\\."r) ~> not (".") ^^^ ()
+		lazy val pontuacao  = (" *\\."r) ~> not (".") ^^^ (())
 
 		def parseRotulo(s : String) : Option[(Rotulo,Int)] = {
 		    val p = (algumRotulo <~ opt (pontuacao)) ~ pos ^^ { case ~(a,b) => (a,b) }
