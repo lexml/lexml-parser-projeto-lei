@@ -458,11 +458,11 @@ object EmendaConstitucional extends DocumentProfile with DefaultRegexProfile wit
 object ResolucaoDaCamara extends ResolucaoProfile with DaCamaraProfile
 
 object ResolucaoDoCongresso extends ResolucaoProfile with DoCongressoProfile {
-    override def epigrafeTemplateCode : String = """RESOLUCAO Nº <numeroComComplemento>, DE <ano>-CN"""
+    override def epigrafeTemplateCode : String = """RESOLUÇÃO Nº <numeroComComplemento>, DE <ano>-CN"""
 }
 
 object ResolucaoDoSenado extends ResolucaoProfile with DoSenadoProfile {
-  override def epigrafeTemplateCode : String = """RESOLUCAO Nº <numeroComComplemento>, DE <ano>"""
+  override def epigrafeTemplateCode : String = """RESOLUÇÃO Nº <numeroComComplemento>, DE <ano>"""
 }
 
 object RegimentoInternoSenado extends RegimentoInternoProfile with DoSenadoProfile {
