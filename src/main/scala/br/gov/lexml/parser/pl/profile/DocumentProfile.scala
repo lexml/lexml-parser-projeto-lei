@@ -346,7 +346,8 @@ object DocumentProfileRegister {
       ResolucaoDoCongresso,
       ResolucaoDoSenado,
       ProjetoDeLeiDoSenadoNoSenado,
-      ConstituicaoFederal
+      ConstituicaoFederal,
+      AtoDisposicoesConstitucionaisTransitorias
   )
   builtins foreach register
 }
@@ -382,6 +383,14 @@ trait ConstituicaoProfile extends TipoNormaProfile {
 trait ConstituicaoFederalProfile extends ConstituicaoProfile with FederalProfile with EmentaAusente {     
   override def epigrafeTemplateCode : String = """CONSTITUIÇÃO DA REPÚBLICA FEDERATIVA DO BRASIL"""
   override def epigrafeSemIdTemplateCode : String = """CONSTITUIÇÃO DA REPÚBLICA FEDERATIVA DO BRASIL"""    
+}
+
+trait AtoDisposicoesConstitucionaisTransitoriasProfile extends TipoNormaProfile with FederalProfile with EmentaAusente {
+  override def urnFragTipoNorma = "ato.disposicoes.constitucionais.transitorias"
+  override def epigrafeHead = "ATO DAS DISPOSIÇÕES CONSTITUCIONAIS TRANSITÓRIAS"
+  override def epigrafeTail = ""
+  override def epigrafeTemplateCode = epigrafeHead
+  override def epigrafeSemIdTemplateCode = epigrafeHead
 }
 
 trait NormaProfile extends DocumentProfile with DefaultRegexProfile
@@ -610,4 +619,14 @@ object ConstituicaoFederal extends DocumentProfile with ConstituicaoFederalProfi
         "^preambulo$"r
        )
   override def epigrafeTemplateCode : String = """Constituição da República Federativa do Brasil."""
+}
+
+object AtoDisposicoesConstitucionaisTransitorias extends DocumentProfile with AtoDisposicoesConstitucionaisTransitoriasProfile with DefaultRegexProfile {
+  override def regexLocalData : List[Regex] = 
+    List("""brasilia, *\d+ +de +\w+ +de +\d\d\d\d\.""".r)
+  override def regexJustificativa: List[Regex] = List()
+  override def regexAnexos: List[Regex] = List()
+  override def regexLegislacaoCitada: List[Regex] = List()
+  override def regexPreambulo: List[Regex] = List()  
+  override def regexEpigrafe: List[Regex] = List("""^ato das disposicoes constitucionais""".r)
 }
