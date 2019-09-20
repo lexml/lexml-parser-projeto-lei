@@ -50,7 +50,8 @@ trait DefaultRegexProfile extends RegexProfile {
 	      "^sala da comissao"r,
 	      "^camara dos deputados"r,
 	      "^senado federal"r,
-	      "^brasilia,"r
+	      "^brasilia,"r,
+	      "^rio de janeiro,"r
 	)
 	override def regexJustificativa: List[Regex] = super.regexJustificativa ++ List(
 	    "^justificacao"r,
@@ -603,7 +604,8 @@ object ConstituicaoFederal extends DocumentProfile with ConstituicaoFederalProfi
 	      "^sala da comissao"r,
 	      "^camara dos deputados"r,
 	      "^senado federal"r,
-	      "^brasilia,"r
+	      "^brasilia,"r,
+	      "^rio de janeiro"r
 	)
 	override def regexJustificativa: List[Regex] = List()
 	override def regexAnexos: List[Regex] = super.regexAnexos ++ List(
@@ -623,7 +625,7 @@ object ConstituicaoFederal extends DocumentProfile with ConstituicaoFederalProfi
 
 object AtoDisposicoesConstitucionaisTransitorias extends DocumentProfile with AtoDisposicoesConstitucionaisTransitoriasProfile with DefaultRegexProfile {
   override def regexLocalData : List[Regex] = 
-    List("""brasilia, *\d+ +de +\w+ +de +\d\d\d\d\.""".r)
+    List("""(brasilia|rio de janeiro), *\d+ +de +\w+ +de +\d\d\d\d\.""".r)
   override def regexJustificativa: List[Regex] = List()
   override def regexAnexos: List[Regex] = List()
   override def regexLegislacaoCitada: List[Regex] = List()
