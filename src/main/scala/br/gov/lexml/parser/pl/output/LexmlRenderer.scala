@@ -199,6 +199,7 @@ object LexmlRenderer {
         case d: Dispositivo ⇒ rename(elemLabel(d.rotulo), addXlinkHref(d.id)(
           <Dispositivo id={ d.id } textoOmitido={
             d.conteudo match {
+              case _ if d.rotulo.isAgregador => null
               case Some(_: Omissis) ⇒ "s"
               case Some(p: Paragraph) if p.text == "" ⇒ "s"
               case _ ⇒ null
