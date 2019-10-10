@@ -352,7 +352,7 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
         throw ParseException(ArticulacaoNaoIdentificada)
       }
 
-      val urnContexto = metadado.urn
+      val urnContexto = metadado.urnContextoLinker
       
       val articulacao1 = elementos(Articulacao)
       val articulacao = parseArticulacao(articulacao1,urnContexto = urnContexto)

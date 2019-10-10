@@ -146,6 +146,7 @@ case class Metadado(profile : DocumentProfile, localidade : Option[String] = Non
   lazy val urnFragTipoNorma = tipoNorma.getOrElse(profile.urnFragTipoNorma)
   lazy val urnFragLocalidade = localidade.orElse(profile.urnFragLocalidade).getOrElse("br")
 	lazy val urn = s"urn:lex:$urnFragLocalidade:$urnFragAutoridade:$urnFragTipoNorma:${id.map(_.urnRepr).getOrElse("LEXML_URN_ID")}"
+  lazy val urnContextoLinker = if(id.isDefined) { urn } else { this.copy(id = Some(Id())).urn }
   val isProjetoNorma = profile.isProjetoNorma
 	//lazy val epigrafePadrao = "" //FIXME: EPIGRAFE
 		
