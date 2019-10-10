@@ -80,7 +80,7 @@ class ArticulacaoParser {
   def parseList(l : List[String]) = {
     val blocks = l.map((x : String) => Paragraph(Seq(Text(x))))
     val parser = new ProjetoLeiParser(ProjetoDeLeiDoSenadoNoSenado)
-    val articulacao = parser.parseArticulacao(blocks,false)
+    val articulacao = parser.parseArticulacao(blocks,false,"")
     LexmlRenderer.renderArticulacao(articulacao).toString
   }
   def parse(f : File) = parseList(Source.fromFile(f).getLines().toList)

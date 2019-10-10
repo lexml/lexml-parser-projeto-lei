@@ -30,11 +30,12 @@ object Linker {
       supervisorStrategy = strategy )))
             
   
-  def findLinks(ns : Seq[Node]) : (List[String],List[Node]) = {
+  def findLinks(urnContexto : String, ns : Seq[Node]) : (List[String],List[Node]) = {
     import akka.pattern.ask
     import akka.util.Timeout
-    implicit val timeout = Timeout(30 seconds) 
-    val f = (linkerRouter ? ns).mapTo[(List[Node],Set[String])] map {
+    implicit val timeout = Timeout(30 seconds)
+    val msg = (urnContexto,ns)
+    val f = (linkerRouter ? msg).mapTo[(List[Node],Set[String])] map {
       case (nl,links) ⇒ (links.toList,nl)
     }
     Await.result(f,timeout.duration)

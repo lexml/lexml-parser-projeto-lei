@@ -221,23 +221,23 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
     (prePreambulo, preAmbulo.collect { case p: Paragraph ⇒ p }, posPreambulo)
   }
 
-  def reconheceLinks(b: Block) = b.mapBlock {
+  def reconheceLinks(b: Block, urnContexto : String) = b.mapBlock {
     case d: Dispositivo ⇒ d.conteudo match {
       case Some(p: Paragraph) ⇒ {
         import br.gov.lexml.parser.pl.linker.Linker.findLinks
-        val (links, nl) = findLinks(p.nodes)
+        val (links, nl) = findLinks(urnContexto,p.nodes)
         d copy (links = links, conteudo = Some(p copy (nodes = nl)))
       }
       case _ ⇒ d
     }
     case p: Paragraph ⇒ {
       import br.gov.lexml.parser.pl.linker.Linker.findLinks
-      val (links, nl) = findLinks(p.nodes)
+      val (links, nl) = findLinks(urnContexto,p.nodes)
       p copy (nodes = nl)
     }
     case x ⇒ x
   }
-  def reconheceLinks(bl: List[Block]): List[Block] = bl.map(reconheceLinks(_))
+  def reconheceLinks(bl: List[Block], urnContexto : String): List[Block] = bl.map(reconheceLinks(_,urnContexto))
 
   def printArticulacao(bl: List[Block], num: Int) = {
     println("articulacao" + num + ":")
@@ -277,7 +277,7 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
     case x => x
   }
   
-  def parseArticulacao(bl: List[Block], useLinker: Boolean = true): List[Block] = {
+  def parseArticulacao(bl: List[Block], useLinker: Boolean = true, urnContexto : String): List[Block] = {
     //Trim paragraphs
     val articulacao1 = bl.map(trimParagraphs)
     //printArticulacao(articulacao1,1)
@@ -309,7 +309,7 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
     val articulacao11 = Block.identificaPaths(articulacao10)
     //printArticulacao(articulacao11,11)
     if (useLinker) {
-      val articulacao12 = reconheceLinks(articulacao11)
+      val articulacao12 = reconheceLinks(articulacao11, urnContexto)
       //printArticulacao(articulacao12,12)
       val articulacao13 = Linker.paraCadaAlteracao(articulacao12)
       //printArticulacao(articulacao13,13)
@@ -352,8 +352,10 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
         throw ParseException(ArticulacaoNaoIdentificada)
       }
 
+      val urnContexto = metadado.urn
+      
       val articulacao1 = elementos(Articulacao)
-      val articulacao = parseArticulacao(articulacao1)
+      val articulacao = parseArticulacao(articulacao1,urnContexto = urnContexto)
       val possuiImagem = (preEpigrafe ++ List(epigrafe) ++ preambulo ++ articulacao1).exists({
         case p: Paragraph ⇒ !(p.nodes \\ "img").isEmpty
         case Image ⇒ true
@@ -365,11 +367,13 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
       val otherCaracteristicas = Map[String, Boolean](
         POSSUI_IMAGEM -> possuiImagem)
 
+      
+      
       val pl = ProjetoLei(
         metadado = metadado,
         preEpigrafe = preEpigrafe,
         epigrafe = epigrafe,
-        ementa = ementa.map(reconheceLinks),
+        ementa = ementa.map(x => reconheceLinks(x,urnContexto)),
         preambulo = preambulo,
         articulacao = articulacao,
         otherCaracteristicas = otherCaracteristicas)

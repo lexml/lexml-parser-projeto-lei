@@ -105,7 +105,8 @@ case class CmdParse(
 case class CmdParseArticulacao(
     input : SourceType = ST_Stdin,
     output : SinkType = SK_Stdout,
-    linkerPath : Option[File] = None
+    linkerPath : Option[File] = None,
+    contexto : String = "urn:lex:br:federal:lei:2000-01-01;1" 
     ) extends Cmd
     
 
@@ -445,9 +446,9 @@ object FECmdLine {
               case Some(path) =>
                 val path1 = path.getCanonicalPath()
                 if(verbose) {
-                  println(s"linker: using simplelinker executable at ${path1}")
+                  println(s"linker: using linkertool executable at ${path1}")
                 }
-                sys.props += ("lexml.simplelinker" -> path1)
+                sys.props += ("lexml.linkertool" -> path1)
             }
             process(profile,md,cmd.input,cmd.mimeType,cmd.output,cmd.linkerPath,verbose,cmd.errorOutput)
           }        
@@ -537,13 +538,14 @@ object FECmdLine {
     val pars = (sourceElem \ "p").to[List]
     val blocks = pars collect { case e : Elem => Paragraph(e.child) }    
     val parser = new ProjetoLeiParser(ProjetoDeLeiDoSenadoNoSenado)
+    val contexto = cmd.contexto
     val useLinker = cmd.linkerPath match {
       case Some(f) if f.canExecute() =>
         val path = f.getCanonicalPath
         if(verbose) {
-          println(s"linker: using simplelinker executable at ${path}")
+          println(s"linker: using linkertool executable at ${path}")
         }
-        sys.props += ("lexml.simplelinker" -> path)
+        sys.props += ("lexml.linkertool" -> path)
         true
       case _ =>        
         if(verbose) {
@@ -552,7 +554,7 @@ object FECmdLine {
         sys.props += ("lexml.skiplinker" -> "true")        
         false
     }
-    val articulacao = parser.parseArticulacao(blocks,useLinker)
+    val articulacao = parser.parseArticulacao(blocks,useLinker,contexto)
     val res = LexmlRenderer.renderArticulacao(articulacao)
     cmd.output.write(res.toString.getBytes("utf-8"))
   }
