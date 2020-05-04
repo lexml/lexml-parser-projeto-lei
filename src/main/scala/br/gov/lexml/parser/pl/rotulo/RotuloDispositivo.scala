@@ -85,7 +85,8 @@ object niveis {
       , item -> Set(pena)
       , parte -> Set (livro,titulo,capitulo,secao,artigo)
       , livro -> Set (titulo,capitulo,secao,artigo)
-      , titulo -> Set (capitulo,secao,artigo)
+      , titulo -> Set (capitulo,secao,artigo,subtitulo)
+      , subtitulo -> Set (capitulo,secao,artigo)
       , capitulo -> Set (subcapitulo,secao,artigo)
       , secao -> Set (subsecao,artigo)
       , subsecao -> Set (artigo)
@@ -278,6 +279,10 @@ case class RotuloCapitulo(num: Int, comp: Option[Int] = None, unico: Boolean = f
   val compBase = Some(num :: comp.toList)
   val proposicao = "do"
   val proposicaoEm = "no"
+  override def consecutivoContinuo(r: Rotulo) = super.consecutivoContinuo(r) || (r match {
+    case RotuloSubTitulo(1,None,_) => true
+    case _ => false
+  })
 }
 case class RotuloSubCapitulo(num: Int, comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with HasRegularContinuity[RotuloSubCapitulo] {
   val nivel = niveis.subcapitulo

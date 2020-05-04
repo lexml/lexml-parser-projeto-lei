@@ -46,10 +46,10 @@ object HasId {
     case RotuloPena ⇒ "pena"
     case RotuloParte(Left(_), _,_) ⇒ throw new IdRenderException("Parte sem número não suportado na renderização")
     case RotuloParte(Right(num), comp,unico) ⇒ "prt%d%s%s" format(num,unico.unicoChar,renderCompId(comp))
-    case RotuloLivro(Left(_), _,_) ⇒ throw new IdRenderException("Livro sem número não suportado na renderização")
+    case RotuloLivro(Left(rot), _,_) ⇒ throw new IdRenderException(s"Livro sem número não suportado na renderização: ${rot}")
     case RotuloLivro(Right(num), comp,unico) ⇒ "liv%d%s%s" format(num,unico.unicoChar, renderCompId(comp))
     case RotuloTitulo(num, comp,unico) ⇒ "tit%d%s%s" format(num, unico.unicoChar,renderCompId(comp))
-    case RotuloSubTitulo(num, comp,_) ⇒ throw new IdRenderException("Sub-título não suportado pelo parser")
+    case RotuloSubTitulo(num, comp,unico) ⇒  "stt%d%s%s" format(num, unico.unicoChar,renderCompId(comp))       
     case RotuloCapitulo(num, comp,unico) ⇒ "cap%d%s%s" format(num, unico.unicoChar,renderCompId(comp))
     case RotuloSubCapitulo(num, comp,_) ⇒ throw new IdRenderException("Sub-capítulo não suportado pelo parser")
     case RotuloSecao(num, comp,unico) ⇒ "sec%d%s%s" format(num, unico.unicoChar,renderCompId(comp))
