@@ -13,7 +13,7 @@
 
         <!-- github server corresponds to entry in ~/.m2/settings.xml -->
         <github.global.server>github</github.global.server>
-        <akka.version>2.3.16</akka.version>
+        <akka.version>2.4.17</akka.version>
 
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
     </properties>
