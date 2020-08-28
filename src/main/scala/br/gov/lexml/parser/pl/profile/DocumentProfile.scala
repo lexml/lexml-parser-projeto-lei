@@ -8,7 +8,8 @@ trait RegexProfile {
 	def regexAnexos : List[Regex] = List()
 	def regexLegislacaoCitada : List[Regex] = List()
 	def regexAssinatura : List[Regex] = List()
-	def regexEpigrafe : List[Regex] = List()  
+	def regexEpigrafe1 : List[Regex] = List()
+	def regexEpigrafe : List[Regex] = List()
 	def regexPosEpigrafe : List[Regex] = List()
 	def epigrafeObrigatoria : Boolean = true
 	def preEpigrafePermitida : Boolean = true
@@ -20,6 +21,7 @@ trait RegexProfile {
 	    "anexos" -> regexAnexos.map(_.pattern.pattern()),
 	    "legislacaoCitada" -> regexLegislacaoCitada.map(_.pattern.pattern()),
 	    "assinatura" -> regexAssinatura.map(_.pattern.pattern()),
+	    "epigrafe1" -> regexEpigrafe1.map(_.pattern.pattern()),
 	    "epigrafe" -> regexEpigrafe.map(_.pattern.pattern()),
 	    "posEpigrafe" -> regexPosEpigrafe.map(_.pattern.pattern()),
 	    "preambulo" -> regexPreambulo.map(_.pattern.pattern()),
@@ -68,9 +70,11 @@ trait DefaultRegexProfile extends RegexProfile {
 	    "^l e g i s l a c a o c i t a d a"r
 	)
 	override def regexAssinatura: List[Regex] = super.regexAssinatura ++ List("^senadora? "r)
-	override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List(
-          """^\s*(red\d+;+)?(projeto( de)? (lei|decreto legislativo)|(proposta|projeto) de emenda|pec|projeto de resolu)""".r
-         ,"""^(n[oº°˚]|complementar)"""r
+	override def regexEpigrafe1: List[Regex] = super.regexEpigrafe1 ++ List(
+          """^\s*(red\d+;+)?(projeto( de)? (lei|decreto legislativo)|(proposta|projeto) de emenda|pec|projeto de resolu)""".r         
+    )
+  override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List(          
+         """^(n[oº°˚]|complementar)"""r
     )
     
     override def regexPosEpigrafe: List[Regex] = super.regexPosEpigrafe ++ List(
@@ -171,6 +175,7 @@ trait Overrides {
   val overrideRegexAnexos: Option[List[Regex]]
   val overrideRegexLegislacaoCitada: Option[List[Regex]]
   val overrideRegexAssinatura: Option[List[Regex]]
+  val overrideRegexEpigrafe1: Option[List[Regex]]
   val overrideRegexEpigrafe: Option[List[Regex]]
   val overrideRegexPosEpigrafe: Option[List[Regex]]
   val overrideEpigrafeObrigatoria: Option[Boolean]
@@ -192,6 +197,7 @@ final case class OverridesData(
   overrideRegexLegislacaoCitada: Option[List[Regex]] = None,
   overrideRegexAssinatura: Option[List[Regex]] = None,
   overrideRegexEpigrafe: Option[List[Regex]] = None,
+  overrideRegexEpigrafe1: Option[List[Regex]] = None,
   overrideRegexPosEpigrafe: Option[List[Regex]] = None,
   overrideEpigrafeObrigatoria: Option[Boolean] = None,
   overridePreEpigrafePermitida: Option[Boolean] = None,
@@ -211,6 +217,7 @@ final case class DocumentProfileOverride(base : DocumentProfile,
   overrideRegexAnexos: Option[List[Regex]] = None,
   overrideRegexLegislacaoCitada: Option[List[Regex]] = None,
   overrideRegexAssinatura: Option[List[Regex]] = None,
+  overrideRegexEpigrafe1: Option[List[Regex]] = None,
   overrideRegexEpigrafe: Option[List[Regex]] = None,
   overrideRegexPosEpigrafe: Option[List[Regex]] = None,
   overrideEpigrafeObrigatoria: Option[Boolean] = None,
@@ -229,6 +236,7 @@ final case class DocumentProfileOverride(base : DocumentProfile,
   override def regexAnexos: List[Regex] = overrideRegexAnexos.getOrElse(base.regexAnexos)
   override def regexLegislacaoCitada: List[Regex] = overrideRegexLegislacaoCitada.getOrElse(base.regexLegislacaoCitada)
   override def regexAssinatura: List[Regex] = overrideRegexAssinatura.getOrElse(base.regexAssinatura)
+  override def regexEpigrafe1: List[Regex] = overrideRegexEpigrafe1.getOrElse(base.regexEpigrafe1)
   override def regexEpigrafe: List[Regex] = overrideRegexEpigrafe.getOrElse(base.regexEpigrafe)
   override def regexPosEpigrafe: List[Regex] = overrideRegexPosEpigrafe.getOrElse(base.regexPosEpigrafe)
   override def epigrafeObrigatoria: Boolean = overrideEpigrafeObrigatoria.getOrElse(base.epigrafeObrigatoria)
@@ -250,6 +258,7 @@ final case class DocumentProfileOverride(base : DocumentProfile,
     overrideRegexAnexos = o.overrideRegexAnexos.orElse(overrideRegexAnexos),
     overrideRegexLegislacaoCitada = o.overrideRegexLegislacaoCitada.orElse(overrideRegexLegislacaoCitada),
     overrideRegexAssinatura = o.overrideRegexAssinatura.orElse(overrideRegexAssinatura),
+    overrideRegexEpigrafe1 = o.overrideRegexEpigrafe.orElse(overrideRegexEpigrafe1),
     overrideRegexEpigrafe = o.overrideRegexEpigrafe.orElse(overrideRegexEpigrafe),
     overrideRegexPosEpigrafe = o.overrideRegexPosEpigrafe.orElse(overrideRegexPosEpigrafe),
     overrideEpigrafeObrigatoria = o.overrideEpigrafeObrigatoria.orElse(overrideEpigrafeObrigatoria),
@@ -270,6 +279,7 @@ final case class DocumentProfileOverride(base : DocumentProfile,
     overrideRegexAnexos = o.overrideRegexAnexos,
     overrideRegexLegislacaoCitada = o.overrideRegexLegislacaoCitada,
     overrideRegexAssinatura = o.overrideRegexAssinatura,
+    overrideRegexEpigrafe1 = o.overrideRegexEpigrafe1,
     overrideRegexEpigrafe = o.overrideRegexEpigrafe,
     overrideRegexPosEpigrafe = o.overrideRegexPosEpigrafe,
     overrideEpigrafeObrigatoria = o.overrideEpigrafeObrigatoria,
@@ -630,5 +640,6 @@ object AtoDisposicoesConstitucionaisTransitorias extends DocumentProfile with At
   override def regexAnexos: List[Regex] = List()
   override def regexLegislacaoCitada: List[Regex] = List()
   override def regexPreambulo: List[Regex] = List()  
+  override def regexEpigrafe1: List[Regex] = List("""^ato das disposicoes constitucionais""".r)
   override def regexEpigrafe: List[Regex] = List("""^ato das disposicoes constitucionais""".r)
 }

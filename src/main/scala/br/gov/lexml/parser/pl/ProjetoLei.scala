@@ -189,9 +189,9 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
 
   def spanEpigrafe(bl: List[Block]): Option[(List[Block], Block, List[Block])] = {
  
-    val (pre, bl1) = bl.span(doesNotMatchAnyOf(profile.regexEpigrafe))
+    val (pre, bl1) = bl.span(doesNotMatchAnyOf(profile.regexEpigrafe1))
     val pre2 = pre.filter(!isEmptyPar(_))
-    val (epi, pos) = bl1.span(matchesOneOf(profile.regexEpigrafe))
+    val (epi, pos) = bl1.span(matchesOneOf(profile.regexEpigrafe ++ profile.regexEpigrafe1))
     val pos2 = pos.dropWhile(b ⇒ matchesOneOf(profile.regexPosEpigrafe)(b) || isEmptyPar(b))
     val epi2 = epi collect { case p: Paragraph ⇒ p }
     epi2 match {
