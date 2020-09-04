@@ -350,6 +350,7 @@ object DocumentProfileRegister {
       DecretoLegislativoDoCongresso,
       DecretoLegislativoFederal,
       EmendaConstitucional,
+      EmendaConstitucionalDeRevisao,
       RegimentoComumCongresso,
       RegimentoInternoCamara,
       RegimentoInternoSenado,
@@ -483,6 +484,16 @@ object EmendaConstitucional extends DocumentProfile with DefaultRegexProfile wit
   override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List("^emenda constitucional"r)
   override def epigrafeTemplateCode : String = """EMENDA CONSTITUCIONAL Nº <numeroComComplemento>"""
 }
+
+object EmendaConstitucionalDeRevisao extends DocumentProfile with DefaultRegexProfile with FederalProfile {
+  override def urnFragTipoNorma = "emenda.constitucional.revisao"
+  override def epigrafeHead = "EMENDA CONSTITUCIONAL DE REVISÃO"
+  override def regexEpigrafe1: List[Regex] = super.regexEpigrafe1 ++ List("^emenda constitucional de revis"r)
+  override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List("^emenda constitucional de revis"r)
+  override def epigrafeTemplateCode : String = """EMENDA CONSTITUCIONAL DE REVISÃO Nº <numeroComComplemento>"""
+  override def ementaAusente = true
+}
+
 
 object ResolucaoDaCamara extends ResolucaoProfile with DaCamaraProfile
 
