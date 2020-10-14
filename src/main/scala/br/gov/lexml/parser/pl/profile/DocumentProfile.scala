@@ -1,6 +1,8 @@
 package br.gov.lexml.parser.pl.profile
 import scala.util.matching.Regex
 import scala.language.postfixOps
+import org.json4s._
+import org.json4s.native.JsonMethods._
 
 trait RegexProfile {
   def regexLocalData : List[Regex] = List()
@@ -293,6 +295,25 @@ final case class DocumentProfileOverride(base : DocumentProfile,
     overrideUrnFragLocalidade  = o.overrideUrnFragLocalidade,
     overrideEmentaAusente = o.overrideEmentaAusente
   )
+  
+  def asJSON : String = {
+    import org.json4s.native.Serialization
+    import org.json4s.native.Serialization.write
+    implicit val formats = Serialization.formats(NoTypeHints)
+  
+    write[DocumentProfileOverride](this)  
+  }
+}
+
+object DocumentProfileOverride {
+  import org.json4s.native.Serialization
+  import org.json4s.native.Serialization.{read, write}
+
+  implicit val formats = Serialization.formats(NoTypeHints)
+  
+  def fromJSON(json : String) = {
+    read[DocumentProfileOverride](json)
+  }
 }
 
 

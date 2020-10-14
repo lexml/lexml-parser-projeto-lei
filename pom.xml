@@ -253,6 +253,12 @@
         	<artifactId>scalasti_${scala.version}</artifactId>
         <version>3.0.1</version>
         </dependency>
+        <dependency>
+        	 <groupId>org.json4s</groupId>
+			  <artifactId>json4s-native_${scala.version}</artifactId>
+  			 <version>3.7.0-M6</version>
+  		</dependency>
+        
     </dependencies>
 
 </project>
