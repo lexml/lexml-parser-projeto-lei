@@ -219,7 +219,18 @@
         <dependency>
             <groupId>br.gov.lexml</groupId>
             <artifactId>lexml-xml-schemas</artifactId>
-            <version>3.1.13</version>
+            <version>3.1.14</version>
+            <exclusions>
+				<exclusion>
+					<groupId>ch.qos.logback</groupId>
+					<artifactId>logback-classic</artifactId>
+				</exclusion>
+			
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-api</artifactId>
+				</exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.ccil.cowan.tagsoup</groupId>

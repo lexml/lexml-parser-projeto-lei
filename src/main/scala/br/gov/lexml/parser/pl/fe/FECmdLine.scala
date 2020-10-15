@@ -29,6 +29,7 @@ import scala.xml.Elem
 import br.gov.lexml.parser.pl.linker.Linker
 import org.apache.logging.log4j.core.LoggerContext
 
+
 abstract sealed class SourceType {
   def toByteArray : Array[Byte]
 }
@@ -155,11 +156,9 @@ class FECmdLineOptionParser extends scopt.OptionParser[CmdLineOpts]("parser") {
     def cmdParseArticulacao[T](f : (T,CmdParseArticulacao) => CmdParseArticulacao) : (T,CmdLineOpts) => CmdLineOpts = {
       case (v, opts) =>        
         opts.command(CmdParseArticulacao())(c => f(v,c))        
-    }
-
-    val parserVersion = IOUtils.toString(getClass.getResourceAsStream("version.txt"),"utf-8")
+    }    
   
-    head("LexML Parser Command-line tool",parserVersion)
+    head("LexML Parser Command-line tool")
     note("Opções Gerais:")
     opt[File]("log4j-configuration-xml").
       text("arquivo de configuração de log4j2. Será usado ao invés do padrão.").
@@ -382,11 +381,22 @@ object FECmdLine {
     import org.apache.logging.log4j.core.config._
     import org.apache.logging.log4j.core.config.xml._
     import java.io._
-    val cfgSource = log4jConfigFile.map(f => new ConfigurationSource(new BufferedInputStream(new FileInputStream(f)),f))
-                             .getOrElse(new ConfigurationSource(getClass.getResourceAsStream("fecmdline.log4j.xml")))
-    val loggerContext = new LoggerContext("")
-    val conf = new XmlConfiguration(loggerContext, cfgSource)
+    val cfgStream : Option[InputStream] = 
+        log4jConfigFile.flatMap(f => 
+                      Some(new BufferedInputStream(new FileInputStream(f))))
+                      .orElse(Option(getClass.getResourceAsStream("fecmdline.log4j.xml")))
+    val cfgSource = cfgStream.map(s => new ConfigurationSource(s))
+    val loggerContext = new LoggerContext("")    
+    val conf = cfgSource.map(x => new XmlConfiguration(loggerContext, x))
+          .getOrElse(new NullConfiguration())
+    System.err.println("Logging conf = " + conf)
     Configurator.initialize(conf)    
+    val l = org.apache.logging.log4j.core.LoggerContext.getContext.getLogger("br.gov.lexml.parser.pl")
+    l.setLevel(org.apache.logging.log4j.Level.DEBUG)
+    l.addAppender(org.apache.logging.log4j.core.appender.ConsoleAppender.createDefaultAppenderForLayout(org.apache.logging.log4j.core.layout.MessageLayout.createLayout()))
+    
+    println("Logging initialized")
+    l.warn("Logging initialized")
   }
   def main(args : Array[String]) = {
     val parser = new FECmdLineOptionParser

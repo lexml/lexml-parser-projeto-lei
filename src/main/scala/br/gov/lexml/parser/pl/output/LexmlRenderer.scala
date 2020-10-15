@@ -24,6 +24,7 @@ object LexmlRenderer {
     case _: RotuloInciso ⇒ "Inciso"
     case _: RotuloAlinea ⇒ "Alinea"
     case _: RotuloItem ⇒ "Item"
+    case _: RotuloDispositivoGenerico => "DispositivoGenerico"
     case RotuloPena ⇒ "Pena"
     case _: RotuloParte ⇒ "Parte"
     case _: RotuloLivro ⇒ "Livro"
@@ -33,8 +34,7 @@ object LexmlRenderer {
     case _: RotuloSubCapitulo ⇒ "Subcapitulo"
     case _: RotuloSecao ⇒ "Secao"
     case _: RotuloSubSecao ⇒ "Subsecao"
-    case _: RotuloAlteracao ⇒ "Alteracao"
-    case x => throw new RuntimeException("Lexml Xml renderer. Elemento não esperado:" + x)
+    case _: RotuloAlteracao ⇒ "Alteracao"    
   }
 
   def renderNumeral(num: Int): String = {
@@ -92,6 +92,7 @@ object LexmlRenderer {
     case RotuloAlinea(num, comp) ⇒ Left(renderAlphaSeq(num - 1).toLowerCase + renderComp(comp) + ")")
     case RotuloItem(num, comp) ⇒ Left(num.toString + ".")
     case RotuloPena ⇒ Left("Pena –")
+    case d : RotuloDispositivoGenerico ⇒ Left(s"${d.nomeRotulo} –")
     case RotuloParte(Left(rot), _, _) ⇒ throw new RenderException(s"Parte sem número não suportado na renderização: ${rot}")
     case RotuloParte(Right(num), comp,unica) ⇒ Left("PARTE " + unica.unicaMajStr(renderRomano(num).toUpperCase + renderComp(comp)))
     case RotuloLivro(Left(rot), _, _) ⇒ throw new RenderException(s"Livro sem número não suportado na renderização: ${rot}")
@@ -196,30 +197,38 @@ object LexmlRenderer {
   def render(idPai: String): ((List[Node], Int), Block) ⇒ (List[Node], Int) = {
     case ((nl, omissisCount), b) ⇒ {
       val el = b match {
-        case d: Dispositivo ⇒ rename(elemLabel(d.rotulo), addXlinkHref(d.id)(
-          <Dispositivo id={ d.id } textoOmitido={
-            d.conteudo match {
-              case _ if d.rotulo.isAgregador => null
-              case Some(_: Omissis) ⇒ "s"
-              case Some(p: Paragraph) if p.text == "" ⇒ "s"
-              case _ ⇒ null
-            }
-          } abreAspas={ if (d.abreAspas) { "s" } else { null } } fechaAspas={ if (d.fechaAspas) { "s" } else { null } } notaAlteracao={ d.notaAlteracao.map(_.toUpperCase).orNull }>
+        case d: Dispositivo ⇒           
+          val xml = rename(elemLabel(d.rotulo), addXlinkHref(d.id)(
+            <Dispositivo id={ d.id } textoOmitido={
+              d.conteudo match {
+                case _ if d.rotulo.isAgregador => null
+                case Some(_: Omissis) ⇒ "s"
+                case Some(p: Paragraph) if p.text == "" ⇒ "s"
+                case _ ⇒ null
+              }
+            } abreAspas={ if (d.abreAspas) { "s" } else { null } } fechaAspas={ if (d.fechaAspas) { "s" } else { null } } notaAlteracao={ d.notaAlteracao.map(_.toUpperCase).orNull }
+          	nome={d.rotulo match {
+                    case dd : RotuloDispositivoGenerico => dd.nomeRotulo
+                    case _ => null 
+                  }}>
             { d.links.map(l ⇒ Comment("Link: " + l)) }
             { d.titulo.map(tit ⇒ <TituloDispositivo>{ cleanBs(tit.nodes) }</TituloDispositivo>).getOrElse(NodeSeq.Empty) }
-            { renderRotulo(d.rotulo) match { case Some(r) ⇒ <Rotulo>{ r }</Rotulo>; case _ ⇒ NodeSeq.Empty } }
+            { renderRotulo(d.rotulo) match { 
+                case Some(r) ⇒ <Rotulo>{ r }</Rotulo>                
+                case _ ⇒ NodeSeq.Empty 
+                } }
             {
-              d.conteudo.filter(!_.isInstanceOf[Omissis]).map(b ⇒ {
-                val e = b.toNodeSeq.asInstanceOf[Elem]
-                val e2 = e.copy(child = cleanTopBIs(e.child))
-                if (d.rotulo.isAgregador) {
-                  rename("NomeAgrupador", e2)
-                } else { e2 }
-              }).getOrElse(NodeSeq.Empty)
-            }
+                d.conteudo.filter(!_.isInstanceOf[Omissis]).map(b ⇒ {
+                  val e = b.toNodeSeq.asInstanceOf[Elem]
+                  val e2 = e.copy(child = cleanTopBIs(e.child))
+                  if (d.rotulo.isAgregador) {
+                    rename("NomeAgrupador", e2)
+                  } else { e2 }
+                }).getOrElse(NodeSeq.Empty)
+              }
             { renderBlocks(d.subDispositivos, d.id + "_") }
-          </Dispositivo>)).toList
-
+          </Dispositivo>)).toList                   
+          xml
         case a: Alteracao ⇒ {
           addBaseURN(a.baseURN)(
             <Alteracao id={ a.id }>              

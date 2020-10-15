@@ -12,7 +12,7 @@ import scala.xml._
 import br.gov.lexml.parser.pl.errors.ParseProblem.inContext
 
 trait HasId[T] {
-  val path: List[Rotulo]
+  def path: List[Rotulo]
   val overridenId: Option[String] = None
   lazy val id: String = overridenId.getOrElse(HasId.renderId(path))
 
@@ -44,6 +44,7 @@ object HasId {
     case RotuloAlinea(num, comp) ⇒ "ali%d%s" format(num, renderCompId(comp))
     case RotuloItem(num, comp) ⇒ "ite%d%s" format(num, renderCompId(comp))
     case RotuloPena ⇒ "pena"
+    case r : RotuloDispositivoGenerico  => s"dpg${r.num}"
     case RotuloParte(Left(_), _,_) ⇒ throw new IdRenderException("Parte sem número não suportado na renderização")
     case RotuloParte(Right(num), comp,unico) ⇒ "prt%d%s%s" format(num,unico.unicoChar,renderCompId(comp))
     case RotuloLivro(Left(rot), _,_) ⇒ throw new IdRenderException(s"Livro sem número não suportado na renderização: ${rot}")
@@ -822,6 +823,31 @@ object Block extends Block {
     }
 
     blocks.map(createPath(List()))
+  }
+    
+  def numeraDispsGenericos(blocks : List[Block]) : List[Block] = {       
+    val blocks1 = blocks.foldLeft((List[Block](),1)) {      
+      case ((l,n),d : Dispositivo) => {
+        val subDisps = numeraDispsGenericos(d.subDispositivos)
+        val (d1,n1) = d.rotulo match {      
+          case r : RotuloDispositivoGenerico =>             
+            r.num match {
+              case 0 => 
+                val r1 = r.copy(num = n)
+                (d.copy(rotulo = r1, path = r1 :: d.path.tail),n + 1)
+              case nn => (d,math.max(nn+1,n))            
+            }  
+          case _ => (d,n + 1)
+        }
+        (d1.copy(subDispositivos = subDisps) :: l,n1)
+      }
+      case((l,n), a : Alteracao) => {
+        val subDisps = numeraDispsGenericos(a.blocks)
+        (a.copy(blocks = subDisps) :: l, n)
+      }
+      case ((l,n),x) => (x :: l,n)
+    }._1.reverse  
+    blocks1
   }
 
   def reconheceOmissis(blocks: List[Block]): List[Block] = blocks.mapConserve(_.mapBlock(_.recognizeOmissis))

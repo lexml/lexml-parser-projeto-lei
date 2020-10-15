@@ -11,11 +11,11 @@ sealed abstract class Rotulo extends AnyRef with Ordered[Rotulo] {
   val isAgregador: Boolean
   val compBase: Option[List[Int]]
   val proposicao: String
-  val proposicaoEm : String
+  val proposicaoEm : String 
 
   def subRotulo(n: Int): Option[Rotulo] = None
 
-  final def compare(r: Rotulo) =  {
+  final def compare(r: Rotulo) =  {      
       val ord = implicitly[Ordering[Iterable[Int]]]
       ord.compare((nivel :: compBase.getOrElse(List())).to[Iterable],
         (r.nivel :: r.compBase.getOrElse(List())).to[Iterable]
@@ -116,7 +116,7 @@ object niveis {
   def nivelSubNivelValidoTrans(r : Rotulo, sr : Rotulo) = niveisSubNiveisTrans.get(r.nivel).map(s => s.contains(sr.nivel)).getOrElse(false)
 }
 
-trait WithNumComp extends Rotulo {
+sealed trait WithNumComp extends Rotulo {
   val num : Int
   val comp : Option[Int]
   override def canBeFirst : Boolean = num == 1 && comp.isEmpty 
@@ -170,7 +170,7 @@ case class RotuloParagrafo(num: Option[Int] = None, comp: Option[Int] = None, un
   override def canBeFirst = num.isEmpty && comp.isEmpty
 }
 
-trait HasRegularContinuity[T <: Rotulo] extends Rotulo with WithNumComp {
+sealed trait HasRegularContinuity[T <: Rotulo] extends Rotulo with WithNumComp {
   val num: Int
   val comp: Option[Int]
   override def consecutivoContinuo(r: Rotulo) = r match {
@@ -184,7 +184,7 @@ trait HasRegularContinuity[T <: Rotulo] extends Rotulo with WithNumComp {
   }
 }
 
-trait NoMatterContinuity extends Rotulo {
+sealed trait NoMatterContinuity extends Rotulo {
   override def consecutivoContinuo(r: Rotulo) = true
 }
 
@@ -219,7 +219,7 @@ case class RotuloItem(num: Int, comp: Option[Int] = None) extends Rotulo with Ro
   val proposicaoEm = "no"
 }
 
-case object RotuloPena extends Rotulo with RotuloDispositivo {
+case object RotuloPena extends Rotulo with RotuloDispositivo  {
   val nivel = niveis.pena
   override lazy val toNodeSeq = <RotuloPena/>
   val elemLabel = "Pena"
@@ -229,7 +229,21 @@ case object RotuloPena extends Rotulo with RotuloDispositivo {
   override def canBeFirst = true
 }
 
-trait WithEitherNumComp extends Rotulo {
+case class RotuloDispositivoGenerico(
+    nomeRotulo : String,
+    num : Int = 0,    
+    nivel : Int = niveis.pena,    
+    proposicao : String = "da",
+    proposicaoEm : String = "na",
+    override val canBeFirst : Boolean = true) extends Rotulo with RotuloDispositivo with HasRegularContinuity[RotuloDispositivoGenerico] {  
+  override lazy val toNodeSeq = <RotuloGenerico nome={nomeRotulo} nivel={nivel.toString}/>
+  val elemLabel = "DispositivoGenerico"
+  val compBase = Some(List(num))
+  val comp = None
+}
+
+
+sealed trait WithEitherNumComp extends Rotulo {
   val num : Either[String,Int]
   val comp : Option[Int]
   override def canBeFirst = (num,comp) match {

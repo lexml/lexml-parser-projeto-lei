@@ -29,7 +29,8 @@ object rotuloParser {
 	
 	lazy val tipos = Seq(
 		    "artigo","paragrafo","inciso","alinea",
-		    "item", "pena", "parte", "livro",
+		    "item", "pena", "penalidade", "infracao",
+		    "medida administrativa", "parte", "livro",
 		    "agregador","algumRotulo", "inteiro", 
 		    "complemento", "ordinalExtenso", "numeroComposto", 
 		    "simbOrdMasc", "simbOrdFem", "ordinalOuNatural", 
@@ -119,6 +120,15 @@ object rotuloParser {
 		    ) ^^ RotuloItem
 
 		lazy val pena : Parser[Rotulo] = "pena -" ^^^ RotuloPena
+		
+		lazy val dispositivoGenerico : Parser[Rotulo] = 
+		  (("penalidade" | "infracao" | "medida administrativa" ) <~ rep1(whiteSpace) <~ "-") ^^ {
+		  case "penalidade" => RotuloDispositivoGenerico( nomeRotulo = "Penalidade")
+		  case "infracao" => RotuloDispositivoGenerico( nomeRotulo = "Infração")
+		  case "medida administrativa" => RotuloDispositivoGenerico( nomeRotulo = "Medida Administrativa")
+		  case x => throw new RuntimeException(
+		      s"Valor não esperado em parser para rótulo de dispositivo genérico: $x")  
+		}
 
 		lazy val parte : Parser[RotuloParte] = {
 			lazy val rotTexto : Parser[String] = ("parte " ~> ("\\w+"r) ) | ("p a r t e" ~> rep(' ' ~> letterOrDigit) ^^ mkString)
@@ -149,7 +159,7 @@ object rotuloParser {
 			  { case ~(~(t,(n,v)),c) => t (n,c,v) }
 		}
 
-		lazy val algumRotulo : Parser[Rotulo] = ( artigo | paragrafo | inciso | alinea | item | pena | parte | livro | agregador ) <~ " *-? *".r
+		lazy val algumRotulo : Parser[Rotulo] = ( artigo | paragrafo | inciso | alinea | item | pena | dispositivoGenerico | parte | livro | agregador ) <~ " *-? *".r
 
 		def parserPorTipo(tipo : String) : Parser[Any] = tipo match {
 			case "artigo" => artigo
@@ -158,6 +168,9 @@ object rotuloParser {
 			case "alinea" => alinea
 			case "item" => item
 			case "pena" => pena
+			case "penalidade" => dispositivoGenerico
+			case "infracao" => dispositivoGenerico
+			case "medida administrativa" => dispositivoGenerico
 			case "parte" => parte
 			case "livro" => livro			
 			case "agregador" => agregador

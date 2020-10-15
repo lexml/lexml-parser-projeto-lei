@@ -308,14 +308,15 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
     //printArticulacao(articulacao10,10)
     val articulacao11 = Block.identificaPaths(articulacao10)
     //printArticulacao(articulacao11,11)
+    val articulacao11_1 = Block.numeraDispsGenericos(articulacao11)
     if (useLinker) {
-      val articulacao12 = reconheceLinks(articulacao11, urnContexto)
+      val articulacao12 = reconheceLinks(articulacao11_1, urnContexto)
       //printArticulacao(articulacao12,12)
       val articulacao13 = Linker.paraCadaAlteracao(articulacao12)
       //printArticulacao(articulacao13,13)
       articulacao13
     } else {
-      articulacao11
+      articulacao11_1
     }
   }
   def fromBlocks(metadado: Metadado, blocks: List[Block]): (Option[ProjetoLei], List[ParseProblem]) = {
