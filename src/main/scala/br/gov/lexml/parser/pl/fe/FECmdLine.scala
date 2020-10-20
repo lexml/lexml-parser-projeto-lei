@@ -38,6 +38,7 @@ case object ST_Stdin extends SourceType {
   lazy val toByteArray = IOUtils.toByteArray(System.in)
 }
 
+
 case class ST_File(f : File) extends SourceType {
   lazy val toByteArray = FileUtils.readFileToByteArray(f)
 }
@@ -135,7 +136,7 @@ class FECmdLineOptionParser extends scopt.OptionParser[CmdLineOpts]("parser") {
     }
     
     def stringToRegexList(txt : String) =
-      txt.split('%').to[List] match {
+      txt.split('%').to(List) match {
         case Nil => None
         case l => Some(l.map(_.r))      
       }
@@ -381,28 +382,26 @@ object FECmdLine {
     import org.apache.logging.log4j.core.config._
     import org.apache.logging.log4j.core.config.xml._
     import java.io._
-    val cfgStream : Option[InputStream] = 
-        log4jConfigFile.flatMap(f => 
-                      Some(new BufferedInputStream(new FileInputStream(f))))
-                      .orElse(Option(getClass.getResourceAsStream("fecmdline.log4j.xml")))
-    val cfgSource = cfgStream.map(s => new ConfigurationSource(s))
+
+    val cfgStream : InputStream = log4jConfigFile match {
+      case None => getClass.getClassLoader.getResourceAsStream("fecmdline.log4j.xml")
+      case Some(is) => new BufferedInputStream(new FileInputStream(is))
+    }
+    val cfgSource = new ConfigurationSource(cfgStream)
     val loggerContext = new LoggerContext("")    
-    val conf = cfgSource.map(x => new XmlConfiguration(loggerContext, x))
-          .getOrElse(new NullConfiguration())
-    System.err.println("Logging conf = " + conf)
-    Configurator.initialize(conf)    
-    val l = org.apache.logging.log4j.core.LoggerContext.getContext.getLogger("br.gov.lexml.parser.pl")
-    l.setLevel(org.apache.logging.log4j.Level.DEBUG)
-    l.addAppender(org.apache.logging.log4j.core.appender.ConsoleAppender.createDefaultAppenderForLayout(org.apache.logging.log4j.core.layout.MessageLayout.createLayout()))
-    
-    println("Logging initialized")
-    l.warn("Logging initialized")
+    val conf = new XmlConfiguration(loggerContext, cfgSource)
+    println("Calling Configurator")
+    Configurator.initialize(conf)
+    println("Configurator.initialize finished")
   }
   def main(args : Array[String]) = {
+    println("Setting up logging")
+    setupLogging(None)
+    println("Logging set up")
     val parser = new FECmdLineOptionParser
     parser.parse(args,CmdLineOpts()) foreach { opts =>      
-      val verbose = opts.verbose    
-      setupLogging(opts.log4jConfigFile)
+      val verbose = opts.verbose
+      //setupLogging(opts.log4jConfigFile)
       
       opts.cmd match {
         case cmd : CmdParse =>      
@@ -456,15 +455,16 @@ object FECmdLine {
               case Some(path) =>
                 val path1 = path.getCanonicalPath()
                 if(verbose) {
-                  println(s"linker: using linkertool executable at ${path1}")
+                  println(s"linker: using linkertool executable at $path1")
                 }
                 sys.props += ("lexml.linkertool" -> path1)
             }
             process(profile,md,cmd.input,cmd.mimeType,cmd.output,cmd.linkerPath,verbose,cmd.errorOutput)
-          }        
+            Linker.system.terminate()
+          }
         case CmdHelp => parser.showUsageAsError()
         case CmdDumpProfiles =>      
-          val l = DocumentProfileRegister.profiles.to[IndexedSeq].sortBy(_._1) foreach {
+          DocumentProfileRegister.profiles.to(IndexedSeq).sortBy(_._1) foreach {
             case (_,p) => dumpProfile(p)
           }  
         case cmd : CmdParseArticulacao => processArticulacao(cmd,verbose)
@@ -516,8 +516,8 @@ object FECmdLine {
       xhtml =>
         val blocks = Block fromNodes xhtml        
         val (mpl1, falhasValidacao) = new ProjetoLeiParser(profile).fromBlocks(md, blocks)
-        Linker.system.shutdown()
-        val (res : Option[Elem],falhasXML : List[ParseProblem]) = (mpl1 match {
+        //Linker.system.terminate().wait() // Porque parar o linker aqui?
+        val (res : Option[Elem],falhasXML : List[ParseProblem]) = mpl1 match {
           case None => (None,List())
           case Some(pl) =>
             try { val (xml,probs) = renderAndValidaXML(pl) ; (Some(xml),probs) } catch {
@@ -525,7 +525,7 @@ object FECmdLine {
               ex.printStackTrace()
               (None,List(ErroNaRenderizacao(ex)))
           }
-        })                                   
+        }
         val falhas = falhasValidacao ++ falhasXML
         
         res foreach {
@@ -545,7 +545,7 @@ object FECmdLine {
     import scala.xml._
     val sourceData = cmd.input.toByteArray
     val sourceElem = XML.load(new ByteArrayInputStream(sourceData))
-    val pars = (sourceElem \ "p").to[List]
+    val pars = (sourceElem \ "p").to(List)
     val blocks = pars collect { case e : Elem => Paragraph(e.child) }    
     val parser = new ProjetoLeiParser(ProjetoDeLeiDoSenadoNoSenado)
     val contexto = cmd.contexto

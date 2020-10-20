@@ -57,7 +57,7 @@ object Entities {
     "ap" -> '≈',
     "ape" -> '≊',
     "apid " -> '≋',
-    "apos " -> ''',
+    "apos " -> '\'',
     "apos" -> '\'',
     "approx" -> '≈',
     "approxeq " -> '≊',

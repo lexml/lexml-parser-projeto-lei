@@ -1,7 +1,6 @@
 package br.gov.lexml.parser.pl
 
 import java.io.File
-import scala.xml.NodeSeq
 import java.security.MessageDigest
 import java.security.DigestInputStream
 import java.util.zip.ZipEntry
@@ -34,9 +33,7 @@ object ParserFrontEnd {
     val xhtmlRes = XHTMLProcessor.pipeline(inRTF2, new AbiwordConverter())
     try { params.inRTF.close() } catch { case _ : Exception ⇒ }
     val xhtml = xhtmlRes match {
-      case Failure ⇒ {
-        throw ParseException(FalhaConversaoPrimaria)
-      }
+      case Failure ⇒ throw ParseException(FalhaConversaoPrimaria)
       case Success(xhtml) ⇒ xhtml
     }
     val blocks = Block fromNodes xhtml    
@@ -73,15 +70,14 @@ class ArticulacaoParser {
   import java.util.{List => JList}  
   import xml.Text
   import br.gov.lexml.parser.pl.profile.ProjetoDeLeiDoSenadoNoSenado
-  def parseJList(l : JList[String]) = {
-    import collection.JavaConversions._
-    parseList(l.toList)
-  }
+  import scala.jdk.javaapi.CollectionConverters.asScala
+  def parseJList(l : JList[String]) =
+    parseList(asScala(l).to(List))
   def parseList(l : List[String]) = {
     val blocks = l.map((x : String) => Paragraph(Seq(Text(x))))
     val parser = new ProjetoLeiParser(ProjetoDeLeiDoSenadoNoSenado)
     val articulacao = parser.parseArticulacao(blocks,false,"")
     LexmlRenderer.renderArticulacao(articulacao).toString
   }
-  def parse(f : File) = parseList(Source.fromFile(f).getLines().toList)
+  def parse(f : File) = parseList(Source.fromFile(f).getLines().to(List))
 }

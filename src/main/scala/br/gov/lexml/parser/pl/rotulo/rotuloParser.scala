@@ -49,7 +49,7 @@ object rotuloParser {
 
 		lazy val hyphenCases = "‐‑‒–—―-－─━–−—" 
 		lazy val hyphenOrSimilar : Parser[Elem] = 
-          hyphenCases.to[Set].map(accept).reduceLeft( (x,y) => x | y)
+          hyphenCases.to(Set).map(accept).reduceLeft( (x,y) => x | y)
 		
 		def romanOrString(s : String) : Either[String,Int] = {
 			lazy val tryroman : Parser[Either[String,Int]] = (numeroRomano <~ eos) ^^ (Right(_))
@@ -226,7 +226,7 @@ object rotuloParser {
 		} else if (args.length == 1) {
 		  (tipos, Seq(args(0)))
 		} else {
-			(Seq(args(0)),args.slice(1,args.length).to[Seq])
+			(Seq(args(0)),args.slice(1,args.length).to(Seq))
 		}
 	  val inputs = inputs1.map(normalizer.normalize)
 	  println(s"tps = ${tps}, inputs={$inputs}")

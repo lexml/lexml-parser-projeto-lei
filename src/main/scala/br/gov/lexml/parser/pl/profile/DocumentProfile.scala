@@ -98,14 +98,16 @@ trait TipoNormaProfile {
   def epigrafeTail : String = ""
   val isProjetoNorma : Boolean = false
     
-  import org.clapper.scalasti._
-    
+  //import org.clapper.scalasti._
+  
+  import org.stringtemplate.v4._
+  
   def epigrafeTemplateCode : String = """<epigrafeHead> <epigrafeRepr> <epigrafeTail>"""
   def epigrafeSemIdTemplateCode : String = """<epigrafeHead> Nº LEXML_EPIGRAFE_NUMERO de LEXML_EPIGRAFE_DATA <epigrafeTail>"""
   
-  final def epigrafeTemplate = ST(epigrafeTemplateCode)
+  final def epigrafeTemplate = new ST(epigrafeTemplateCode)
 
-  final def epigrafeSemIdTemplate = ST(epigrafeSemIdTemplateCode)
+  final def epigrafeSemIdTemplate = new ST(epigrafeSemIdTemplateCode)
 
   final def tipoNormaProfileAsMap : Map[String,Any] = Map(
       "urnFragTipoNorma" -> urnFragTipoNorma,
@@ -336,7 +338,7 @@ object DocumentProfileRegister {
   }   
   
   def dumpProfiles(pw : java.io.PrintWriter = new java.io.PrintWriter(System.err)) {
-      profiles.to[Vector].sortBy { case (x,y) => x }.foreach { 
+      profiles.to(Vector).sortBy { case (x,y) => x }.foreach {
       case ((loc,aut,tn),prof) =>
         System.err.println(s"localidade: ${loc}, autoridade=${aut}, tipoNorma: ${tn}")
         System.err.println(prof)

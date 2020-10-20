@@ -11,11 +11,11 @@
 		</Console>		
 	</Appenders>
 	<Loggers>
-		<Logger name="br.gov.lexml.parser.pl" level="INFO" additivity="false">			
+		<Logger name="br.gov.lexml.parser.pl" level="WARN" additivity="false">
             <AppenderRef ref="ConsoleErr"/>            	
 		</Logger> 
 		<Logger name="br.gov.lexml.schema.validator.Validador$MyLSResourceResolver" level="OFF"/>		
-		<Root level="info">        
+		<Root level="WARN">
             <AppenderRef ref="ConsoleErr">
             	<ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
             </AppenderRef>

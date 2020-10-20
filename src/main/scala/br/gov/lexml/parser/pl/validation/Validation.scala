@@ -12,13 +12,11 @@ import br.gov.lexml.parser.pl.rotulo._
 import scala.xml.NodeSeq
 import scala.util.matching.Regex
 import br.gov.lexml.parser.pl.util.ClassificadoresRegex
-import scala.collection.generic._
 import br.gov.lexml.parser.pl.block.OL
 import scala.xml.Node
 import br.gov.lexml.parser.pl.block.Paragraph
 import br.gov.lexml.parser.pl.block.Omissis
 import br.gov.lexml.parser.pl.block.Table
-import br.gov.lexml.parser.pl.errors.ParseProblem.inContext
 
 final case class Path(rl: List[Rotulo]) extends Ordered[Path] {
   import LexmlRenderer.{ renderRotulo2 ⇒ render }
@@ -38,13 +36,13 @@ final case class Path(rl: List[Rotulo]) extends Ordered[Path] {
     mkTexto1(rl1)
   }
 
-  lazy val txt = { mkTexto(rl) }
+  lazy val txt = mkTexto(rl)
 
-  override def toString(): String = txt
+  override def toString: String = txt
 
   def +(r: Rotulo) = Path(rl :+ r)
 
-  def compare(p: Path) = {
+  def compare(p: Path): Int = {
     def comp(l1: Seq[Rotulo], l2: Seq[Rotulo]): Int = (l1, l2) match {
       case (a :: al, b :: bl) ⇒ a.compare(b) match {
         case 0 ⇒ comp(al, bl)
@@ -70,8 +68,6 @@ trait ToContext[-T] {
 }
 
 class Validation {
-
-  import LexmlRenderer.{renderRotulo2 ⇒ render}
 
   type ValidationRule[P] = PartialFunction[P, Set[ParseProblem]]
 
@@ -101,7 +97,7 @@ class Validation {
 
   def withContext(p: Set[ParseProblem]): Set[ParseProblem] = p.map(withContext)
 
-  val tcAny: ToContext[Any] = new ToContext[Any] {
+  private val tcAny: ToContext[Any] = new ToContext[Any] {
     def toContext(t: Any) = {
       Seq()
     }
@@ -272,20 +268,6 @@ class Validation {
     }
     r
   }
-
-  /*
-   * Aplica a regra dada de validação de caminhos para todo caminho (id) encontrado no documento
-   */
-  /*def paraTodoCaminho(vl: ValidationRule[Path]*): ValidationRule[List[Block]] = {
-    case bl: List[Block] ⇒ {
-      def collectPaths: PartialFunction[Block, List[Path]] = {
-        case (d: Dispositivo) ⇒ Path(d.path) :: d.subDispositivos.collect(collectPaths).flatten
-        case (a: Alteracao) ⇒ Path(a.path) :: a.blocks.collect(collectPaths).flatten
-      }
-      val r1: List[Set[ParseProblem]] = bl.collect(collectPaths).flatten.collect(verificaTodos(vl: _*))
-      r1.foldLeft(Set.empty: Set[ParseProblem]) { case (x, y) ⇒ x union y }
-    }
-  }*/
 
   def toMultiSet[T](i: Iterable[T]): Map[T, Int] = {
     i.foldLeft(Map[T, Int]()) {
@@ -469,7 +451,7 @@ class Validation {
         Set(withContext(OmissisForaAlteracao(Some(Path(d.path).txt))))
       }
     case (c, _: Omissis) =>
-      in(c.to[Seq]: _*) {
+      in(c.to(Seq): _*) {
         Set(withContext(OmissisForaAlteracao()))
       }
     case _ => Set()
@@ -500,13 +482,10 @@ class Validation {
     regras.lift(bl).getOrElse(es)
 
   def validaComSchema(ns: NodeSeq): Set[ParseProblem] = {
-    import _root_.org.w3c.dom.ls._
-    import _root_.javax.xml.transform.stream._
     import _root_.javax.xml.stream._
     import scala.xml._
     import _root_.br.gov.lexml.schema.validator.Validador
     import _root_.br.gov.lexml.schema.validator.TipoSchema
-    import scala.collection.JavaConversions
 
     val validador = Validador.getInstance
 
@@ -532,10 +511,10 @@ class Validation {
         flatMap(unchain(_))
 
     def validate(xml: String): Set[ParseProblem] = {
-      import JavaConversions._
       import TipoSchema._
       val res = validador.valide(RIGIDO, xml)
-      (res.errosFatais ++ res.erros).map(ErroValidacaoSchema(_)).toSet
+      import scala.jdk.javaapi.CollectionConverters._
+      (asScala(res.errosFatais) ++ asScala(res.erros)).map(ErroValidacaoSchema(_)).toSet
     }
     import scala.xml.Utility.serialize
     validate(serialize(ns.head, minimizeTags = MinimizeMode.Always).toString)

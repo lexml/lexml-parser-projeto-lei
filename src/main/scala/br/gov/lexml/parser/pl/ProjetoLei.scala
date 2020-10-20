@@ -115,7 +115,7 @@ case class Marcadores(profile: DocumentProfile,
     Justificacao -> profile.regexJustificativa,
     Anexo -> profile.regexAnexos,
     Legislacao -> profile.regexLegislacaoCitada,
-    Assinatura -> profile.regexAssinatura) mapValues matchesOneOf
+    Assinatura -> profile.regexAssinatura).view.mapValues(matchesOneOf).toMap
 
   def reconheceMarcador(b: Block): Option[Marcador] =
     reMarcadores.toList collectFirst { case (n, f) if f(b) ⇒ n }
@@ -383,7 +383,7 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
         new Validation().validaEstrutura(articulacao)
       } catch {
 	      case e: ParseException ⇒ {
-	        e.errors.to[Set]
+	        e.errors.to(Set)
 	      }
 	      case e: Exception ⇒ {
 	        Set(ErroSistema(e))

@@ -18,11 +18,13 @@ class LinkerActor extends Actor {
   //self.dispatcher = Dispatchers.newThreadBasedDispatcher(self)
   //val id = "LinkerActor"
 
-  import Actor._
-    
   val skipLinker = sys.props.get("lexml.skiplinker").map(_.toBoolean).getOrElse(false)
+
+  log.info(s"skipLinker: $skipLinker")
+
   val cmdPath = new File(sys.props.getOrElse("lexml.linkertool","/usr/local/bin/linkertool"))
 
+  log.info(s"cmdPath: $cmdPath")
   
   final class LinkerProcess() {
 
@@ -39,6 +41,7 @@ class LinkerActor extends Actor {
   override def preStart() {
     if(!skipLinker && cmdPath.canExecute()) {
       oprocess = Some(new LinkerProcess())
+      log.info("oprocess created.")
     }    
   }
   override def postStop() {
@@ -51,35 +54,41 @@ class LinkerActor extends Actor {
 
   val ws = """\p{javaWhitespace}"""r
   def receive = {
-    case (urnContexto : String, mmsg: Seq[_]) => {           
+    case (urnContexto : String, mmsg: Seq[_]) =>
+      log.debug(s"receive: urnContexto = $urnContexto, mmsg=$mmsg")
       val msg = mmsg.collect { case x : Node => x }
-      oprocess match { 
-        case Some(p) =>      
+      oprocess match {
+        case Some(p) =>
+          log.debug("receive: oprocess is defined")
           val msgTxt = (NodeSeq fromSeq msg).toString
           p.writer.println(urnContexto)
           p.writer.println(msgTxt)
           p.writer.println("###LEXML-END###")
           p.writer.flush()
+          log.debug("receive: output to linker process sent")
           val res = {
             val b = new StringBuilder()
-            var line = p.reader.readLine()  
+            var line = p.reader.readLine()
             while (line != null && line != "###LEXML-END###") {
               b ++= line
-              b ++= System.lineSeparator()     
+              b ++= System.lineSeparator()
               line = p.reader.readLine()
-            }            
+            }
             if(line == null) {
               throw new LinkerActorException("Connection to linker process down!")
             }
             b.toString()
-          }          
+          }
+          log.debug(s"receive: result from linker: $res")
           val r = XhtmlParser(Source.fromString("<result>" + res + "</result>")).head.asInstanceOf[Elem]
+          log.debug(s"parsed result: $r")
           val links: Set[String] = (r \\ "span").collect({ case (e: Elem) => e.attributes.find(_.prefixedKey == "xlink:href").map(_.value.text) }).flatten.toSet
-          sender ! ((r.child.toList, links))        
-        case None => 
+          log.debug(s"links found: $links")
+          sender ! ((r.child.toList, links))
+        case None =>
+          log.warning("receive: no oprocess found! returning input with empty set of links!")
           sender ! ((msg,Set()))
       }
-    } 
     case r => 
       log.warning("received unexpected message: {} ", r)
   } 

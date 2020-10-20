@@ -271,9 +271,7 @@ object XHTMLProcessor extends Logging {
     ("text/plain", ("txt", (source: Array[Byte], _ : Converter) ⇒ {
       val text = fixXHTML(source)
 
-      import scala.collection.JavaConversions._
-      val lines = IOUtils.readLines(new InputStreamReader(
-          new ByteArrayInputStream(text),"utf-8")).toList
+      val lines = scala.io.Source.fromBytes(text,"utf-8").getLines().to(List)
       def toPars(l: List[String], r: List[String] = Nil, s: List[String] = Nil): List[String] = l match {
         case Nil ⇒ s match { case Nil ⇒ r; case _ ⇒ s.mkString("", " ", "") :: r }
         case (x :: xs) if x.trim.length == 0 ⇒ toPars(xs, s.mkString("", " ", "") :: r)
@@ -305,7 +303,7 @@ object XHTMLProcessor extends Logging {
   def selectBaseElems(root: Elem): List[Elem] = {
     val body = (root \\ "body").head.asInstanceOf[Elem]
    
-    val belems = root.child.to[List].dropWhile ((n : Node) => n match {
+    val belems = root.child.to(List).dropWhile ((n : Node) => n match {
       case e : Elem => e.label != "body" 
       case _ => true 
     })

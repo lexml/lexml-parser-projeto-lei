@@ -17,8 +17,8 @@ sealed abstract class Rotulo extends AnyRef with Ordered[Rotulo] {
 
   final def compare(r: Rotulo) =  {      
       val ord = implicitly[Ordering[Iterable[Int]]]
-      ord.compare((nivel :: compBase.getOrElse(List())).to[Iterable],
-        (r.nivel :: r.compBase.getOrElse(List())).to[Iterable]
+      ord.compare((nivel :: compBase.getOrElse(List())).to(Iterable),
+        (r.nivel :: r.compBase.getOrElse(List())).to(Iterable)
       )
   }
 

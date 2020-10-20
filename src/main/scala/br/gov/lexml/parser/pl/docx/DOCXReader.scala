@@ -28,7 +28,7 @@ object DOCXReader {
     }
   }
   
-  val emptyStyle = TextStyle()
+  val emptyStyle: TextStyle = TextStyle()
 
   abstract sealed class Segment {
     import scala.xml._
@@ -37,7 +37,7 @@ object DOCXReader {
   
   final case class TextSegment(style : TextStyle, text : String) extends Segment {
     import scala.xml._
-	override def toXML = style.wrap(Text(text))
+	  override def toXML: Seq[Node] = style.wrap(Text(text))
   }
   
   case object Space extends Segment {
