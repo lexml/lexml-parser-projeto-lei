@@ -1,7 +1,0 @@
-repository = ${prefix.repository}
-path = ${prefix.path}
-revision = ${prefix.revision}
-mixedRevisions = ${prefix.mixedRevisions}
-committedRevision = ${prefix.committedRevision}
-status = ${prefix.status}
-specialStatus = ${prefix.specialStatus}
