@@ -25,3 +25,4 @@ project/plugins/project/
 
 #VIM
 *.swp
+/project/
