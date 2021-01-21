@@ -338,7 +338,7 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
       
       val ementa = if (
             ementa2.isEmpty ||
-            !(ementa2.filter(isEmptyPar).isEmpty) ||
+            !ementa2.filter(isEmptyPar).isEmpty ||
             !ementa2.filter(!isParagraph(_)).isEmpty) {
               if (profile.ementaAusente) { None } else { 
                 throw ParseException(EmentaAusente)

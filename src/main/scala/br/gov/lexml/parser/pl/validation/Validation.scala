@@ -326,8 +326,8 @@ class Validation {
         }
       }
     case (Path(rl@(x :: y :: xs)), bl) 
-      if !xs.exists(_.isInstanceOf[RotuloAlteracao]) && !niveis.nivelSubNivelValido(y, x) => {      
-        in(bl) {
+      if !xs.exists(_.isInstanceOf[RotuloAlteracao]) && !niveis.nivelSubNivelValido(y, x) => {
+      in(bl) {
           Set(withContext(PosicaoInvalida(Path(rl).txt).in()))
         }
       }

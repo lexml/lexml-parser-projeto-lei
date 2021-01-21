@@ -112,7 +112,14 @@ object niveis {
     niveisSubNiveis.keys.foreach(visit)
     m
   }
-  def nivelSubNivelValido(r : Rotulo, sr : Rotulo) = niveisSubNiveis.get(r.nivel).map(s => s.contains(sr.nivel)).getOrElse(false)
+  def nivelSubNivelValido(r : Rotulo, sr : Rotulo) = {
+    (niveisSubNiveis
+      .get(r.nivel)
+      .map(s => s.contains(sr.nivel))
+      .getOrElse(false)
+       || sr.isInstanceOf[RotuloAlteracao])
+  }
+
   def nivelSubNivelValidoTrans(r : Rotulo, sr : Rotulo) = niveisSubNiveisTrans.get(r.nivel).map(s => s.contains(sr.nivel)).getOrElse(false)
 }
 
