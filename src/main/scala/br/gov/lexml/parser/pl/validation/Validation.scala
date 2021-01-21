@@ -243,7 +243,9 @@ class Validation {
   }
 
   val noTopoSoDispositivos: ValidationRule[(Option[Block], Block)] = {
-    case (None, p: Paragraph) => Set(ElementoArticulacaoNaoReconhecido("", p.text))
+    case (None, p: Paragraph) => {
+      Set(ElementoArticulacaoNaoReconhecido("", "Text Paragraph: " + p.text))
+    }
   }
 
   def paraTodosOsCaminhos(vl: ValidationRule[List[(Path, Block)]]*) = {
@@ -292,7 +294,8 @@ class Validation {
       a.blocks collect {
         case p: Paragraph =>
           in(p) {
-            withContext(ElementoArticulacaoNaoReconhecido(Path(a.path).txt, p.text))
+            withContext(ElementoArticulacaoNaoReconhecido(Path(a.path).txt,
+              "Text Paragraph: " + p.text))
           }
       } toSet
     }
@@ -319,18 +322,29 @@ class Validation {
   }
 
   val niveisSubNiveisValidos: ValidationRule[(Path, Block)] = {
-    case (Path(rl@(x :: y :: xs)), bl) 
-      if xs.exists(_.isInstanceOf[RotuloAlteracao]) && !niveis.nivelSubNivelValidoTrans(y, x) => {       
-        in(bl) {
-          Set(withContext(PosicaoInvalida(Path(rl).txt).in()))
-        }
-      }
-    case (Path(rl@(x :: y :: xs)), bl) 
-      if !xs.exists(_.isInstanceOf[RotuloAlteracao]) && !niveis.nivelSubNivelValido(y, x) => {
+    case (Path(rl@(x :: xs)), bl)
+      if x.isInstanceOf[RotuloAlteracao] &&
+        xs.exists(_.isInstanceOf[RotuloAlteracao]) => in(bl) {
+      //System.err.println(s"niveisSubNiveisValidos (caso 0): x=$x, rl=$rl")
+      Set(withContext(PosicaoInvalida(Path(rl).txt).in()))
+    }
+    case (Path(rl@(x :: y :: xs)), bl)
+      if xs.exists(_.isInstanceOf[RotuloAlteracao]) && !niveis.nivelSubNivelValidoTrans(y, x) => {
       in(bl) {
-          Set(withContext(PosicaoInvalida(Path(rl).txt).in()))
-        }
+        //System.err.println(s"niveisSubNiveisValidos (caso 1): x=$x, y=$y, xs=$xs, rl=$rl")
+        Set(withContext(PosicaoInvalida(Path(rl).txt).in()))
       }
+    }
+    case (Path(rl@(x :: y :: xs)), bl)
+      if !xs.exists(_.isInstanceOf[RotuloAlteracao])
+        && !x.isInstanceOf[RotuloAlteracao]
+        && !y.isInstanceOf[RotuloAlteracao]
+        && !niveis.nivelSubNivelValido(y, x) => {
+      in(bl) {
+        //System.err.println(s"niveisSubNiveisValidos (caso 2): x=$x, y=$y, xs=$xs, rl=$rl")
+        Set(withContext(PosicaoInvalida(Path(rl).txt).in()))
+      }
+    }
   }
 
   def alineasSoDebaixoDeIncisos: ValidationRule[(Path, Block)] = {
@@ -348,7 +362,7 @@ class Validation {
 
     {
       case (Path(rl), bl) if check2(rl) ⇒
-        println(s"alineasSoDebaixoDeIncisos (2) rl=${rl}, bl=${bl}")
+        //println(s"alineasSoDebaixoDeIncisos (2) rl=${rl}, bl=${bl}")
         in(bl) {
           Set(withContext(PosicaoInvalida(Path(rl).txt)))
         }
@@ -419,10 +433,6 @@ class Validation {
         }
         l2 = todosOsPares(rl).collect {
           case (r1, r2) if !ordemInvertida(r1, r2) && !r1.consecutivoContinuo(r2) =>
-            println("r1 = " + r1)
-            println("r2 = " + r2)
-            println(s"ordemInvertida(r1,r2) = ${ordemInvertida(r1,r2)}")
-            println(s"r1.consecutivoContinuo(r2) = ${r1.consecutivoContinuo(r2)}")
             DispositivosDescontinuos((p + r1).txt, (p + r2).txt)
         }
         e <- l1 ++ l2
@@ -434,13 +444,15 @@ class Validation {
   }
 
   val naoDevemHaverParagrafosNoMeio: ValidationRule[Dispositivo] = {
-    case d: Dispositivo if d.subDispositivos.exists(x => x.isInstanceOf[Paragraph] || x.isInstanceOf[OL]) =>
+    case d: Dispositivo
+      if d.subDispositivos.exists(x => x.isInstanceOf[Paragraph] || x.isInstanceOf[OL]) => {
       Set(ElementoArticulacaoNaoReconhecido(
         Path(d.path).txt,
         (d.subDispositivos collect {
-          case p: Paragraph => p.text
-          case o: OL => o.toNodeSeq.text
+          case p: Paragraph => "Text Paragraph: " + p.text
+          case o: OL => "OL: " + o.toNodeSeq.text
         }): _*))
+    }
   }
 
   val omissisSoEmAlteracao: ValidationRule[(Option[Block], Block)] = {
