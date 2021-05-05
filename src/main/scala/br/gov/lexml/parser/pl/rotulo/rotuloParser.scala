@@ -77,7 +77,10 @@ object rotuloParser {
 			  | "oitav" ^^^ (8,false) | "non" ^^^ (9,false) ) <~ g.select("o","a")
 		lazy val numeroComposto : Parser[Int] =
 			("\\d{1,3}+((\\.\\d\\d\\d)+|\\d*)"r) ^^ ((s : String) => { Integer.parseInt(s.toList.filter(c => c != '.').mkString("")) })
-		def simbOrdinal(g : Genero) : Parser[Unit] = g.select("[oº°˚]"r,"[aª]"r) ~> not(letter | digit) ~> success(())
+		def simbOrdinal(g : Genero) : Parser[Unit] =
+			(( "o" | "a") ~> not(letter | digit) ~> success(())) |
+			(g.select("[º°˚]"r,"[ª]"r) ~> success(()))
+
 		def ordinalOuNatural(g : Genero) : Parser[(Int,Boolean)] = ordinalExtenso(g) | ((numeroComposto <~ opt(simbOrdinal(g))) ^^ ((_ : Int,false)))
 		def ordinal(g : Genero) : Parser[(Int,Boolean)] = ordinalExtenso(g) | ((numeroComposto <~ simbOrdinal(g))) ^^ ((_ : Int,false))
 
