@@ -660,6 +660,23 @@ object Block extends Block {
     onAlteracaoL(bl)
   }
 
+  def numeraDispositivosGenericos(bl : List[Block]) : List[Block] = {
+    var pos = 0
+    def numera(b: Block): List[Block] = {
+      b.flatMapChildren(numera) match {
+        case d: Dispositivo => d.rotulo match {
+          case r: RotuloDispositivoGenerico =>
+            val d1 = d.copy(rotulo = r.copy(num = pos))
+            pos = pos + 1
+            List(d1)
+          case _ => List(d)
+        }
+        case _ => List(b)
+      }
+    }
+    bl.flatMap(numera)
+  }
+
   def limpaParagrafosVazios(bl: List[Block]): List[Block] = {
     def limpa(b: Block): Option[Block] = b match {
       case d: Dispositivo => Some(d copy (subDispositivos = limpaParagrafosVazios(d.subDispositivos)))

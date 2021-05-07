@@ -125,10 +125,11 @@ object rotuloParser {
 		lazy val pena : Parser[Rotulo] = "pena -" ^^^ RotuloPena
 		
 		lazy val dispositivoGenerico : Parser[Rotulo] = 
-		  (("penalidade" | "infracao" | "medida administrativa" ) <~ rep1(whiteSpace) <~ "-") ^^ {
+		  (("penalidade" | "infracao" | "medida administrativa" | "multa") <~ rep1(whiteSpace) <~ "-") ^^ {
 		  case "penalidade" => RotuloDispositivoGenerico( nomeRotulo = "Penalidade")
 		  case "infracao" => RotuloDispositivoGenerico( nomeRotulo = "Infração")
 		  case "medida administrativa" => RotuloDispositivoGenerico( nomeRotulo = "Medida Administrativa")
+			case "multa" => RotuloDispositivoGenerico( nomeRotulo = "Multa")
 		  case x => throw new RuntimeException(
 		      s"Valor não esperado em parser para rótulo de dispositivo genérico: $x")  
 		}
