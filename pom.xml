@@ -5,6 +5,10 @@
     <artifactId>lexml-parser-projeto-lei</artifactId>
     <version>1.13.1-SNAPSHOT</version>
 
+    <name>LexML Brazil Legal Document Parser</name>
+    <description>Brazillian legal document parsing library.</description>
+    <url>https://github.com/lexml/lexml-parser-projeto-lei</url>
+
     <licenses>
 	    <license>
 		    <name>GPLv2</name>
