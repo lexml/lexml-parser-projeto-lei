@@ -3,7 +3,7 @@
 
     <groupId>br.gov.lexml.parser.pl</groupId>
     <artifactId>lexml-parser-projeto-lei</artifactId>
-    <version>1.13.0-SNAPSHOT</version>
+    <version>1.13.0</version>
 
     <licenses>
 	    <license>
@@ -43,7 +43,7 @@
         <url>https://github.com/lexml/lexml-parser-projeto-lei</url>
         <developerConnection>scm:git:https://github.com/lexml/lexml-parser-projeto-lei.git</developerConnection>
         <connection>scm:git:https://github.com/lexml/lexml-parser-projeto-lei.git</connection>
-        <tag>HEAD</tag>
+        <tag>lexml-parser-projeto-lei-1.13.0</tag>
     </scm>
 
     <!-- <distributionManagement>
