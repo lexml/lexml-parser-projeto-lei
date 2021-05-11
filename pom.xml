@@ -5,6 +5,21 @@
     <artifactId>lexml-parser-projeto-lei</artifactId>
     <version>1.13.0-SNAPSHOT</version>
 
+    <licenses>
+	    <license>
+		    <name>GPLv2</name>
+                    <url>https://www.gnu.org/licenses/old-licenses/gpl-2.0.html</url>
+	    </license>
+    </licenses>
+ 
+    <developers>
+      <developer>
+        <id>jrafael</id>
+        <name>João Nicola</name>
+        <email>jrafael@senado.leg.br</email>
+      </developer>
+    </developers>
+
     <properties>
         <scala.version>2.13</scala.version>
         <scala.lib.version>${scala.version}.2</scala.lib.version>
@@ -31,49 +46,11 @@
         </repository>
     </distributionManagement>
 
-    <repositories>
-        <repository>
-            <id>jcenter</id>
-            <name>jcenter</name>
-            <url>https://jcenter.bintray.com</url>
-        </repository>
-    </repositories>
-
     <build>
         <sourceDirectory>src/main/scala</sourceDirectory>
         <testSourceDirectory>src/test/scala</testSourceDirectory>
 
         <plugins>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
-                <version>2.5.3</version>
-                <configuration>
-                    <detail>true</detail>
-                    <allowTimestampedSnapshots>true</allowTimestampedSnapshots>
-                    <tagNameFormat>@{project.version}</tagNameFormat>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <version>2.8.2</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.0.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
@@ -98,42 +75,6 @@
                     </jvmArgs>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.1.0</version>
-                <configuration>
-                    <archive>
-                        <!-- 		    <index>true</index>
-                                    <manifest>
-                                        <addClasspath>true</addClasspath>
-                                        <mainClass>br.gov.lexml.parser.pl.ParserMain</mainClass>
-                                    </manifest> -->
-                    </archive>
-                </configuration>
-            </plugin>
-            <plugin>
-                <!--groupId>org.dstovall</groupId--> <!-- not available on the central -->
-                <groupId>com.jolira</groupId>
-                <artifactId>onejar-maven-plugin</artifactId>
-                <version>1.4.4</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <configuration>
-                            <mainClass>br.gov.lexml.parser.pl.fe.FECmdLine</mainClass>
-                            <attachToBuild>true</attachToBuild>
-                            <!-- https://code.google.com/p/onejar-maven-plugin/issues/detail?id=8 -->
-                            <!--classifier>onejar</classifier-->
-                            <filename>${project.build.finalName}-onejar.${project.packaging}</filename>
-                            <classifier>one-jar</classifier>
-                        </configuration>
-                        <goals>
-                            <goal>one-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
 
         </plugins>
         <resources>
@@ -145,8 +86,6 @@
     </build>
 
     <dependencies>
-        
-
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-actor_${scala.version}</artifactId>
@@ -243,5 +182,91 @@
         
     </dependencies>
 
+    <profiles>
+      <profile>
+        <id>release</id>
+        <activation>
+          <activeByDefault>false</activeByDefault>
+        </activation>
+        <build>
+          <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
+                <configuration>
+                    <detail>true</detail>
+                    <tagNameFormat>@{project.version}</tagNameFormat>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>2.8.2</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+              </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>empty-javadoc-jar</id>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>jar</goal>
+                    </goals>
+                    <configuration>
+                        <classifier>javadoc</classifier>
+                        <classesDirectory>${basedir}/javadoc</classesDirectory>
+                    </configuration>
+                </execution>
+             </executions>
+           </plugin>
+         </plugins>
+       </build>
+
+       </profile>
+       <profile>
+         <id>onejar</id>
+         <activation>
+           <activeByDefault>false</activeByDefault>
+         </activation>
+         <build>
+           <plugins>
+             <plugin>
+                <groupId>com.jolira</groupId>
+                <artifactId>onejar-maven-plugin</artifactId>
+                <version>1.4.4</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <configuration>
+                            <mainClass>br.gov.lexml.parser.pl.fe.FECmdLine</mainClass>
+                            <attachToBuild>true</attachToBuild>
+                            <filename>${project.build.finalName}-onejar.${project.packaging}</filename>
+                            <classifier>one-jar</classifier>
+                        </configuration>
+                        <goals>
+                            <goal>one-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+              </plugin> 
+            </plugins>
+         </build>
+       </profile>
+    </profiles>
 </project>
 
