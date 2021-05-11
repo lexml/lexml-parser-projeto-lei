@@ -4,6 +4,8 @@ import br.gov.lexml.parser.pl.metadado.Metadado
 import br.gov.lexml.parser.pl.rotulo._
 import br.gov.lexml.parser.pl.block._
 import br.gov.lexml.parser.pl.ProjetoLei
+import br.gov.lexml.parser.pl.rotulo.rotuloParser.{Fem, Genero}
+
 import scala.xml._
 import scala.collection.immutable.List
 
@@ -81,7 +83,46 @@ object LexmlRenderer {
     def unicaMinStr(alt : => String) : String =
       if(un) { "Única" } else { alt }
   }
-  
+
+  val ordDez : Map[Int,String] = Map(
+    1 -> "décim",
+    2 -> "vigésim",
+    3 -> "trigésim",
+    4 -> "quadragésim",
+    5 -> "quinquagésim",
+    6 -> "sexagésim",
+    7 -> "septuagésim",
+    8 -> "octagésim",
+    9 -> "nonagésim"
+  )
+  val ordUnid : Map[Int,String] = Map(
+    1 -> "primeir",
+    2 -> "segund",
+    3 -> "terceir",
+    4 -> "quart",
+    5 -> "quint",
+    6 -> "sext",
+    7 -> "sétim",
+    8 -> "oitav",
+    9 -> "non"
+  )
+  def renderOrdinalExtenso(num : Int, g : Genero,allCaps : Boolean = false, firstCaps : Boolean = false): String = {
+    val s = g.select("o","a")
+    if(num > 99) { throw new RuntimeException("Não há suporte à renderização de ordinais por extenso acima de 99: " + num)}
+    if(num < 1)  { throw new RuntimeException("Não há suporte à renderização de ordinais por extenso menores do que 1: " + num)}
+    val d = num / 10
+    val u = num % 10
+    val ds = if(d > 0) { ordDez(d) + s} else {""}
+    val us = if(u > 0) { ordUnid(u) + s} else {""}
+    val rs1 = if(ds != "" && us != "") { ds + "-" + us} else { ds + us }
+    if(allCaps) { rs1.toUpperCase() }
+    else if(firstCaps) {
+      rs1.substring(0,1).toUpperCase + rs1.substring(1)
+    } else {
+      rs1
+    }
+  }
+
   def renderRotuloEither(r: Rotulo): Either[String, String] = r match {
     case RotuloArtigo(1, None, true) ⇒ Left("Artigo único. ")
     case RotuloArtigo(num, comp, _) ⇒ Left("Art. " + renderOrdinal(num) + renderComp(comp) + (if (num >= 10 || comp.isDefined) "." else ""))
@@ -93,8 +134,13 @@ object LexmlRenderer {
     case RotuloItem(num, comp) ⇒ Left(num.toString + ".")
     case RotuloPena ⇒ Left("Pena –")
     case d : RotuloDispositivoGenerico ⇒ Left(s"${d.nomeRotulo} –")
-    case RotuloParte(Left(rot), _, _) ⇒ throw new RenderException(s"Parte sem número não suportado na renderização: ${rot}")
-    case RotuloParte(Right(num), comp,unica) ⇒ Left("PARTE " + unica.unicaMajStr(renderRomano(num).toUpperCase + renderComp(comp)))
+    case RotuloParte(Left(rot),_,_,_,_) ⇒ Left("PARTE " + rot)
+    case RotuloParte(_,_,_,_,Some(rot)) ⇒ Left("PARTE " + rot)
+    case RotuloParte(_,_,true,_,_) ⇒ Left("PARTE ÚNICA")
+    case RotuloParte(Right(num),comp,_,true,_) ⇒
+      Left("PARTE " + renderOrdinalExtenso(num = num,g = Fem,allCaps = true).toUpperCase + renderComp(comp))
+    case RotuloParte(Right(num),comp,_,_,_) ⇒
+      Left(renderRomano(num).toUpperCase + renderComp(comp))
     case RotuloLivro(Left(rot), _, _) ⇒ throw new RenderException(s"Livro sem número não suportado na renderização: ${rot}")
     case RotuloLivro(Right(num), comp,unico) ⇒ Left("LIVRO " + unico.unicoMajStr(renderRomano(num).toUpperCase + renderComp(comp)))
     case RotuloTitulo(num, comp, unico) ⇒ Left("TÍTULO " + unico.unicoMajStr(renderRomano(num) + renderComp(comp)))
@@ -123,8 +169,8 @@ object LexmlRenderer {
     case RotuloAlinea(num, comp) ⇒ "ali%d%s" format (num, renderCompId(comp))
     case RotuloItem(num, comp) ⇒ "ite%d%s" format (num, renderCompId(comp))
     case RotuloPena ⇒ "pena"
-    case RotuloParte(Left(rot), _,_) ⇒ throw new RenderException(s"Parte sem número não suportado na renderização: ${rot}")
-    case RotuloParte(Right(num), comp,unico) ⇒ "prt%d%s%s" format (num, unico.unicoChar, renderCompId(comp))
+    case RotuloParte(Left(rot), _,_,_,_) ⇒ throw new RenderException(s"Parte sem número não suportado na renderização: ${rot}")
+    case RotuloParte(Right(num), comp,unico,_,_) ⇒ "prt%d%s%s" format (num, unico.unicoChar, renderCompId(comp))
     case RotuloLivro(Left(rot), _,_) ⇒ throw new RenderException(s"Livro sem número não suportado na renderização: ${rot}")
     case RotuloLivro(Right(num), comp,unico) ⇒ "liv%d%s%s" format (num, renderCompId(comp))
     case RotuloTitulo(num, comp,unico) ⇒ "tit%d%s" format (num, unico.unicoChar, renderCompId(comp))

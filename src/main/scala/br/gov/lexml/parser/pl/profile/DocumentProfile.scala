@@ -73,7 +73,7 @@ trait DefaultRegexProfile extends RegexProfile {
 	)
 	override def regexAssinatura: List[Regex] = super.regexAssinatura ++ List("^senadora? "r)
 	override def regexEpigrafe1: List[Regex] = super.regexEpigrafe1 ++ List(
-          """^\s*(red\d+;+)?(projeto( de)? (lei|decreto legislativo)|(proposta|projeto) de emenda|pec|projeto de resolu)""".r         
+          """^\s*(red\d+;+)?(projeto( de)? (lei|decreto legislativo)|(proposta|projeto) de emenda|projeto de resolu)""".r
     )
   override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List(          
          """^(n[oº°˚]|complementar)"""r

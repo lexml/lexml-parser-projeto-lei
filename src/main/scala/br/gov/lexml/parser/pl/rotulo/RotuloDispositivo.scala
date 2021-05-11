@@ -260,8 +260,13 @@ sealed trait WithEitherNumComp extends Rotulo {
   }
 }
 
-case class RotuloParte(num: Either[String, Int], comp: Option[Int] = None, unico: Boolean = false) 
-extends Rotulo with RotuloAgregador with NoMatterContinuity with WithEitherNumComp {
+case class RotuloParte(
+  num: Either[String,Int],
+  comp: Option[Int] = None,
+  unico: Boolean = false,
+  ordinalExtenso : Boolean = false,
+  rotulo : Option[String] = None) extends
+  Rotulo with RotuloAgregador with NoMatterContinuity with WithEitherNumComp {
   val nivel = niveis.parte
   override lazy val toNodeSeq = <RotuloParte num={ num.fold(x ⇒ x, x ⇒ x.toString) } comp={ comp.mkString("", "", "") }/>
   val elemLabel = "Parte"

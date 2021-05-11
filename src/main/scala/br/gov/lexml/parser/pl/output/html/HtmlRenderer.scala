@@ -3,6 +3,8 @@ import scala.xml._
 import br.gov.lexml.parser.pl._
 import br.gov.lexml.parser.pl.rotulo._
 import br.gov.lexml.parser.pl.block._
+import br.gov.lexml.parser.pl.output.LexmlRenderer
+import br.gov.lexml.parser.pl.rotulo.rotuloParser.Fem
 
 object HtmlRenderer {
 	def rename(label : String,n : NodeSeq) : NodeSeq = n match {
@@ -86,8 +88,16 @@ object HtmlRenderer {
 		case RotuloAlinea(num, comp) => <span class="rotuloDispositivo">Alínea </span> <span class="numeroDispositivo">{renderAlphaSeq(num-1).toLowerCase + renderComp(comp)})</span>
 		case RotuloItem(num,comp) => <span class="rotuloDispositivo">Item </span> <span class="numeroDispositivo">{num.toString} –</span>
 		case RotuloPena => <span class="rotuloDispositivo">Pena –</span>
-		case RotuloParte(Left(_),_, _) => throw new RenderException("Parte sem número não suportado na renderização")
-		case RotuloParte(Right(num),comp,unica) => <span class="rotuloDispositivo">PARTE </span> <span class="numeroDispositivo">{unica.unicaMajStr(renderRomano(num).toUpperCase + renderComp(comp))}</span>
+
+		case RotuloParte(Left(rot),_,_,_,_) ⇒ <span class="rotuloDispositivo">PARTE ${rot}</span>
+		case RotuloParte(_,_,_,_,Some(rot)) ⇒ <span class="rotuloDispositivo">PARTE ${rot}</span>
+		case RotuloParte(_,_,true,_,_) ⇒ <span class="rotuloDispositivo">PARTE ÚNICA</span>
+		case RotuloParte(Right(num),comp,_,true,_) ⇒
+			val rot = LexmlRenderer.renderOrdinalExtenso(num = num,g = Fem,allCaps = true) + renderComp(comp)
+			<span class="rotuloDispositivo">PARTE ${rot}</span>
+		case RotuloParte(Right(num),comp,_,_,_) ⇒
+			val rot = renderRomano(num).toUpperCase + renderComp(comp)
+			<span class="rotuloDispositivo">PARTE ${rot}</span>
 		case RotuloLivro(Left(_),_, _) => throw new RenderException("Livro sem número não suportado na renderização")
 		case RotuloLivro(Right(num),comp,unico) => <span class="rotuloDispositivo">LIVRO </span><span class="numeroDispositivo">{unico.unicoMajStr(renderRomano(num).toUpperCase + renderComp(comp))}</span>
 		case RotuloTitulo(num, comp,unico) => <span class="rotuloDispositivo">TÍTULO </span><span class="numeroDispositivo">{unico.unicoMajStr(renderRomano(num) + renderComp(comp))}</span>
@@ -110,8 +120,8 @@ object HtmlRenderer {
 		case RotuloAlinea(num, comp) => "ali%d%s" format(num,renderCompId(comp))
 		case RotuloItem(num,comp) => "ite%d%s" format(num,renderCompId(comp))
 		case RotuloPena => "pena"
-		case RotuloParte(Left(_),_, _) => throw new RenderException("Parte sem número não suportado na renderização")
-		case RotuloParte(Right(num),comp,unica) => "prt%d%s%s" format(num,unica.unicoChar,renderCompId(comp))
+		case RotuloParte(Left(_),_, _,_,_) => throw new RenderException("Parte sem número não suportado na renderização")
+		case RotuloParte(Right(num),comp,unica,_,_) => "prt%d%s%s" format(num,unica.unicoChar,renderCompId(comp))
 		case RotuloLivro(Left(_),_, _) => throw new RenderException("Livro sem número não suportado na renderização")
 		case RotuloLivro(Right(num),comp,unico) => "liv%d%s%s" format(num,unico.unicoChar,renderCompId(comp))
 		case RotuloTitulo(num, comp,unico) => "tit%d%s%s" format(num,unico.unicoChar,renderCompId(comp))
