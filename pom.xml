@@ -50,14 +50,6 @@
         <tag>HEAD</tag>
     </scm>
 
-    <!-- <distributionManagement>
-        <repository>
-            <id>bintray-lexml</id>
-            <name>Bintray ${project.artifactId} Repository</name>
-            <url>https://api.bintray.com/maven/lexml/lexml/lexml-parser-projeto-lei/;publish=1</url>
-        </repository>
-    </distributionManagement> -->
-
     <build>
         <sourceDirectory>src/main/scala</sourceDirectory>
         <testSourceDirectory>src/test/scala</testSourceDirectory>
@@ -135,7 +127,7 @@
         <dependency>
             <groupId>br.gov.lexml</groupId>
             <artifactId>lexml-xml-schemas</artifactId>
-            <version>3.1.14</version>
+            <version>3.1.15</version>
             <exclusions>
 				<exclusion>
 					<groupId>ch.qos.logback</groupId>
