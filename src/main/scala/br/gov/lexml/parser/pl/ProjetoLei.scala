@@ -278,8 +278,24 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
   }
   
   def parseArticulacao(bl: List[Block], useLinker: Boolean = true, urnContexto : String): List[Block] = {
+    val articulacao0 = {
+      import java.text.Normalizer
+      import Normalizer.Form.NFC
+      def norm(x : String) =
+        Normalizer.normalize(x,NFC)
+      import scala.xml._
+      def normalize(n : Node) : Node = n match {
+        case x : Text => Text(norm(x.text))
+        case e : Elem => e.copy(child = e.child.map(normalize))
+        case x => x
+      }
+      bl.map {
+        case p: Paragraph => p.copy(nodes = p.nodes.map(normalize))
+        case x => x
+      }
+    }
     //Trim paragraphs
-    val articulacao1 = bl.map(trimParagraphs)
+    val articulacao1 = articulacao0.map(trimParagraphs)
     //printArticulacao(articulacao1,1)
     val articulacao2 = trimEmptyPars(articulacao1)
     //printArticulacao(articulacao2,2)

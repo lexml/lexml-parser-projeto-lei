@@ -1,7 +1,12 @@
 package br.gov.lexml.parser.pl.text
 
 object normalizer {
-	def normalize(s : String) : String = removeDuplicateSpace(s.toLowerCase.map(cleanchar).trim)
+	def normalize(s : String) : String = {
+		import java.text.Normalizer
+		val s1 = Normalizer.normalize(s,Normalizer.Form.NFD).
+							replaceAll("\\p{InCombiningDiacriticalMarks}+","")
+		removeDuplicateSpace(s1.toLowerCase.map(cleanchar).trim)
+	}
 	def removeDuplicateSpace(s : String) = s.replaceAll("""\p{javaWhitespace}+"""," ")
 	def cleanchar(c : Char) : Char = c match {
 		case 'á' => 'a'
