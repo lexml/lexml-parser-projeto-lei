@@ -31,9 +31,7 @@ final case class Path(rl: List[Rotulo]) extends Ordered[Path] {
         }
       }
     }
-    val rl1 = rl.reverse
-    
-    mkTexto1(rl1)
+    mkTexto1(rl)
   }
 
   lazy val txt = mkTexto(rl)
@@ -277,15 +275,32 @@ class Validation {
     }
   }
 
+  def procDuplicado(data : (Path,List[Block])) : Option[ParseProblem] = data match {
+    case (p, bl) if bl.length > 1 =>
+      val itsOk = if (p.rl.exists(x => x.nivel == niveis.alteracao)
+        && bl.length == 2) {
+        (bl(0), bl(1)) match {
+          case (d1: Dispositivo, d2: Dispositivo) => (d1.rotulo, d2.rotulo) match {
+            case (RotuloParagrafo(Some(1), None, true),
+            RotuloParagrafo(Some(1), None, false)) => true
+            case _ => false
+          }
+          case _ => false
+        }
+      } else { false }
+      if (!itsOk) {
+        val c = bl.map(tcBlock.toContext).map(_.mkString(":")).mkString(", ")
+        in(c) {
+          Some(withContext(RotuloDuplicado(p.txt)))
+        }
+      } else {
+        None
+      }
+    case _ => None
+  }
   val naoPodeHaverCaminhoDuplicado: ValidationRule[List[(Path, Block)]] = {
     case l: List[(Path, Block)] => {
-      l.groupBy(_._1).mapValues(_.map(_._2)).toList collect {
-        case (p, bl) if bl.length > 1 =>
-          val c = bl.map(tcBlock.toContext).map(_.mkString(":")).mkString(", ")
-          in(c) {
-            withContext(RotuloDuplicado(p.txt))
-          }
-      } toSet
+      l.groupBy(_._1).mapValues(_.map(_._2)).toList.flatMap(procDuplicado).toSet
     }
   }
 
