@@ -17,7 +17,7 @@ mvn test
 Para rodar (interface linha de comando):
 ```bash
 cd lexml-parser-projeto-lei
-mvn package
+mvn -Ponejar package
 java -jar target/lexml-parser-projeto-lei-VERSAO-onejar.jar [args....]
 ```
 
