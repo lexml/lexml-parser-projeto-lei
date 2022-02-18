@@ -188,7 +188,6 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
   def doesNotMatchAnyOf(r: List[Regex]) = oneOf(r).andThen(_.isEmpty)
 
   def spanEpigrafe(bl: List[Block]): Option[(List[Block], Block, List[Block])] = {
- 
     val (pre, bl1) = bl.span(doesNotMatchAnyOf(profile.regexEpigrafe1))
     val pre2 = pre.filter(!isEmptyPar(_))
     val (epi, pos) = bl1.span(matchesOneOf(profile.regexEpigrafe ++ profile.regexEpigrafe1))
@@ -338,16 +337,17 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
   }
   def fromBlocks(metadado: Metadado, blocks: List[Block]): (Option[ProjetoLei], List[ParseProblem]) = {
     try {
-      val (preEpigrafe, epigrafe, posEpigrafe) =
+      val (preEpigrafe, epigrafe, posEpigrafe) = {
         if (profile.regexEpigrafe.isEmpty) {
           (List(), Paragraph(List()), blocks)
         } else {
           spanEpigrafe(blocks) match {
             case None if !profile.epigrafeObrigatoria ⇒ (List(), Paragraph(List()), blocks)
             case Some(p @ (pre, _, _)) if profile.preEpigrafePermitida || pre.length == 0 ⇒ p
-            case r ⇒ throw ParseException(EpigrafeAusente) 
+            case r ⇒ throw ParseException(EpigrafeAusente)
           }
         }
+      }
 
       val (ementa1, preambulo, posPreambulo) = reconhecePreambulo(posEpigrafe)
       
