@@ -55,7 +55,8 @@ trait DefaultRegexProfile extends RegexProfile {
 	      "^camara dos deputados"r,
 	      "^senado federal"r,
 	      "^brasilia,"r,
-	      "^rio de janeiro,"r
+	      "^rio de janeiro,"r,
+        "^congresso nacional,"r
 	)
 	override def regexJustificativa: List[Regex] = super.regexJustificativa ++ List(
 	    "^justificacao"r,
