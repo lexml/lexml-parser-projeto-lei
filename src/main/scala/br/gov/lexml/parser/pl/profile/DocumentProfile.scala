@@ -89,7 +89,8 @@ trait DefaultRegexProfile extends RegexProfile {
         """^[ao] president[ae] (da republica|do senado|do supremo tribunal)"""r,
         "^[ao] vice-president[ae] da republica"r,
         "^as? mesas?"r,
-        """^faco saber que [oa] president[ea] da republica""".r
+        """^faco saber que [oa] president[ea] da republica""".r,
+      """^faco saber que o congresso nacional rejeitou""".r
        )
 }
 
