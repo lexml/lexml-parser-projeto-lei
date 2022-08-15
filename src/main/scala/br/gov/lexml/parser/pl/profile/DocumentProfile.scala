@@ -384,7 +384,8 @@ object DocumentProfileRegister {
       ResolucaoDoSenado,
       ProjetoDeLeiDoSenadoNoSenado,
       ConstituicaoFederal,
-      AtoDisposicoesConstitucionaisTransitorias
+      AtoDisposicoesConstitucionaisTransitorias,
+      ProjetoDeLeiDeConversao
   )
   builtins foreach register
 }
@@ -694,4 +695,14 @@ object AtoDisposicoesConstitucionaisTransitorias extends DocumentProfile with At
   override def regexPreambulo: List[Regex] = List()  
   override def regexEpigrafe1: List[Regex] = List("""^ato das disposicoes constitucionais""".r)
   override def regexEpigrafe: List[Regex] = List("""^ato das disposicoes constitucionais""".r)
+}
+
+object ProjetoDeLeiDeConversao extends DocumentProfile with DefaultRegexProfile with DoCongressoProfile  with ProjetoNorma {
+  override def urnFragTipoNorma = "projeto.lei.conversao;plv"
+  override def epigrafeHead = "PROJETO DE LEI DE CONVERSÃO"
+  override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List("^projeto de lei de convers"r)
+  override def regexEpigrafe1: List[Regex] = super.regexEpigrafe1 ++ List("^projeto de lei de convers"r)
+
+  override def epigrafeObrigatoria: Boolean = false
+  //FIXME: Medida Provisória com Sequencial
 }
