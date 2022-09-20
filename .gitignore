@@ -24,5 +24,7 @@ project/plugins/project/
 *.iml
 
 #VIM
-*.swp
+*.sw*
 /project/
+
+/.*
