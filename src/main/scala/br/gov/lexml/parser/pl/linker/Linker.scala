@@ -18,11 +18,11 @@ import akka.routing.SmallestMailboxPool
 
 object Linker {
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
-  val system = ActorSystem("linker")
+  val system: ActorSystem = ActorSystem("linker")
   
-  val strategy = OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {
+  private val strategy = OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {
     case _ : java.io.IOException => Restart
     case _ : Exception => Escalate
   }
@@ -34,7 +34,7 @@ object Linker {
   def findLinks(urnContexto : String, ns : Seq[Node]) : (List[String],List[Node]) = {
     logger.info(s"findLinks: urnContexto = $urnContexto, ns=$ns")
     import akka.util.Timeout
-    implicit val timeout = Timeout(30 seconds)
+    implicit val timeout : Timeout = Timeout(30 seconds)
     val msg = (urnContexto,ns)
     import system.dispatcher
     val f = (linkerRouter ? msg).mapTo[(List[Node],Set[String])] map {
@@ -53,16 +53,20 @@ object Linker {
   }
 
   private def getLinks(d: Dispositivo): List[URN] = d.rotulo match {
-    case _: RotuloArtigo ⇒ for { (dd: Dispositivo) ← d.conteudo.toList.collect { case (d: Dispositivo) ⇒ d }; l ← getLinks(dd) } yield l
-    case _ ⇒ d.links.flatMap(URN.fromString(_))
+    case _: RotuloArtigo ⇒ for {
+      dd ← d.conteudo.toList.collect {
+        case d: Dispositivo ⇒ d
+      }
+      l <- getLinks(dd)
+    } yield l
+    case _ ⇒ d.links.flatMap(URN.fromString)
   }
 
-  def paraCadaAlteracao(bl: List[Block]) = {
-    def f(d: Dispositivo): Block ⇒ Block = (b: Block) ⇒ b match {
-      case a: Alteracao ⇒ {
+  def paraCadaAlteracao(bl: List[Block]): List[Block] = {
+    def f(d: Dispositivo): Block ⇒ Block = {
+      case a: Alteracao ⇒
         val links = getLinks(d)
-        processaAlteracao(a, links) 
-      }
+        processaAlteracao(a, links)
       case dd: Dispositivo ⇒ dd.replaceChildren(dd.children.map(f(dd)))
       case x ⇒ x
     }

@@ -5,20 +5,24 @@ import java.security.MessageDigest
 import java.security.DigestInputStream
 import java.util.zip.ZipEntry
 import br.gov.lexml.parser.pl.block.Paragraph
+
 import java.util.zip.ZipOutputStream
 import java.io.ByteArrayOutputStream
 import br.gov.lexml.parser.pl.block.Block
-import br.gov.lexml.parser.pl.xhtml.AbiwordConverter
-import br.gov.lexml.parser.pl.xhtml.Success
-import br.gov.lexml.parser.pl.xhtml.Failure
-import br.gov.lexml.parser.pl.xhtml.XHTMLProcessor
+import br.gov.lexml.parser.pl.xhtml.{AbiwordConverter, Failure, Success, TextUtils, XHTMLProcessor}
 import br.gov.lexml.parser.pl.metadado.Metadado
+
 import java.io.InputStream
 import br.gov.lexml.parser.pl.output._
 import br.gov.lexml.parser.pl.errors.ParseProblem
 import br.gov.lexml.parser.pl.errors.ParseException
 import br.gov.lexml.parser.pl.errors.FalhaConversaoPrimaria
+
 import scala.io.Source
+import br.gov.lexml.parser.pl.linker.Linker
+
+import java.util.Optional
+import scala.annotation.unused
 
 
 case class ParserParams(inRTF: InputStream, md: Metadado)
@@ -66,18 +70,23 @@ object ParserFrontEnd {
   }
 }
 
+@unused
 class ArticulacaoParser {
   import java.util.{List => JList}  
   import xml.Text
   import br.gov.lexml.parser.pl.profile.ProjetoDeLeiDoSenadoNoSenado
   import scala.jdk.javaapi.CollectionConverters.asScala
-  def parseJList(l : JList[String]) =
-    parseList(asScala(l).to(List))
-  def parseList(l : List[String]) = {
+
+  def parseJList(l: JList[String]): String =
+    parseList(asScala(l).to(List), None)
+  def parseJList(l : JList[String], urnContexto : String): String =
+    parseList(asScala(l).to(List),Option(urnContexto))
+  def parseList(l : List[String], urnContexto : Option[String] = None): String = {
     val blocks = l.map((x : String) => Paragraph(Seq(Text(x))))
     val parser = new ProjetoLeiParser(ProjetoDeLeiDoSenadoNoSenado)
-    val articulacao = parser.parseArticulacao(blocks,false,"")
+    val articulacao = parser.parseArticulacao(blocks,urnContexto.nonEmpty,urnContexto.getOrElse(""))
     LexmlRenderer.renderArticulacao(articulacao).toString
   }
-  def parse(f : File) = parseList(Source.fromFile(f).getLines().to(List))
+  def parse(f : File): String = parseList(Source.fromFile(f).getLines().to(List))
+
 }

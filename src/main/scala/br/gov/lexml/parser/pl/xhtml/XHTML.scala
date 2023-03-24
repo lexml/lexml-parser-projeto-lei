@@ -1,37 +1,24 @@
 package br.gov.lexml.parser.pl.xhtml
 
-import java.io.CharArrayReader
-import java.io.FileReader
-import java.io.BufferedReader
 import org.apache.commons.io.IOUtils
-import org.apache.commons.io.filefilter.FileFilterUtils
-import java.io.FileWriter
-import java.io.BufferedWriter
-import java.io.IOException
-import java.io.FileOutputStream
-import java.io.FileInputStream
-import java.io.BufferedOutputStream
-import java.io.BufferedInputStream
+
 import java.io.InputStream
-import java.io.OutputStream
 import java.io.File
 import scala.xml._
 import scala.util.matching.Regex
 import grizzled.slf4j.Logging
 import org.apache.commons.io.FileUtils
-import java.io.InputStreamReader
+
 import java.io.ByteArrayInputStream
-import java.io.StringReader
 import scala.xml.parsing.NoBindingFactoryAdapter
 import org.apache.commons.io.filefilter.PrefixFileFilter
+
 import java.io.FileFilter
 import scala.xml.parsing.XhtmlParser
 import scala.io.BufferedSource
-import scala.xml.Source
-import scala.xml.Source
-import scala.xml.Source
-import scala.xml.Source
 import br.gov.lexml.parser.pl.docx.DOCXReader
+
+import scala.annotation.{tailrec, unused}
 import scala.io.Codec
 
 abstract class XHTMLProcessorResult
@@ -39,21 +26,22 @@ case object Failure extends XHTMLProcessorResult
 case class Success(result: List[Node]) extends XHTMLProcessorResult
 
 object TextUtils {
-  def fixXHTML(data: Array[Byte]) = new String(data,"utf-8")
-    //.replaceFirst("<!DOCTYPE (html|HTML)[^>]*>", "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"" + XHTMLProcessor.dtdUrl + "\">")
-    .replaceAll("\u0007", "")
-    .replaceAll("\u001f", "")
-    .replace(0x92: Char, '`')
-    .replaceAll("&#146;", "`")
-    .replace(0x202d: Char, ' ')
-    .replace(0x202c: Char, ' ')
-    .replace('–', '-')
-    .getBytes("utf-8")
+  def fixXHTML(data: Array[Byte]) : Array[Byte] =
+    new String(data,"utf-8")
+      //.replaceFirst("<!DOCTYPE (html|HTML)[^>]*>", "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"" + XHTMLProcessor.dtdUrl + "\">")
+      .replaceAll("\u0007", "")
+      .replaceAll("\u001f", "")
+      .replace(0x92: Char, '`')
+      .replaceAll("&#146;", "`")
+      .replace(0x202d: Char, ' ')
+      .replace(0x202c: Char, ' ')
+      .replace('–', '-')
+      .getBytes("utf-8")
 }
 
 trait Converter {
   def convert(srcExtension: String, srcData: Array[Byte], dstExtension: String): Array[Byte]
-  def deleteByPrefix(dir : File, prefix : String) =
+  def deleteByPrefix(dir : File, prefix : String) : Unit =
         dir.listFiles(new PrefixFileFilter(prefix) : FileFilter).foreach(f => FileUtils.deleteQuietly(f))
 }
 
@@ -71,11 +59,9 @@ final class DOCXConverter(otherConverter : Converter) extends Converter {
 
 final class AbiwordConverter(val removeTemporaryFiles: Boolean = true) extends Converter with Logging {
 
-  import TextUtils._
+  private def noPostProc(data: Array[Byte]) = data
 
-  def noPostProc(data: Array[Byte]) = data
-
-  override def convert(srcExtension: String, srcData: Array[Byte], dstExtension: String) = {
+  override def convert(srcExtension: String, srcData: Array[Byte], dstExtension: String) : Array[Byte] = {
     logger.info("abiword.convert: starting: srcExtension = " + srcExtension + ", dstExtension = " + dstExtension)
     val srcFile = File.createTempFile("lexml-parser-pl", "." + srcExtension)
     logger.info("abiword.convert: srcFile = " + srcFile)
@@ -84,8 +70,8 @@ final class AbiwordConverter(val removeTemporaryFiles: Boolean = true) extends C
     val destFile = new File(baseDir, baseName + "." + dstExtension)
     logger.info("abiword.convert: destFile = " + destFile)
     val (params, postProc) = dstExtension match {
-      case "xhtml" ⇒ (List("--to=xhtml", "--exp-props=html4: no; declare-xml: yes; use-awml:no; embed-css: yes; embed-images: yes"), fixXHTML(_))
-      case "pdf" ⇒ (List("--to=pdf"), noPostProc(_))
+      case "xhtml" ⇒ (List("--to=xhtml", "--exp-props=html4: no; declare-xml: yes; use-awml:no; embed-css: yes; embed-images: yes"), TextUtils.fixXHTML(_ : Array[Byte]))
+      case "pdf" ⇒ (List("--to=pdf"), noPostProc _)
       case _ ⇒ throw new RuntimeException("Abiword Converter does not support extension: " + dstExtension)
     }
     logger.info("abiword.convert: params = " + params)
@@ -106,13 +92,14 @@ final class AbiwordConverter(val removeTemporaryFiles: Boolean = true) extends C
   }
 }
 
+@unused
 final class OpenOfficeConverter(val removeTemporaryFiles: Boolean = true) extends Converter with Logging {
 
-  val pyodconverter = "/usr/local/bin/docconverter"
+  private val pyodconverter = "/usr/local/bin/docconverter"
 
   import TextUtils._
 
-  def htmlPostProc(data: Array[Byte]) = {
+  private def htmlPostProc(data: Array[Byte]) = {
     val data2 = fixXHTML(data)
     val parserFactory = new org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl
     val parser = parserFactory.newSAXParser()
@@ -122,9 +109,9 @@ final class OpenOfficeConverter(val removeTemporaryFiles: Boolean = true) extend
     e.toString.getBytes("utf-8")
   }
 
-  def noPostProc(data: Array[Byte]) = data
+  private def noPostProc(data: Array[Byte]) = data
 
-  override def convert(srcExtension: String, srcData: Array[Byte], dstExtension: String) = {
+  override def convert(srcExtension: String, srcData: Array[Byte], dstExtension: String): Array[Byte] = {
     logger.info("oo.convert: starting: srcExtension = " + srcExtension + ", dstExtension = " + dstExtension)
     val dstExtension2 = dstExtension match {
       case "xhtml" ⇒ "html"
@@ -137,12 +124,11 @@ final class OpenOfficeConverter(val removeTemporaryFiles: Boolean = true) extend
     val destFile = new File(baseDir, baseName + "." + dstExtension2)
     logger.info("oo.convert: destFile = " + destFile)
     val postProc = dstExtension match {
-      case "xhtml" ⇒ htmlPostProc(_)
-      case _ ⇒ noPostProc(_)
+      case "xhtml" ⇒ htmlPostProc _
+      case _ ⇒ noPostProc _
     }
 
     try {
-
       FileUtils.writeByteArrayToFile(srcFile, srcData)
       val cmd: Array[String] = Array(pyodconverter, srcFile.getPath, destFile.getPath)
       val p = Runtime.getRuntime.exec(cmd, Array[String](), srcFile.getParentFile)
@@ -151,7 +137,6 @@ final class OpenOfficeConverter(val removeTemporaryFiles: Boolean = true) extend
       //FileUtils.writeByteArrayToFile(new File(destFile.getParentFile,destFile.getName + ".res"),res)
       res
     } finally {
-      
       if (removeTemporaryFiles) {
         deleteByPrefix(baseDir,baseName)        
       }
@@ -188,12 +173,12 @@ object XHTMLProcessor extends Logging {
   }*/
 
   //val converter : Converter = new AbiwordConverter
-  val defaultConverter: Converter = new DOCXConverter(new AbiwordConverter)
+  private val defaultConverter: Converter = new DOCXConverter(new AbiwordConverter)
 
-  def changeChildren[T <: Seq[Node]](f: Seq[Node] ⇒ Seq[Node]) = (e: T) ⇒ {
+  private def changeChildren[T <: Seq[Node]](f: Seq[Node] ⇒ Seq[Node]) = (e: T) ⇒ {
     e match {
       case Elem(pref, name, attrs, scope, children @ _*) ⇒
-        Elem(pref, name, attrs, scope, true, (f(children)): _*).asInstanceOf[T]
+        Elem(pref, name, attrs, scope, true, f(children): _*).asInstanceOf[T]
       case _ ⇒ e
     }
   }
@@ -252,30 +237,31 @@ object XHTMLProcessor extends Logging {
   //    }
   //  }
 
-  type SourceProcessor = (Array[Byte], Converter) ⇒ Elem
+  private type SourceProcessor = (Array[Byte], Converter) ⇒ Elem
 
-  def xhtmlLoader(in : Array[Byte]) : Elem = xhtmlLoader(new ByteArrayInputStream(in)) 
+  private def xhtmlLoader(in : Array[Byte]) : Elem = xhtmlLoader(new ByteArrayInputStream(in))
 	  
-  def xhtmlLoader(is : InputStream) : Elem = 
+  private def xhtmlLoader(is : InputStream) : Elem =
 	  XhtmlParser(new BufferedSource(is)(Codec.UTF8)).collectFirst({ case e : Elem => e }).get
 	      
-  def externalConvertToXhtml(extension: String) = (extension, (data: Array[Byte], converter : Converter) ⇒ {
+  private def externalConvertToXhtml(extension: String) = (extension, (data: Array[Byte], converter : Converter) ⇒ {
     System.setProperty("file.encoding", "utf-8")
     val converted = converter.convert(extension, data, "xhtml")
     val r = xhtmlLoader(converted)
-    ((r \\ "html").toSeq.collect { case e : Elem => e }) . head
+    (r \\ "html").collect { case e : Elem => e } . head
     
   })
   
-  val sourceProcessorMap: Map[String, (String, SourceProcessor)] = Map(
+  private val sourceProcessorMap: Map[String, (String, SourceProcessor)] = Map(
     ("text/plain", ("txt", (source: Array[Byte], _ : Converter) ⇒ {
       val text = fixXHTML(source)
 
       val lines = scala.io.Source.fromBytes(text,"utf-8").getLines().to(List)
+      @tailrec
       def toPars(l: List[String], r: List[String] = Nil, s: List[String] = Nil): List[String] = l match {
         case Nil ⇒ s match { case Nil ⇒ r; case _ ⇒ s.mkString("", " ", "") :: r }
-        case (x :: xs) if x.trim.length == 0 ⇒ toPars(xs, s.mkString("", " ", "") :: r)
-        case (x :: xs) ⇒ toPars(xs, r, x :: s)
+        case x :: xs if x.trim.isEmpty ⇒ toPars(xs, s.mkString("", " ", "") :: r)
+        case x :: xs ⇒ toPars(xs, r, x :: s)
       }
       val pars = toPars(lines).reverse
       <html><body><div>{ pars.map(p ⇒ <p>{ p }</p>) }</div></body></html>
@@ -300,7 +286,7 @@ object XHTMLProcessor extends Logging {
   def convertRTFtoXHTML(rtfSource: InputStream, converter : Converter): Option[Elem] =
     convertSrcToXHTML(IOUtils.toByteArray(rtfSource), "text/rtf",converter)
 
-  def selectBaseElems(root: Elem): List[Elem] = {
+  private def selectBaseElems(root: Elem): List[Elem] = {
     val body = (root \\ "body").head.asInstanceOf[Elem]
    
     val belems = root.child.to(List).dropWhile ((n : Node) => n match {
@@ -310,13 +296,13 @@ object XHTMLProcessor extends Logging {
       
     
     def getAttr(n: Node, attr: String) = n match {
-      case (e: Elem) ⇒ e.attributes.get(attr).map(_.text.toLowerCase)
+      case e: Elem ⇒ e.attributes.get(attr).map(_.text.toLowerCase)
       case x ⇒ None
     }
     def getIdOrType(n: Node) = getAttr(n, "id").orElse(getAttr(n, "type")).getOrElse("")
     val childs = trim(belems)
     val childs1 = childs.filter((n: Node) ⇒ { val x = getIdOrType(n) ; x != "header" && x != "footer" })      
-    val (cl1, cl2) = childs1.span({ case (e: Elem) ⇒ e.label == "table"; case _ ⇒ false })
+    val (cl1, cl2) = childs1.span({ case e: Elem ⇒ e.label == "table"; case _ ⇒ false })
     val childs3 = (cl1 \\ "*").filter { 
       case e : Elem => e.label == "p" || e.label == "h1" || e.label == "h2" || e.label == "h3"
       case _ => false
@@ -325,39 +311,39 @@ object XHTMLProcessor extends Logging {
     r
   }
 
-  def chooseDivs(divs: List[Elem]) = divs
+  private def chooseDivs(divs: List[Elem]): List[Elem] = divs
 
-  val parLabels = Set("p", "h1", "h2", "h3", "h4", "blockquote")
-  val isValidElem: PartialFunction[Node, Node] = (x: Node) ⇒
-    x match {
-      case e @ Elem(_, "table", _, _, _@ _*) ⇒ e
-      case Elem(pref, "ol", _, scope, children @ _*) ⇒ Elem(pref, "ol", Null, scope, true, children.collect(isValidElem): _*)
-      case Elem(pref, "li", _, scope, children @ _*) ⇒ Elem(pref, "li", Null, scope, true, children.collect(isValidElem orElse isContent): _*)
-      case Elem(pref, label, attrs, scope, children @ _*) if (parLabels.contains(label)) ⇒ Elem(pref, "p", attrs, scope, true, children: _*)
-    }
-  val isContent: PartialFunction[Node, Node] = ({
+  private val parLabels: Set[String] = Set("p", "h1", "h2", "h3", "h4", "blockquote")
+  private val isValidElem: PartialFunction[Node, Node] = {
+    case e@Elem(_, "table", _, _, _@_*) ⇒ e
+    case Elem(pref, "ol", _, scope, children@_*) ⇒ Elem(pref, "ol", Null, scope, true, children.collect(isValidElem): _*)
+    case Elem(pref, "li", _, scope, children@_*) ⇒ Elem(pref, "li", Null, scope, true, children.collect(isValidElem orElse isContent): _*)
+    case Elem(pref, label, attrs, scope, children@_*) if parLabels.contains(label) ⇒ Elem(pref, "p", attrs, scope, true, children: _*)
+  }
+  private val isContent: PartialFunction[Node, Node] = ({
     case t: Text ⇒ t
     case e @ Elem(_, "span", _, _, _*) ⇒ e
   }: PartialFunction[Node, Node]).orElse(isValidElem)
 
-  def wrapText(nl: List[Node]): List[Node] = {
+  private def wrapText(nl: List[Node]): List[Node] = {
     val blockElems = List("table","thead","tbody","th","tr","td","p","blockquote","center","div","img")
+    @tailrec
     def docollect(nl: List[Node], accum: List[Node] = Nil, accum2 : List[Node] = Nil): List[Node] = nl match {
       case Nil if trim(accum).isEmpty => accum2.reverse
       case Nil => (<p>{ NodeSeq fromSeq accum.reverse }</p> :: accum2).reverse
       case (t: Text) :: r ⇒ docollect(r, t :: accum, accum2)
-      case (e: Elem) :: r if (!blockElems.contains(e.label)) ⇒ docollect(r, e :: accum, accum2)
+      case (e: Elem) :: r if !blockElems.contains(e.label) ⇒ docollect(r, e :: accum, accum2)
       case (e : Elem) :: r if trim(accum).isEmpty ⇒ docollect(r,Nil,e :: accum2)
-      case (e : Elem) :: r  ⇒ docollect(r,Nil,e :: (<p>{ NodeSeq fromSeq accum.reverse }</p>) :: accum2)
+      case (e : Elem) :: r  ⇒ docollect(r,Nil,e :: <p>{ NodeSeq fromSeq accum.reverse }</p> :: accum2)
     }
     docollect(nl, Nil)
   }
   
-  def trimLeft(nl: List[Node]) = nl.dropWhile({ case t: Text ⇒ t.text.trim.isEmpty; case _ ⇒ false })
-  def trim(nl: List[Node]) = trimLeft(trimLeft(nl).reverse).reverse
-  val explodedBlockElements = Set("div", "center")
-  val explodedInlineElements = Set("font")
-  def explodeDivs(divs: List[Elem]) = {
+  private def trimLeft(nl: List[Node]) = nl.dropWhile({ case t: Text ⇒ t.text.trim.isEmpty; case _ ⇒ false })
+  def trim(nl: List[Node]): List[Node] = trimLeft(trimLeft(nl).reverse).reverse
+  private val explodedBlockElements = Set("div", "center")
+  private val explodedInlineElements = Set("font")
+  private def explodeDivs(divs: List[Elem]) = {
     def explode(n: Node): List[Node] = n match {
       case e: Elem if explodedBlockElements.contains(e.label) ⇒ wrapText(e.child.toList).flatMap(explode)
       case e: Elem if explodedInlineElements.contains(e.label) ⇒ e.child.toList.flatMap(explode)
@@ -372,20 +358,15 @@ object XHTMLProcessor extends Logging {
     divs.flatMap(explode).collect(isValidElem)
   }
 
-  def changeElem(f: Elem ⇒ Elem) = (n: Node) ⇒ n match {
-    case Elem(_, _, _, _, _*) ⇒ f(n.asInstanceOf[Elem])
-    case _ ⇒ n
-  }
-
-  def mapToAttributes(m: Map[String, String]) = m.foldRight(Null.asInstanceOf[MetaData])(
+  private def mapToAttributes(m: Map[String, String]) = m.foldRight(Null.asInstanceOf[MetaData])(
     (kv, md) ⇒ {
-      val (k, v) = kv;
-      new UnprefixedAttribute(k, v, md);
+      val (k, v) = kv
+      new UnprefixedAttribute(k, v, md)
     })
 
-  def cleanAttributes: Seq[Node] ⇒ Seq[Node] = bottomUp((n: Node) ⇒ {
+  private def cleanAttributes: Seq[Node] ⇒ Seq[Node] = bottomUp((n: Node) ⇒ {
 
-    val changeAttrs = (f: (Map[String, String] ⇒ Map[String, String])) ⇒
+    val changeAttrs = (f: Map[String, String] ⇒ Map[String, String]) ⇒
       (e: Node) ⇒ e match {
         case Elem(pref, name, attrs, scope, children @ _*) ⇒
           Elem(pref, name, mapToAttributes(f(attrs.asAttrMap)), scope, true, children: _*)
@@ -399,8 +380,8 @@ object XHTMLProcessor extends Logging {
       v.split(";").filter(allowedStyles.contains).mkString(";")
     }
 
-    val filterStyle: PartialFunction[(String, String), (String, String)] = (kv: (String, String)) ⇒ kv match {
-      case ("style", v) ⇒ ("style", cleanStyle(v))
+    val filterStyle: PartialFunction[(String, String), (String, String)] = {
+      case ("style", v : String) ⇒ ("style", cleanStyle(v))
     }
 
     val cleanSpanAttrs: Elem ⇒ Elem = changeAttrs(_.collect(filterStyle).toMap)
@@ -416,14 +397,15 @@ object XHTMLProcessor extends Logging {
     val emptyAttributes = changeAttrs((_: Map[String, String]) ⇒ Map())
 
     def saveIndentation(e: Elem) = e match {
-      case Elem(pref, name, attrs, scope, children @ _*) ⇒ {
+      case Elem(pref, name, attrs, scope, children @ _*) ⇒
         val styleMap = getStyleMap(attrs).withDefault(_ ⇒ "")
+
         def parseAndNormalize(s: String): Option[Double] = {
           val re = new Regex("(-?[0-9.]+)([a-z]+)")
           val ratios = Map[String, Double](
             "mm" -> 1, "cm" -> 10, "in" -> 25.4)
           val m = re.findAllIn(s)
-          if (!m.isEmpty) {
+          if (m.nonEmpty) {
             val num = m.group(1).toDouble
             val unit = m.group(2)
             val ratio = ratios.get(unit)
@@ -432,43 +414,41 @@ object XHTMLProcessor extends Logging {
             None
           }
         }
+
         val textIndent = parseAndNormalize(styleMap("text-indent"))
         val marginLeft = parseAndNormalize(styleMap("margin-left"))
         val centered = styleMap("text-align") == "center"
         val indentation = List(textIndent, marginLeft).collect({ case Some(x) ⇒ x }).sum
         Elem(pref, name, new UnprefixedAttribute("indentation", Text(indentation.toString), new UnprefixedAttribute("centered", centered.toString, Null)), scope, true, children: _*)
-      }
     }
 
     n match {
-      case Elem(_, label, _, _, _*) ⇒ {
-        var e = n.asInstanceOf[Elem]
+      case Elem(_, label, _, _, _*) ⇒
+        val e = n.asInstanceOf[Elem]
         label match {
           case "span" ⇒ cleanSpanAttrs(e)
           case "table" ⇒ changeAttrs(keepOnly("rows", "cols"))(e)
           case "td" ⇒ changeAttrs(filterRedundantTDAttrs.andThen(keepOnly("colspan", "rowspan")))(e)
           case _ ⇒ emptyAttributes(e)
         }
-      }
       case _ ⇒ n
     }
 
   })
 
-  def fixSpans(nl: List[Node]): List[Node] = {
+  private def fixSpans(nl: List[Node]): List[Node] = {
     nl.flatMap({  
-	    case e @ (Elem(pref, label, attrs, scope, child @ _*)) ⇒ {
-	      val child2 = fixSpans(child.toList)
-	      e.label match {
-	        case "span" ⇒ makeSpanOrIandB(pref, scope, attrs, child2)
-	        case _ ⇒ List(Elem(pref, label, attrs, scope, true, child2: _*))
-	      }
-	    }
-	    case n ⇒ List(n)
+	    case e @ Elem(pref, label, attrs, scope, child @ _*) ⇒
+        val child2 = fixSpans(child.toList)
+        e.label match {
+          case "span" ⇒ makeSpanOrIandB(pref, scope, attrs, child2)
+          case _ ⇒ List(Elem(pref, label, attrs, scope, true, child2: _*))
+        }
+      case n ⇒ List(n)
 	  })
   }
 
-  def makeSpanOrIandB(prefix: String, scope: NamespaceBinding, attrs: MetaData, child: Seq[Node]): Seq[Node] = {
+  private def makeSpanOrIandB(prefix: String, scope: NamespaceBinding, attrs: MetaData, child: Seq[Node]): Seq[Node] = {
     
     def makePair(s: String) = s.span(c ⇒ c != ':') match {
       case (k, "") ⇒ (k, "")
@@ -476,7 +456,7 @@ object XHTMLProcessor extends Logging {
     }
     val attrMap = attrs.asAttrMap
   
-    val styleString = attrMap.get("style").getOrElse("")
+    val styleString = attrMap.getOrElse("style", "")
     val otherAttrs: Map[String, String] = attrMap - "style"
     val styles = styleString.split(";").map(makePair).toMap
 
@@ -490,9 +470,9 @@ object XHTMLProcessor extends Logging {
       case Some("bolder") ⇒ true
       case _ ⇒ false
     }
-    val isSuperScript = styles.get("vertical-align") == Some("super")    
-    val isSubScript = styles.get("vertical-align") == Some("sub")
-    val hasUnderline = styles.get("text-decoration") == Some("underline")
+    val isSuperScript = styles.get("vertical-align").contains("super")
+    val isSubScript = styles.get("vertical-align").contains("sub")
+    val hasUnderline = styles.get("text-decoration").contains("underline")
     
     val otherStyles = styles - "font-style" - "font-weight" - "text-decoration" - "vertical-align"
     val restMap: Map[String, String] = if (otherStyles.isEmpty) { otherAttrs } else {
@@ -511,7 +491,7 @@ object XHTMLProcessor extends Logging {
     e
   }
 
-  def mapElements[T](others: Node ⇒ T, elem: Elem ⇒ T) = (n: Node) ⇒
+  private def mapElements[T](others: Node ⇒ T, elem: Elem ⇒ T) = (n: Node) ⇒
     n match {
       case e: Elem ⇒ elem(e)
       case _ ⇒ others(n)
@@ -519,52 +499,50 @@ object XHTMLProcessor extends Logging {
 
   def id[T]: T ⇒ T = (t: T) ⇒ t
 
-  val validElements = Set("p", "span", "sup", "sub", "table", "tr", "td", "th", "b", "i", "ol", "li", "img", "blockquote", "u",
+  private val validElements = Set("p", "span", "sup", "sub", "table", "tr", "td", "th", "b", "i", "ol", "li", "img", "blockquote", "u",
       "h1","h2","h3","h4")
 
-  val cleanSeqNodes: List[Node] ⇒ List[Node] = bottomUp(mapElements(id,
+  private val cleanSeqNodes: List[Node] ⇒ List[Node] = bottomUp(mapElements(id,
     (e: Elem) ⇒ if (validElements.contains(e.label)) { e } else { e.child }))
 
-  val headings = Set("h1", "h2", "h3", "h4")
+  private val headings = Set("h1", "h2", "h3", "h4")
     
-  val renameHeadings: List[Node] ⇒ List[Node] = bottomUp(mapElements(id,
+  private val renameHeadings: List[Node] ⇒ List[Node] = bottomUp(mapElements(id,
     (e: Elem) ⇒ if (headings.contains(e.label)) { e copy (label = "p") } else { e }))
     
-  def bottomUp(f: Node ⇒ Seq[Node]): Seq[Node] ⇒ List[Node] = (ns: Seq[Node]) ⇒ {
-    val chChildren = (n: Node) ⇒ (changeChildren(bottomUp(f))(n))
+  private def bottomUp(f: Node ⇒ Seq[Node]): Seq[Node] ⇒ List[Node] = (ns: Seq[Node]) ⇒ {
+    val chChildren = (n: Node) ⇒ changeChildren(bottomUp(f))(n)
 
-    var nl = ns.iterator.toList
+    val nl = ns.iterator.toList
     nl.flatMap(f.compose(chChildren))
   }
 
-  def topDown(f: Node ⇒ Seq[Node]): Seq[Node] ⇒ List[Node] = (ns: Seq[Node]) ⇒ {
-    val chChildren = (n: Node) ⇒ (changeChildren(bottomUp(f))(n))
-    var nl = ns.iterator.toList
+  private def topDown(f: Node ⇒ Seq[Node]): Seq[Node] ⇒ List[Node] = (ns: Seq[Node]) ⇒ {
+    val chChildren = (n: Node) ⇒ changeChildren(bottomUp(f))(n)
+    val nl = ns.iterator.toList
     nl.flatMap(f).map(chChildren)
   }
 
   def topDownUntil(f: PartialFunction[Node, Seq[Node]]): Seq[Node] ⇒ List[Node] = (ns: Seq[Node]) ⇒ {
     val rec = topDownUntil(f)
     ns.toList.flatMap((n: Node) ⇒
-      (f.lift(n)) match {
+      f.lift(n) match {
         case None ⇒ changeChildren(rec)(n)
         case Some(ns2) ⇒ ns2
       })
   }
 
-  def transformTextWith[A](f: (A, String) ⇒ (String, A))(a: A): Seq[Node] ⇒ List[Node] = (ns: Seq[Node]) ⇒ {
+  private def transformTextWith[A](f: (A, String) ⇒ (String, A))(a: A): Seq[Node] ⇒ List[Node] = (ns: Seq[Node]) ⇒ {
     def doit(bl: (A, List[Node]), n: Node): (A, List[Node]) = {
       val (b1, l) = bl
       n match {
-        case Text(t1) ⇒ {
+        case Text(t1) ⇒
           val (t2, b2) = f(b1, t1)
           if (t2.isEmpty) { (b2, l) }
           else { (b2, Text(t2) :: l) }
-        }
-        case Elem(pref, name, attrs, scope, children @ _*) ⇒ {
+        case Elem(pref, name, attrs, scope, children @ _*) ⇒
           val (b2, rl) = children.foldLeft(b1, List[Node]())(doit)
           (b2, Elem(pref, name, attrs, scope, true, rl.reverse: _*) :: l)
-        }
         case _ ⇒ (b1, n :: l)
       }
     }
@@ -572,7 +550,7 @@ object XHTMLProcessor extends Logging {
     rl.reverse
   }
 
-  def transformTextBackwardsWith[A](f: (A, String) ⇒ Option[(String, A)])(a: A): Seq[Node] ⇒ List[Node] =
+  private def transformTextBackwardsWith[A](f: (A, String) ⇒ Option[(String, A)])(a: A): Seq[Node] ⇒ List[Node] =
     (ns: Seq[Node]) ⇒ {
       def doit(bl: (A, List[Node], Boolean), n: Node): (A, List[Node], Boolean) = {
         val (b1, l, skip) = bl
@@ -580,15 +558,13 @@ object XHTMLProcessor extends Logging {
           case Text(t1) ⇒
             f(b1, t1) match {
               case None ⇒ (b1, n :: l, true)
-              case Some((t2, b2)) ⇒ {
+              case Some((t2, b2)) ⇒
                 if (t2.isEmpty) { (b2, l, false) }
                 else { (b2, Text(t2) :: l, false) }
-              }
             }
-          case Elem(pref, name, attrs, scope, children @ _*) ⇒ {
+          case Elem(pref, name, attrs, scope, children @ _*) ⇒
             val (b2, rl, skip2) = children.reverse.foldLeft(b1, List[Node](), skip)(doit)
             (b2, Elem(pref, name, attrs, scope, true, rl: _*) :: l, skip2)
-          }
           case _ ⇒ (b1, n :: l, skip)
         }
       }
@@ -596,12 +572,12 @@ object XHTMLProcessor extends Logging {
       rl
     }
 
-  val re1 = new Regex("(\\s| )+")
-  val re2 = new Regex("^ +")
-  val re3 = new Regex("“ +")
-  val re4 = new Regex(" +”")
+  private val re1 = new Regex("(\\s| )+")
+  private val re2 = new Regex("^ +")
+  private val re3 = new Regex("“ +")
+  private val re4 = new Regex(" +”")
 
-  def cleanSpaces(trimLeft: Boolean, s: String) = {
+  private def cleanSpaces(trimLeft: Boolean, s: String) = {
     val s1 = re1.replaceAllIn(s, " ")
     val s2 = re3.replaceAllIn(s1, "“")
     val s3 = re4.replaceAllIn(s2, "”")
@@ -612,48 +588,47 @@ object XHTMLProcessor extends Logging {
     (s4, tl)
   }
 
-  val re5 = new Regex(" +$")
+  private val re5 = new Regex(" +$")
 
-  val normalizeSpace: Seq[Node] ⇒ List[Node] = topDownUntil((n: Node) ⇒
+  private val normalizeSpace: Seq[Node] ⇒ List[Node] = topDownUntil((n: Node) ⇒
     n match {
-      case Elem(_, label, _, _, _*) if (label == "p" || label == "li" || label == "blockquote") ⇒ {
+      case Elem(_, label, _, _, _*) if label == "p" || label == "li" || label == "blockquote" ⇒
         val ns1 = transformTextWith(cleanSpaces)(true)(n)
         val ns2 = transformTextBackwardsWith(
           (skip: Boolean, t: String) ⇒
             if (skip) { None }
             else { Some(re5.replaceFirstIn(t, ""), true) })(false)(ns1)
         ns2
-      }
     })
 
-  def getAttr(md: MetaData, key: String): String = {
+  private def getAttr(md: MetaData, key: String): String = {
     md.get(key) match {
       case None ⇒ ""
       case Some(l) ⇒ l.map(_.text).mkString("", "", "")
     }
   }
 
-  val cleanSpuriousSpans = topDown((n: Node) ⇒
-    n match {
-      case Elem(pref, "span", attrs, scope, children @ _*) if (getAttr(attrs, "style").isEmpty ||
-        n.text.trim.isEmpty) ⇒ { children }
-      case e: Elem if (e.label == "i" || e.label == "b") && e.text.trim.isEmpty ⇒ { e.child }
-      case _ ⇒ n
-    })
+  private val cleanSpuriousSpans = topDown {
+    case n@Elem(_, "span", attrs, _, children@_*) if getAttr(attrs, "style").isEmpty ||
+      n.text.trim.isEmpty ⇒  children
+    case e: Elem if (e.label == "i" || e.label == "b") && e.text.trim.isEmpty ⇒
+      e.child
+    case n ⇒ n
+  }
 
-  val cleanNameSpaces = topDown((n: Node) ⇒
+  private val cleanNameSpaces = topDown((n: Node) ⇒
     n match {
       case Elem(pref, label, attrs, _, cl @ _*) ⇒
         Elem(pref, label, attrs, TopScope, true, cl: _*)
       case _ ⇒ n
     })
 
-  def cleanRepeatedEmptyParagraphs(ns: Seq[Node]) = {
+  private def cleanRepeatedEmptyParagraphs(ns: Seq[Node]) = {
     def f(n: Node, ns: List[Node]) =
       n match {
         case Elem(_, name, _, _, _*) if name == "p" || name == "blockquote" ⇒ ns match {
           //case List() => n :: ns
-          case ((n2 @ Elem(_, "p", _, _, _*)) :: _) ⇒
+          case (n2 @ Elem(_, "p", _, _, _*)) :: _ ⇒
             if (n.text.isEmpty && n2.text.isEmpty) { ns }
             else { n :: ns }
           case _ ⇒ n :: ns
@@ -663,7 +638,7 @@ object XHTMLProcessor extends Logging {
     ns.foldRight(List[Node]())(f)
   }
 
-  def getStyleMap(m: MetaData) = {
+  private def getStyleMap(m: MetaData) = {
     m.get("style") match {
       case None ⇒ Map[String, String]()
       case Some(s) ⇒ (NodeSeq fromSeq s).text.split(";").
@@ -672,27 +647,27 @@ object XHTMLProcessor extends Logging {
     }
   }
 
-  def styleIsTheSame(m1: MetaData, m2: MetaData) =
+  private def styleIsTheSame(m1: MetaData, m2: MetaData) =
     getStyleMap(m1) == getStyleMap(m2)
 
-  def collectWhiteSpace(ns: Seq[Node]): (Seq[Node], Seq[Node]) =
+  private def collectWhiteSpace(ns: Seq[Node]): (Seq[Node], Seq[Node]) =
     ns.span((n: Node) ⇒ n match {
       case Text(t) ⇒ t.trim.isEmpty
       case _ ⇒ false
     })
 
-  val mergeTextNodes = topDown(
+  private val mergeTextNodes = topDown(
     mapElements(id, changeChildren((ns: Seq[Node]) ⇒ {
       def mergeTexts(n: Node, ns: List[Node]): List[Node] = {
         (n, ns) match {
-          case (Text(t1), Text(t2) :: ns2) ⇒ (Text(t1 + t2) :: ns2)
+          case (Text(t1), Text(t2) :: ns2) ⇒ Text(t1 + t2) :: ns2
           case _ ⇒ n :: ns
         }
       }
       ns.foldRight(List[Node]())(mergeTexts)
     })))
 
-  val mergeSpans = bottomUp(
+  private val mergeSpans = bottomUp(
     mapElements(id, (e: Elem) ⇒ {
       val Elem(pref, label, attrs, scope, cl @ _*) = e
       def mergeit(n: Node, ns: List[Node]) = {
@@ -702,7 +677,7 @@ object XHTMLProcessor extends Logging {
             nss match {
               case Elem(pref, "span", attrs2, scope, cl2 @ _*) :: ns2 ⇒
                 if (styleIsTheSame(attrs1, attrs2)) {
-                  Elem(pref, "span", attrs2, scope, true,  (cl1 ++ ws ++ cl2): _*) :: ns2
+                  Elem(pref, "span", attrs2, scope, true,  cl1 ++ ws ++ cl2 : _*) :: ns2
                 } else {
                   n :: ns
                 }
@@ -716,7 +691,7 @@ object XHTMLProcessor extends Logging {
       Elem(pref, label, attrs, scope, true, cll: _*)
     }))
 
-  val cleanSpecialCharacters = {
+  private val cleanSpecialCharacters = {
     val cleanit = (x: Unit, s: String) ⇒ {
       val s1 = s.map((c: Char) ⇒ c match {
         case '\u0096' ⇒ '-'
@@ -727,12 +702,12 @@ object XHTMLProcessor extends Logging {
     transformTextWith(cleanit)(())
   }
 
-  def applySeq[T](fs: Seq[T ⇒ T]) =
+  private def applySeq[T](fs: Seq[T ⇒ T]) =
     (v0: T) ⇒ fs.foldLeft(v0)((v: T, f: T ⇒ T) ⇒ f(v))
 
-  def applySeqTo[T](v0: T)(fs: Seq[T ⇒ T]) = applySeq(fs)(v0)
+  private def applySeqTo[T](v0: T)(fs: Seq[T ⇒ T]) = applySeq(fs)(v0)
 
-  def pipelineXHTML(xhtml: Elem): List[Node] = {
+  private def pipelineXHTML(xhtml: Elem): List[Node] = {
     
     def debug(where: String): List[Node] ⇒ List[Node] = (l: List[Node]) ⇒ {
       println("debug: " + where + ":")

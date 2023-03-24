@@ -32,7 +32,9 @@ import br.gov.lexml.parser.pl.text.normalizer
 import br.gov.lexml.parser.pl.validation.Validation
 import br.gov.lexml.parser.pl.profile.DocumentProfile
 import org.apache.commons.io.FileUtils
+
 import java.io.File
+import scala.annotation.unused
 
 object Caracteristicas {
   val POSSUI_TABELA_ARTICULACAO = "possui tabela na articulacao"
@@ -166,28 +168,10 @@ case class Marcadores(profile: DocumentProfile,
 
 class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
 
-  def isEmptyPar(b: Block): Boolean = b match {
-    case Paragraph(_, "") ⇒ true
-    case _ ⇒ false
-  }
-  def isParagraph(b: Block): Boolean = b match {
-    case Paragraph(_, _) ⇒ true
-    case _ ⇒ false
-  }
-  def trimEmptyPars(bl: List[Block]): List[Block] = {
-    bl.dropWhile(isEmptyPar).reverse.dropWhile(isEmptyPar).reverse
-  }
+  import ProjetoLeiParser._
 
-  def oneOf(r: List[Regex]) = (b: Block) ⇒ b match {
-    case p: Paragraph ⇒ r.find(_.findFirstIn(p.text).isDefined).map(_ ⇒ p)
-    case _ ⇒ None
-  }
 
-  def matchesOneOf(r: List[Regex]) = oneOf(r).andThen(_.isDefined)
-
-  def doesNotMatchAnyOf(r: List[Regex]) = oneOf(r).andThen(_.isEmpty)
-
-  def spanEpigrafe(bl: List[Block]): Option[(List[Block], Block, List[Block])] = {
+  private def spanEpigrafe(bl: List[Block]): Option[(List[Block], Block, List[Block])] = {
     val (pre, bl1) = bl.span(doesNotMatchAnyOf(profile.regexEpigrafe1))
     val pre2 = pre.filter(!isEmptyPar(_))
     val (epi, pos) = bl1.span(matchesOneOf(profile.regexEpigrafe ++ profile.regexEpigrafe1))
@@ -195,16 +179,15 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
     val epi2 = epi collect { case p: Paragraph ⇒ p }
     epi2 match {
       case Nil ⇒ None
-      case _ ⇒ {
+      case _ ⇒
         val npNodes = epi2.headOption.toList.flatMap(_.nodes) ++
           epi2.tail.flatMap(Text(" ") :: _.nodes.toList)
         val np = Paragraph(npNodes)
         Some((pre2, np, pos2))
-      }
     }
   }
 
-  def reconhecePreambulo(bl: List[Block]): (List[Block], List[Paragraph], List[Block]) = {
+  private def reconhecePreambulo(bl: List[Block]): (List[Block], List[Paragraph], List[Block]) = {
     val isPreambulo = matchesOneOf(profile.regexPreambulo)
     val isPosEpigrafe = matchesOneOf(profile.regexPosEpigrafe)
     val isArticulacao: Block ⇒ Boolean = {
@@ -220,61 +203,7 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
     (prePreambulo, preAmbulo.collect { case p: Paragraph ⇒ p }, posPreambulo)
   }
 
-  def reconheceLinks(b: Block, urnContexto : String) = b.mapBlock {
-    case d: Dispositivo ⇒ d.conteudo match {
-      case Some(p: Paragraph) ⇒ {
-        import br.gov.lexml.parser.pl.linker.Linker.findLinks
-        val (links, nl) = findLinks(urnContexto,p.nodes)
-        d copy (links = links, conteudo = Some(p copy (nodes = nl)))
-      }
-      case _ ⇒ d
-    }
-    case p: Paragraph ⇒ {
-      import br.gov.lexml.parser.pl.linker.Linker.findLinks
-      val (links, nl) = findLinks(urnContexto,p.nodes)
-      p copy (nodes = nl)
-    }
-    case x ⇒ x
-  }
-  def reconheceLinks(bl: List[Block], urnContexto : String): List[Block] = bl.map(reconheceLinks(_,urnContexto))
 
-  def printArticulacao(bl: List[Block], num: Int) = {
-    println("articulacao" + num + ":")
-    def printBlock(b: Block, indent: String = ""): Unit = b match {
-      case p: Paragraph ⇒ println(indent + "P: text = " + p.text + ", fechaAspas = " + p.fechaAspas + ", na = " + p.notaAlteracao + "\n" +
-        indent + "   nodes = " + p.toNodeSeq)
-      case o: Omissis ⇒ println(indent + "O: fechaAspas = " + o.fechaAspas + ", na =  " + o.notaAlteracao)
-      case a: Alteracao ⇒ {
-        println(indent + "A: id = " + a.id + ", base = " + a.baseURN)
-        a.blocks.foreach(printBlock(_, indent + "  "))
-      }
-      case d: Dispositivo ⇒ {
-        println(indent + "D: id = " + d.id + ", rotulo = " + d.rotulo + ", fechaAspas = " + d.fechaAspas + ", na = " + d.notaAlteracao)
-        d.conteudo.foreach(b ⇒ printBlock(b, indent + "  conteudo: "))
-        d.children.foreach(printBlock(_, indent + "    "))
-      }
-      case t: Table ⇒ println(indent + "<TABLE>")
-      case o: OL ⇒ println(indent + "<OL>")
-      case _ ⇒ println(indent + "<SOMETHING>")
-    }
-    bl.foreach(printBlock(_))
-  }
-
-  def limpaParagrafosVazios(blocks: List[Block]) = blocks.filter {
-    case p: Paragraph if p.text == "" ⇒ false
-    case _ ⇒ true
-  }
-
-  def trimParagraphs(b : Block) = b match {
-    case p : Paragraph =>
-      val t = p.nodes.text
-      val start = t.takeWhile(_.isWhitespace).size
-      val end = t.reverse.takeWhile(_.isWhitespace).size
-      val p1 = if (end > 0) { p.cutRight(end) } else { p }
-      val p2 = if (start > 0) { p.cutLeft(start) } else { p }
-      p2
-    case x => x
-  }
   
   def parseArticulacao(bl: List[Block], useLinker: Boolean = true, urnContexto : String): List[Block] = {
     val articulacao0 = {
@@ -343,8 +272,8 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
         } else {
           spanEpigrafe(blocks) match {
             case None if !profile.epigrafeObrigatoria ⇒ (List(), Paragraph(List()), blocks)
-            case Some(p @ (pre, _, _)) if profile.preEpigrafePermitida || pre.length == 0 ⇒ p
-            case r ⇒ throw ParseException(EpigrafeAusente)
+            case Some(p @ (pre, _, _)) if profile.preEpigrafePermitida || pre.isEmpty ⇒ p
+            case _ ⇒ throw ParseException(EpigrafeAusente)
           }
         }
       }
@@ -355,13 +284,13 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
       
       val ementa = if (
             ementa2.isEmpty ||
-            !ementa2.filter(isEmptyPar).isEmpty ||
-            !ementa2.filter(!isParagraph(_)).isEmpty) {
+            ementa2.exists(isEmptyPar) ||
+            ementa2.exists(!isParagraph(_))) {
               if (profile.ementaAusente) { None } else { 
                 throw ParseException(EmentaAusente)
               }
           } else {
-            Some(Block.joinParagraphs(ementa2)(0))
+            Some(Block.joinParagraphs(ementa2).head)
           }
       
       val ms = Marcadores(profile)
@@ -375,7 +304,7 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
       val articulacao1 = elementos(Articulacao)
       val articulacao = parseArticulacao(articulacao1,urnContexto = urnContexto)
       val possuiImagem = (preEpigrafe ++ List(epigrafe) ++ preambulo ++ articulacao1).exists({
-        case p: Paragraph ⇒ !(p.nodes \\ "img").isEmpty
+        case p: Paragraph ⇒ (p.nodes \\ "img").nonEmpty
         case Image ⇒ true
         case _ ⇒ false
       })
@@ -385,8 +314,6 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
       val otherCaracteristicas = Map[String, Boolean](
         POSSUI_IMAGEM -> possuiImagem)
 
-      
-      
       val pl = ProjetoLei(
         metadado = metadado,
         preEpigrafe = preEpigrafe,
@@ -399,24 +326,104 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
       val falhas = try {
         new Validation().validaEstrutura(articulacao)
       } catch {
-	      case e: ParseException ⇒ {
-	        e.errors.to(Set)
-	      }
-	      case e: Exception ⇒ {
-	        Set(ErroSistema(e))
-	      }
+	      case e: ParseException ⇒ e.errors.to(Set)
+        case e: Exception ⇒ Set(ErroSistema(e))
       }
       (Some(pl), falhas.toList)
     } catch {
-      case e: ParseException ⇒ {
-        (None, e.errors.toList)
-      }
-      case e: Exception ⇒ {
-        (None, List(ErroSistema(e)))
-      }
+      case e: ParseException ⇒ (None, e.errors.toList)
+      case e: Exception ⇒ (None, List(ErroSistema(e)))
     }
   }
+}
 
+object ProjetoLeiParser {
+  private def isEmptyPar(b: Block): Boolean = b match {
+    case Paragraph(_, "") ⇒ true
+    case _ ⇒ false
+  }
+
+  private def isParagraph(b: Block): Boolean = b match {
+    case Paragraph(_, _) ⇒ true
+    case _ ⇒ false
+  }
+
+  private def trimEmptyPars(bl: List[Block]): List[Block] = {
+    bl.dropWhile(isEmptyPar).reverse.dropWhile(isEmptyPar).reverse
+  }
+
+  private def oneOf(r: List[Regex]) = (b: Block) ⇒ b match {
+    case p: Paragraph ⇒ r.find(_.findFirstIn(p.text).isDefined).map(_ ⇒ p)
+    case _ ⇒ None
+  }
+
+  private def matchesOneOf(r: List[Regex]) = oneOf(r).andThen(_.isDefined)
+
+  private def doesNotMatchAnyOf(r: List[Regex]) = oneOf(r).andThen(_.isEmpty)
+
+  def reconheceLinks(b: Block, urnContexto: String): Block = b.mapBlock {
+    case d: Dispositivo ⇒ d.conteudo match {
+      case Some(p: Paragraph) ⇒
+        import br.gov.lexml.parser.pl.linker.Linker.findLinks
+        val (links, nl) = findLinks(urnContexto, p.nodes)
+        d copy(links = links, conteudo = Some(p copy (nodes = nl)))
+      case _ ⇒ d
+    }
+    case p: Paragraph ⇒
+      import br.gov.lexml.parser.pl.linker.Linker.findLinks
+      val (_, nl) = findLinks(urnContexto, p.nodes)
+      p copy (nodes = nl)
+    case x ⇒ x
+  }
+
+  def reconheceLinks(bl: List[Block], urnContexto: String): List[Block] = bl.map(reconheceLinks(_, urnContexto))
+
+  @unused
+  def printArticulacao(bl: List[Block], num: Int) = {
+    println("articulacao" + num + ":")
+
+    def printBlock(b: Block, indent: String = ""): Unit = b match {
+      case p: Paragraph ⇒ println(indent + "P: text = " + p.text + ", fechaAspas = " + p.fechaAspas + ", na = " + p.notaAlteracao + "\n" +
+        indent + "   nodes = " + p.toNodeSeq)
+      case o: Omissis ⇒ println(indent + "O: fechaAspas = " + o.fechaAspas + ", na =  " + o.notaAlteracao)
+      case a: Alteracao ⇒
+        println(indent + "A: id = " + a.id + ", base = " + a.baseURN)
+        a.blocks.foreach(printBlock(_, indent + "  "))
+      case d: Dispositivo ⇒
+        println(indent + "D: id = " + d.id + ", rotulo = " + d.rotulo + ", fechaAspas = " + d.fechaAspas + ", na = " + d.notaAlteracao)
+        d.conteudo.foreach(b ⇒ printBlock(b, indent + "  conteudo: "))
+        d.children.foreach(printBlock(_, indent + "    "))
+      case _: Table ⇒ println(indent + "<TABLE>")
+      case _: OL ⇒ println(indent + "<OL>")
+      case _ ⇒ println(indent + "<SOMETHING>")
+    }
+
+    bl.foreach(printBlock(_))
+  }
+
+  def limpaParagrafosVazios(blocks: List[Block]): List[Block] = blocks.filter {
+    case p: Paragraph if p.text == "" ⇒ false
+    case _ ⇒ true
+  }
+
+  private def trimParagraphs(b: Block) = b match {
+    case p: Paragraph =>
+      val t = p.nodes.text
+      val start = t.takeWhile(_.isWhitespace).length
+      val end = t.reverse.takeWhile(_.isWhitespace).length
+      val p1 = if (end > 0) {
+        p.cutRight(end)
+      } else {
+        p
+      }
+      val p2 = if (start > 0) {
+        p.cutLeft(start)
+      } else {
+        p
+      }
+      p2
+    case x => x
+  }
 }
 
 object ProjetoLei {
