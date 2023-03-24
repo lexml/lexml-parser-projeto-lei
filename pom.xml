@@ -3,7 +3,7 @@
 
     <groupId>br.gov.lexml.parser.pl</groupId>
     <artifactId>lexml-parser-projeto-lei</artifactId>
-    <version>1.14.1-SNAPSHOT</version>
+    <version>1.14.0-SNAPSHOT</version>
 
     <name>LexML Brazil Legal Document Parser</name>
     <description>Brazillian legal document parsing library.</description>
