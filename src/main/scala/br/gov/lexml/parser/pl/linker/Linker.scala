@@ -38,7 +38,7 @@ object Linker {
     val msg = (urnContexto,ns)
     import system.dispatcher
     val f = (linkerRouter ? msg).mapTo[(List[Node],Set[String])] map {
-      case (nl,links) ⇒ (links.toList,nl)
+      case (nl,links) => (links.toList,nl)
     }
     logger.info(s"findLinks: waiting for result....")
     val res = Await.result(f,timeout.duration)
@@ -53,26 +53,26 @@ object Linker {
   }
 
   private def getLinks(d: Dispositivo): List[URN] = d.rotulo match {
-    case _: RotuloArtigo ⇒ for {
-      dd ← d.conteudo.toList.collect {
-        case d: Dispositivo ⇒ d
+    case _: RotuloArtigo => for {
+      dd <- d.conteudo.toList.collect {
+        case d: Dispositivo => d
       }
       l <- getLinks(dd)
     } yield l
-    case _ ⇒ d.links.flatMap(URN.fromString)
+    case _ => d.links.flatMap(URN.fromString)
   }
 
   def paraCadaAlteracao(bl: List[Block]): List[Block] = {
-    def f(d: Dispositivo): Block ⇒ Block = {
-      case a: Alteracao ⇒
+    def f(d: Dispositivo): Block => Block = {
+      case a: Alteracao =>
         val links = getLinks(d)
         processaAlteracao(a, links)
-      case dd: Dispositivo ⇒ dd.replaceChildren(dd.children.map(f(dd)))
-      case x ⇒ x
+      case dd: Dispositivo => dd.replaceChildren(dd.children.map(f(dd)))
+      case x => x
     }
     def g(b: Block) = b match {
-      case dd: Dispositivo ⇒ dd.replaceChildren(dd.children.map(f(dd)))
-      case x ⇒ x
+      case dd: Dispositivo => dd.replaceChildren(dd.children.map(f(dd)))
+      case x => x
     }
     bl.map(g)
   }

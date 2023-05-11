@@ -118,8 +118,12 @@ object DOCXReader {
     def fromEvent(ev : StartElement): XElem = {
       val ns = Option(ev.getName.getNamespaceURI)
       import scala.jdk.CollectionConverters._
-      val attrs = ev.getAttributes.asScala.map { att =>
-        ((att.getName.getNamespaceURI,att.getName.getLocalPart), att.getValue) }.toMap
+      val attrIt : Iterator[Attribute] = ev.getAttributes.asScala.collect { case x : Attribute => x }
+      val attrSeq : Seq[Attribute] = attrIt.toSeq
+      val attrPairs : Seq[((String,String),String)] = attrSeq.map { (att: javax.xml.stream.events.Attribute) =>
+        ((att.getName.getNamespaceURI, att.getName.getLocalPart), att.getValue)
+      }
+      val attrs = attrPairs.toMap
       XElem(ns,ev.getName.getLocalPart,attrs)
     }
     

@@ -35,10 +35,10 @@ object ParserFrontEnd {
     val ParserParams(inRTF, md) = params
     val inRTF2 = new DigestInputStream(inRTF, MessageDigest.getInstance("MD5"))
     val xhtmlRes = XHTMLProcessor.pipeline(inRTF2, new AbiwordConverter())
-    try { params.inRTF.close() } catch { case _ : Exception ⇒ }
+    try { params.inRTF.close() } catch { case _ : Exception => }
     val xhtml = xhtmlRes match {
-      case Failure ⇒ throw ParseException(FalhaConversaoPrimaria)
-      case Success(xhtml) ⇒ xhtml
+      case Failure => throw ParseException(FalhaConversaoPrimaria)
+      case Success(xhtml) => xhtml
     }
     val blocks = Block fromNodes xhtml    
     val (mpl, msgs) = new ProjetoLeiParser(params.md.profile).fromBlocks(md copy (hashFonte = Some(inRTF2.getMessageDigest.digest())), blocks)
@@ -47,7 +47,7 @@ object ParserFrontEnd {
 
   def parseAndBuild(params: ParserParams): (Option[(ProjetoLei, Array[Byte])], List[ParseProblem]) = {
     val (mpl, msgs) = parseProjetoLei(params)
-    val r = mpl.map(pl ⇒ {
+    val r = mpl.map(pl => {
       val bos = new ByteArrayOutputStream()
       val zos = new ZipOutputStream(bos)
       zos.setLevel(9)
@@ -64,10 +64,7 @@ object ParserFrontEnd {
     })
     (r, msgs)
   }  
-  
-  def main(args : Array[String]) {
-    
-  }
+
 }
 
 @unused

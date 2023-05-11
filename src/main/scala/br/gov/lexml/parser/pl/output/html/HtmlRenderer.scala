@@ -89,13 +89,13 @@ object HtmlRenderer {
 		case RotuloItem(num,comp) => <span class="rotuloDispositivo">Item </span> <span class="numeroDispositivo">{num.toString} –</span>
 		case RotuloPena => <span class="rotuloDispositivo">Pena –</span>
 
-		case RotuloParte(Left(rot),_,_,_,_) ⇒ <span class="rotuloDispositivo">PARTE ${rot}</span>
-		case RotuloParte(_,_,_,_,Some(rot)) ⇒ <span class="rotuloDispositivo">PARTE ${rot}</span>
-		case RotuloParte(_,_,true,_,_) ⇒ <span class="rotuloDispositivo">PARTE ÚNICA</span>
-		case RotuloParte(Right(num),comp,_,true,_) ⇒
+		case RotuloParte(Left(rot),_,_,_,_) => <span class="rotuloDispositivo">PARTE ${rot}</span>
+		case RotuloParte(_,_,_,_,Some(rot)) => <span class="rotuloDispositivo">PARTE ${rot}</span>
+		case RotuloParte(_,_,true,_,_) => <span class="rotuloDispositivo">PARTE ÚNICA</span>
+		case RotuloParte(Right(num),comp,_,true,_) =>
 			val rot = LexmlRenderer.renderOrdinalExtenso(num = num,g = Fem,allCaps = true) + renderComp(comp)
 			<span class="rotuloDispositivo">PARTE ${rot}</span>
-		case RotuloParte(Right(num),comp,_,_,_) ⇒
+		case RotuloParte(Right(num),comp,_,_,_) =>
 			val rot = renderRomano(num).toUpperCase + renderComp(comp)
 			<span class="rotuloDispositivo">PARTE ${rot}</span>
 		case RotuloLivro(Left(_),_, _) => throw new RenderException("Livro sem número não suportado na renderização")

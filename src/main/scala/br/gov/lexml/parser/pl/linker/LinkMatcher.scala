@@ -18,20 +18,20 @@ object URN {
   val dataCompletaRe = """(\d\d\d\d)-(\d\d)-(\d\d)""".r
   def fromString(urn: String) =
     urn match {
-      case urnRe(date, fragment) ⇒ {        
+      case urnRe(date, fragment) => {
         date match {
-          case dataCompletaRe(ano, mes, dia) ⇒
+          case dataCompletaRe(ano, mes, dia) =>
             Some(URN(ano.toInt, Some((mes.toInt, dia.toInt)), if (fragment == null || fragment.isEmpty) { "" } else { fragment.substring(1) }, urn))
-          case _ ⇒ Some(URN(date.toInt, None, if (fragment == null || fragment.isEmpty) { "" } else { fragment.substring(1) }, urn))
+          case _ => Some(URN(date.toInt, None, if (fragment == null || fragment.isEmpty) { "" } else { fragment.substring(1) }, urn))
         }
       }
-      case _ ⇒ None
+      case _ => None
     }
 
   def matchAll(urns: List[URN], frags: List[String]): List[UMatch] =
     for {
-      urn ← urns
-      frag ← frags.map(_.replaceAll("1u","1"))
+      urn <- urns
+      frag <- frags.map(_.replaceAll("1u","1"))
     } yield {      
       val ufrag = urn.fragment
       val ulen = ufrag.length
@@ -59,13 +59,13 @@ object URN {
 case class MatchCount(val exact: Int = 0, val prefix: Int = 0, val suffix: Int = 0, val superPrefix: Int = 0,
   val partial: Int = 0, val neighbor: Int = 0, val noMatch: Int = 0) {
   def +(m: UMatch): MatchCount = m match {
-    case _: ExactMatch ⇒ copy(exact = exact + 1)
-    case _: PrefixMatch ⇒ copy(prefix = prefix + 1)
-    case _: SuffixMatch ⇒ copy(suffix = suffix + 1)
-    case _: SuperPrefixMatch ⇒ copy(superPrefix = superPrefix + 1)
-    case _: PartialMatch ⇒ copy(partial = partial + 1)
-    case _: NeighborMatch ⇒ copy(neighbor = neighbor + 1)
-    case _: NoMatch ⇒ copy(noMatch = noMatch + 1)
+    case _: ExactMatch => copy(exact = exact + 1)
+    case _: PrefixMatch => copy(prefix = prefix + 1)
+    case _: SuffixMatch => copy(suffix = suffix + 1)
+    case _: SuperPrefixMatch => copy(superPrefix = superPrefix + 1)
+    case _: PartialMatch => copy(partial = partial + 1)
+    case _: NeighborMatch => copy(neighbor = neighbor + 1)
+    case _: NoMatch => copy(noMatch = noMatch + 1)
   }
   def compareTo(mc: MatchCount) =
     List(exact compareTo mc.exact, prefix compareTo mc.prefix, suffix compareTo mc.suffix, superPrefix compareTo mc.superPrefix,
@@ -78,21 +78,21 @@ case class MatchData(val urn: URN, val count: MatchCount = MatchCount(), val mat
     if (m.urn == urn) { copy(count = count + m, matches = matches + (m.fragment -> m)) }
     else { this }
   }
-  lazy val mapId: String ⇒ Option[String] =
-    matches.mapValues(m ⇒ m.complement + m.fragment).filter(x ⇒ x._1 != x._2).lift
+  lazy val mapId: String => Option[String] =
+    matches.view.mapValues(m => m.complement + m.fragment).filter(x => x._1 != x._2).lift
   def updateAlteracao(a: Alteracao): Alteracao = {
     val baseId = a.id + "_"
     val blen = baseId.length
     def applyBlock(b: Block): Block = b match {
-      case d: Dispositivo ⇒ {
+      case d: Dispositivo => {
         val d1 = mapId(d.id.substring(blen)) match {
-          case None ⇒ d
-          case Some(newId) ⇒ d overrideId (baseId + newId)
+          case None => d
+          case Some(newId) => d overrideId (baseId + newId)
         }
         d1 replaceChildren (applyBlocks(d.children))
       }
-      case a: Alteracao ⇒ throw new RuntimeException("Nao pode haver alteracao dentro de alteracao")
-      case x ⇒ x
+      case a: Alteracao => throw new RuntimeException("Nao pode haver alteracao dentro de alteracao")
+      case x => x
     }
     def applyBlocks(bl: List[Block]): List[Block] = bl.map(applyBlock(_))
     a.mapBlocks(applyBlocks(_)).copy(baseURN = Some(urn.base))
@@ -102,9 +102,9 @@ case class MatchData(val urn: URN, val count: MatchCount = MatchCount(), val mat
 
 case class CompareKey(count: MatchCount, ano: Int, mesDia: Option[(Int, Int)]) extends Ordered[CompareKey] {
   def compareMesDia(md1: Option[(Int, Int)], md2: Option[(Int, Int)]) = (md1, md2) match {
-    case (None, _) ⇒ 1
-    case (_, None) ⇒ -1
-    case (Some((m1, d1)), Some((m2, d2))) ⇒
+    case (None, _) => 1
+    case (_, None) => -1
+    case (Some((m1, d1)), Some((m2, d2))) =>
       List(m1 compareTo m2, d1 compareTo d2).dropWhile((0 == _)).headOption.getOrElse(0)
   }
   override def compare(d: CompareKey): Int =
@@ -116,27 +116,27 @@ case class MatchByBase(base: String, ano: Int, mesdia: Option[(Int, Int)] = None
   def +(u: UMatch): MatchByBase = {
     if (u.urn.base == base) {
       val bestMatch = fragMap.get(u.fragment) match {
-        case None ⇒ u
-        case Some(u1) ⇒ u1 max u
+        case None => u
+        case Some(u1) => u1 max u
       }
       this.copy(base: String, fragMap = fragMap + (u.fragment -> bestMatch))
     } else {
       this
     }
   }
-  lazy val count: MatchCount = (MatchCount() /: fragMap.values)(_ + _)
+  lazy val count: MatchCount = fragMap.values.foldLeft(MatchCount())(_ + _)
   lazy val allMatched: Boolean = fragMap.values.forall(!_.isInstanceOf[NoMatch])
 
   def updateAlteracao(a: Alteracao): Alteracao = {
     val baseId = a.id + "_"
     val blen = baseId.length
     def applyBlock(b: Block): Block = b match {
-      case d: Dispositivo ⇒ {
+      case d: Dispositivo => {
         val oid = d.id.substring(blen)
         val nid = oid.replaceAll("1u","1")
         val d1 = mapId(nid) match {
-          case None ⇒ d
-          case Some(newId) ⇒ {
+          case None => d
+          case Some(newId) => {
             val nid2 = baseId + newId
             val n = nid2.lastIndexOf(nid)
             val rid = nid2.patch(n,oid,oid.length)
@@ -145,14 +145,14 @@ case class MatchByBase(base: String, ano: Int, mesdia: Option[(Int, Int)] = None
         }
         d1 replaceChildren (applyBlocks(d.children))
       }
-      case a: Alteracao ⇒ throw new RuntimeException("Nao pode haver alteracao dentro de alteracao: " + a.id)
-      case x ⇒ x
+      case a: Alteracao => throw new RuntimeException("Nao pode haver alteracao dentro de alteracao: " + a.id)
+      case x => x
     }
     def applyBlocks(bl: List[Block]): List[Block] = bl.map(applyBlock(_))
     a.mapBlocks(applyBlocks(_)).copy(baseURN = Some(base))
   }
-  lazy val mapId: String ⇒ Option[String] =
-    fragMap.mapValues(ma ⇒ ma.complement + ma.fragment).filter(x ⇒ x._1 != x._2).lift
+  lazy val mapId: String => Option[String] =
+    fragMap.view.mapValues(ma => ma.complement + ma.fragment).filter(x => x._1 != x._2).lift
 }
 
 case class MatchResult(val m: Map[String, MatchByBase] = Map()) {
@@ -163,7 +163,7 @@ case class MatchResult(val m: Map[String, MatchByBase] = Map()) {
     copy(m = m + (mt.urn.base -> (m.getOrElse(mt.urn.base, MatchByBase(mt.urn.base, mt.urn.ano, mt.urn.mesdia)) + mt)))
   lazy val rank: List[MatchByBase] = {
     val (l1, l2) = m.values.partition(_.allMatched)
-    def s(l: List[MatchByBase]) = l.sortBy(md ⇒ CompareKey(md.count, md.ano, md.mesdia))
+    def s(l: List[MatchByBase]) = l.sortBy(md => CompareKey(md.count, md.ano, md.mesdia))
     s(l1.toList) ++ s(l2.toList)
   }
   lazy val first: Option[MatchByBase] = rank.headOption
@@ -175,13 +175,13 @@ object MatchResult {
     def getIds(b: Block): List[String] = {
 
       b match {
-        case d: Dispositivo ⇒ { d.id :: d.subDispositivos.flatMap(getIds(_)) }
-        case _ ⇒ Nil
+        case d: Dispositivo => { d.id :: d.subDispositivos.flatMap(getIds(_)) }
+        case _ => Nil
       }
     }
     val altIdLength = renderId(a.path).length() + 1
     val allIds =
-    a.blocks.flatMap(getIds(_)).map(s ⇒ if (s.length >= altIdLength) { s.substring(altIdLength) } else { s })
+    a.blocks.flatMap(getIds(_)).map(s => if (s.length >= altIdLength) { s.substring(altIdLength) } else { s })
     val matches = URN.matchAll(links, allIds)
     
     val mr = links.foldLeft(MatchResult())(_ + _)
@@ -235,7 +235,7 @@ object NeighborMatch {
   def check(refFrag: String, idFrag: String): Option[String] = {
     val c1 = lastComponent(refFrag)
     val c2 = firstComponent(idFrag)
-    val l = for { (cc1, cc2, comp) ← compatiblePairs; if (cc1 == c1 && cc2 == c2) } yield { comp }
+    val l = for { (cc1, cc2, comp) <- compatiblePairs; if (cc1 == c1 && cc2 == c2) } yield { comp }
     l.headOption
   }
   def level = 5

@@ -19,15 +19,15 @@ import br.gov.lexml.parser.pl.block.Omissis
 import br.gov.lexml.parser.pl.block.Table
 
 final case class Path(rl: List[Rotulo]) extends Ordered[Path] {
-  import LexmlRenderer.{ renderRotulo2 ⇒ render }
+  import LexmlRenderer.{ renderRotulo2 => render }
   def mkTexto(rl: List[Rotulo]): String = {    
     def mkTexto1(rl : List[Rotulo]) : String = {    
       rl match {  
-        case Nil ⇒ ""
-        case r1 :: rll ⇒ rll match {
+        case Nil => ""
+        case r1 :: rll => rll match {
           case r2 :: _ if r1.isDispositivo && r2.isAgregador => render(r1) + " (" + r2.proposicaoEm + " " + mkTexto1(rll) + ")"
-          case r2 :: _ ⇒ render(r1) + " " + r2.proposicao + " " + mkTexto1(rll)
-          case Nil ⇒ render(r1)
+          case r2 :: _ => render(r1) + " " + r2.proposicao + " " + mkTexto1(rll)
+          case Nil => render(r1)
         }
       }
     }
@@ -42,21 +42,21 @@ final case class Path(rl: List[Rotulo]) extends Ordered[Path] {
 
   def compare(p: Path): Int = {
     def comp(l1: Seq[Rotulo], l2: Seq[Rotulo]): Int = (l1, l2) match {
-      case (a :: al, b :: bl) ⇒ a.compare(b) match {
-        case 0 ⇒ comp(al, bl)
-        case x ⇒ x
+      case (a :: al, b :: bl) => a.compare(b) match {
+        case 0 => comp(al, bl)
+        case x => x
       }
-      case (Nil, Nil) ⇒ 0
-      case (_, Nil) ⇒ 1
-      case (Nil, _) ⇒ -1
+      case (Nil, Nil) => 0
+      case (_, Nil) => 1
+      case (Nil, _) => -1
     }
     comp(rl, p.rl)
   }
   override def equals(o: Any): Boolean = o match {
-    case p: Path ⇒ compare(p) == 0
-    case _ ⇒ false
+    case p: Path => compare(p) == 0
+    case _ => false
   }
-  override lazy val hashCode: Int = rl.foldLeft(41)((x, y) ⇒ 41 * (x + y.hashCode))
+  override lazy val hashCode: Int = rl.foldLeft(41)((x, y) => 41 * (x + y.hashCode))
   val empty = rl.isEmpty
 }
 
@@ -119,18 +119,18 @@ class Validation {
   }
 
   def verificaTodos[P](vl: ValidationRule[P]*)(implicit tc: ToContext[P]): ValidationRule[P] = {
-    case p ⇒
+    case p =>
       in(p) {
-        vl.map((f: ValidationRule[P]) ⇒ f.lift(p).getOrElse(es)).foldLeft(es)(_ | _)
+        vl.map((f: ValidationRule[P]) => f.lift(p).getOrElse(es)).foldLeft(es)(_ | _)
       }
   }
 
   def paraTodoConjuntoDeIrmaos(vl: ValidationRule[(Path, List[Rotulo])]*): ValidationRule[List[Block]] = {
-    case (bl: List[Block]) ⇒ {
+    case (bl: List[Block]) => {
       val vf = verificaTodos(vl: _*)(tcAny)
 
       def verifica(p: Path, bl: List[Block], res: Set[ParseProblem]): Set[ParseProblem] = {
-        val ds = bl.collect({ case d: Dispositivo ⇒ d })
+        val ds = bl.collect({ case d: Dispositivo => d })
         val resHere = vf.lift(p, ds.map(_.rotulo)).getOrElse(es)
         val resSubdisps = ds.map { d => in(d) {
           verifica(p + d.rotulo, d.subDispositivos, es)
@@ -146,12 +146,12 @@ class Validation {
   }
 
   def paraTodoIrmaoConsecutivo(vl: ValidationRule[(Path, Rotulo, Rotulo)]*): ValidationRule[(Path, List[Rotulo])] = {
-    case (pai: Path, rl: List[Rotulo]) ⇒ rl match {
-      case (r1 :: (rll@(_ :: _))) ⇒ {
+    case (pai: Path, rl: List[Rotulo]) => rl match {
+      case (r1 :: (rll@(_ :: _))) => {
         val vf = verificaTodos(vl: _*)(tcAny)
-        rll.foldLeft((r1, es))({ case ((r1, s), r2) ⇒ (r2, s | vf.lift(pai, r1, r2).getOrElse(es)) })._2
+        rll.foldLeft((r1, es))({ case ((r1, s), r2) => (r2, s | vf.lift(pai, r1, r2).getOrElse(es)) })._2
       }
-      case _ ⇒ es
+      case _ => es
     }
   }
 
@@ -199,10 +199,10 @@ class Validation {
   }
 
   def paraTodoDispositivo(vl: ValidationRule[Dispositivo]*): ValidationRule[List[Block]] = {
-    case (bl: List[Block]) ⇒ {
+    case (bl: List[Block]) => {
       val vf = verificaTodos(vl: _*)
       val r = bl.collect {
-        case d: Dispositivo ⇒ in(d) {
+        case d: Dispositivo => in(d) {
           vf.lift(d).getOrElse(Set[ParseProblem]()).union(
             paraTodoDispositivo(vf)(d.children))
         }
@@ -217,7 +217,7 @@ class Validation {
     def verifica(b: Block, pai: Option[Block]): Set[ParseProblem] = {
       val e1 = vf.lift((pai, b)).getOrElse(Set())
       val cl = b match {
-        case d: Dispositivo ⇒ in(d) {
+        case d: Dispositivo => in(d) {
           d.subDispositivos
         }
         case a: Alteracao => in(a) {
@@ -250,8 +250,8 @@ class Validation {
     val vf = verificaTodos(vl: _*)(tcAny)
 
     def collectPaths(b: Block): List[(Path, Block)] = b match {
-      case (d: Dispositivo) ⇒ (Path(d.path), d) :: d.subDispositivos.flatMap(collectPaths)
-      case (a: Alteracao) ⇒ (Path(a.path), a) :: a.blocks.flatMap(collectPaths)
+      case (d: Dispositivo) => (Path(d.path), d) :: d.subDispositivos.flatMap(collectPaths)
+      case (a: Alteracao) => (Path(a.path), a) :: a.blocks.flatMap(collectPaths)
       case _ => List()
     }
 
@@ -317,9 +317,9 @@ class Validation {
   }
 
   val somenteUmRotuloUnico: ValidationRule[(Path, List[Rotulo])] = {
-    case (p, l) ⇒ {
+    case (p, l) => {
       val possuiUnico = l.collect({
-        case t: PodeSerUnico if t.unico ⇒ t
+        case t: PodeSerUnico if t.unico => t
       })
       (for {
         r <- possuiUnico
@@ -364,10 +364,10 @@ class Validation {
 
   def alineasSoDebaixoDeIncisos: ValidationRule[(Path, Block)] = {
     def check(rl: List[Rotulo]): Boolean = rl match {
-      case (_: RotuloInciso) :: (_: RotuloAlinea) :: r ⇒ check(r)
-      case (_: RotuloAlinea) :: _ ⇒ true
-      case _ :: r ⇒ check(r)
-      case Nil ⇒ false
+      case (_: RotuloInciso) :: (_: RotuloAlinea) :: r => check(r)
+      case (_: RotuloAlinea) :: _ => true
+      case _ :: r => check(r)
+      case Nil => false
     }
 
     def check2(rl: List[Rotulo]): Boolean = {
@@ -376,7 +376,7 @@ class Validation {
     }
 
     {
-      case (Path(rl), bl) if check2(rl) ⇒
+      case (Path(rl), bl) if check2(rl) =>
         //println(s"alineasSoDebaixoDeIncisos (2) rl=${rl}, bl=${bl}")
         in(bl) {
           Set(withContext(PosicaoInvalida(Path(rl).txt)))
@@ -384,10 +384,10 @@ class Validation {
     }
   }
 
-  lazy val listaNegraTextosDispositivos: ClassificadoresRegex[Dispositivo ⇒ TextoInvalido] = {
+  lazy val listaNegraTextosDispositivos: ClassificadoresRegex[Dispositivo => TextoInvalido] = {
     import br.gov.lexml.parser.pl.util.Proc
-    def procBuilder(r: Regex, msg: String) = (t: String, _: List[String]) ⇒
-      (d: Dispositivo) ⇒
+    def procBuilder(r: Regex, msg: String) = (t: String, _: List[String]) =>
+      (d: Dispositivo) =>
         in(d) {
           TextoInvalido(Path(d.path).txt, r.pattern.pattern(), t, msg)
         }
@@ -401,11 +401,11 @@ class Validation {
     case d: Dispositivo =>
       in(d) {
         d.conteudo match {
-          case Some(p: Paragraph) ⇒ {
+          case Some(p: Paragraph) => {
             val l = listaNegraTextosDispositivos.classifique(p.text)
             Set[ParseProblem](l.map(_ (d)): _*)
           }
-          case _ ⇒ Set()
+          case _ => Set()
         }
       }
   }
@@ -490,9 +490,9 @@ class Validation {
     }: ValidationRule[List[Block]],
     paraTodoConjuntoDeIrmaos(
       paraTodoIrmaoConsecutivo({
-        case (p, r1, r2) if r1 == r2 ⇒
+        case (p, r1, r2) if r1 == r2 =>
           Set(withContext(RotuloRepetido((p + r1).txt)))
-        case (p, r1, r2) if ordemInvertida(r1, r2) ⇒
+        case (p, r1, r2) if ordemInvertida(r1, r2) =>
           Set(withContext(OrdemInvertida((p + r1).txt, (p + r2).txt)))
       }),
       somenteUmRotuloUnico,

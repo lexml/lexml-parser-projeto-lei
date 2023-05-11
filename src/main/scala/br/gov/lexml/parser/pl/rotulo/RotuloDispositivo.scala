@@ -15,24 +15,25 @@ sealed abstract class Rotulo extends AnyRef with Ordered[Rotulo] {
 
   def subRotulo(n: Int): Option[Rotulo] = None
 
-  final def compare(r: Rotulo) =  {      
-      val ord = implicitly[Ordering[Iterable[Int]]]
-      ord.compare((nivel :: compBase.getOrElse(List())).to(Iterable),
-        (r.nivel :: r.compBase.getOrElse(List())).to(Iterable)
-      )
+  final def compare(r: Rotulo) = {
+    import Ordering.Implicits._
+    val ord = implicitly[Ordering[Seq[Int]]]
+    ord.compare((nivel :: compBase.getOrElse(List())).to(Seq),
+      (r.nivel :: r.compBase.getOrElse(List())).to(Seq)
+    )
   }
 
 
   final override lazy val hashCode: Int = {
     compBase match {
-      case Some(l) ⇒ ((nivel + 41) :: l).foldLeft(41)({ case (x, y) ⇒ 41 * (x + y) })
-      case _ ⇒ super.hashCode
+      case Some(l) => ((nivel + 41) :: l).foldLeft(41)({ case (x, y) => 41 * (x + y) })
+      case _ => super.hashCode
     }
   }
 
   final override def equals(that: Any) = that match {
-    case r: Rotulo ⇒ compare(r) == 0
-    case _ ⇒ false
+    case r: Rotulo => compare(r) == 0
+    case _ => false
   }
 
   def consecutivoContinuo(r: Rotulo): Boolean = false
@@ -140,13 +141,13 @@ case class RotuloArtigo(num: Int, comp: Option[Int] = None, unico: Boolean = fal
   override def subRotulo(n: Int) = Some(RotuloParagrafo(Some(n)))
   override def consecutivoContinuo(r: Rotulo) = 
     r match {
-      case RotuloArtigo(num1, comp1, _) if num1 == num ⇒ (comp, comp1) match {
-        case (None, Some(0)) ⇒ true
-        case (Some(n1), Some(n2)) ⇒ n2 == n1 + 1
-        case _ ⇒ false
+      case RotuloArtigo(num1, comp1, _) if num1 == num => (comp, comp1) match {
+        case (None, Some(0)) => true
+        case (Some(n1), Some(n2)) => n2 == n1 + 1
+        case _ => false
       }
-      case RotuloArtigo(num1, comp1, _) ⇒ num1 == num + 1 && comp1.isEmpty
-      case r: Rotulo ⇒ r.nivel < nivel
+      case RotuloArtigo(num1, comp1, _) => num1 == num + 1 && comp1.isEmpty
+      case r: Rotulo => r.nivel < nivel
     }
     
   override def canBeFirst = true
@@ -155,10 +156,10 @@ case class RotuloArtigo(num: Int, comp: Option[Int] = None, unico: Boolean = fal
 case class RotuloParagrafo(num: Option[Int] = None, comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloDispositivo with PodeSerUnico {
   val nivel = niveis.paragrafo
   override lazy val toNodeSeq = num match {
-    case None ⇒ <RotuloCaput/>
-    case Some(n) ⇒ <RotuloParagrafo num={ n.toString } comp={ comp.mkString("", "", "") }/>
+    case None => <RotuloCaput/>
+    case Some(n) => <RotuloParagrafo num={ n.toString } comp={ comp.mkString("", "", "") }/>
   }
-  val elemLabel = num match { case Some(_) ⇒ "Paragrafo"; case _ ⇒ "Caput" }
+  val elemLabel = num match { case Some(_) => "Paragrafo"; case _ => "Caput" }
   val compBase = Some(num.getOrElse(-1) :: comp.toList)
   val proposicao = "do"
   val proposicaoEm = "no"
@@ -181,13 +182,13 @@ sealed trait HasRegularContinuity[T <: Rotulo] extends Rotulo with WithNumComp {
   val num: Int
   val comp: Option[Int]
   override def consecutivoContinuo(r: Rotulo) = r match {
-    case rr: HasRegularContinuity[T] if (num == rr.num) ⇒ (comp, rr.comp) match {
-      case (None, Some(0)) ⇒ true
-      case (Some(n1), Some(n2)) ⇒ n2 == n1 + 1
-      case _ ⇒ false
+    case rr: HasRegularContinuity[T] if (num == rr.num) => (comp, rr.comp) match {
+      case (None, Some(0)) => true
+      case (Some(n1), Some(n2)) => n2 == n1 + 1
+      case _ => false
     }
-    case rr: HasRegularContinuity[T] if (num + 1 == rr.num) ⇒ rr.comp.isEmpty
-    case _ ⇒ false
+    case rr: HasRegularContinuity[T] if (num + 1 == rr.num) => rr.comp.isEmpty
+    case _ => false
   }
 }
 
@@ -268,17 +269,17 @@ case class RotuloParte(
   rotulo : Option[String] = None) extends
   Rotulo with RotuloAgregador with NoMatterContinuity with WithEitherNumComp {
   val nivel = niveis.parte
-  override lazy val toNodeSeq = <RotuloParte num={ num.fold(x ⇒ x, x ⇒ x.toString) } comp={ comp.mkString("", "", "") }/>
+  override lazy val toNodeSeq = <RotuloParte num={ num.fold(x => x, x => x.toString) } comp={ comp.mkString("", "", "") }/>
   val elemLabel = "Parte"
-  val compBase = num.fold(_ ⇒ None, n ⇒ Some(n :: comp.toList))
+  val compBase = num.fold(_ => None, n => Some(n :: comp.toList))
   val proposicao = "da" 
   val proposicaoEm = "na"
 }
 case class RotuloLivro(num: Either[String, Int], comp: Option[Int] = None, unico: Boolean = false) extends Rotulo with RotuloAgregador with NoMatterContinuity with WithEitherNumComp {
   val nivel = niveis.livro
-  override lazy val toNodeSeq = <RotuloLivro num={ num.fold(x ⇒ x, x ⇒ x.toString) } comp={ comp.mkString("", "", "") }/>
+  override lazy val toNodeSeq = <RotuloLivro num={ num.fold(x => x, x => x.toString) } comp={ comp.mkString("", "", "") }/>
   val elemLabel = "Livro"
-  val compBase = num.fold(_ ⇒ None, n ⇒ Some(n :: comp.toList))
+  val compBase = num.fold(_ => None, n => Some(n :: comp.toList))
   val proposicao = "do"
   val proposicaoEm = "no"
 }
