@@ -1,12 +1,11 @@
 package br.gov.lexml.parser.pl.docx
 
-import scala.io.Source
-import scala.xml.pull._
+import javax.xml.stream.XMLInputFactory
 import br.gov.lexml.parser.pl.misc.XMLStreamUtils._
 
 import scala.annotation.tailrec
 import br.gov.lexml.parser.pl.misc.CollectionUtils._
-import br.gov.lexml.parser.pl.util.Entities
+import javax.xml.stream.events._
 
 
 object DOCXReader {
@@ -14,17 +13,14 @@ object DOCXReader {
 
   final case class TextStyle(bold : Boolean = false, italics : Boolean = false, 
     subscript : Boolean = false, superscript : Boolean = false) {
-    import scala.xml._
-    def wrap(nodes : Node*) : Seq[Node] = {
-      val styleStr = Map(
-          "font-style: italic" -> italics,
-          "font-weight: bold" -> bold
-          ).filter(_._2).keys.mkString(";")
-      if(styleStr.isEmpty) {
-        nodes
-      } else {
-        Seq(<span style={styleStr}>{nodes}</span>)
-      }
+
+    override def toString : String = {
+      val label =
+        (if (bold) {"B"} else "") +
+        (if (italics) {"I"} else "") +
+        (if (superscript) { "⌃"} else "") +
+          (if (subscript) { "⌄"} else "")
+      s"<$label>"
     }
   }
   
@@ -37,17 +33,55 @@ object DOCXReader {
   
   final case class TextSegment(style : TextStyle, text : String) extends Segment {
     import scala.xml._
-	  override def toXML: Seq[Node] = style.wrap(Text(text))
+	  override def toXML: Seq[Node] =
+      TextSegment.styles(style)(Text(text))
+
+    override def toString : String = {
+      val head = if(style != emptyStyle) { style.toString } else ""
+      "〈" + head + text + "〉"
+    }
+  }
+
+  object TextSegment {
+    import scala.xml._
+    def encloseIf(label : String)(cond : TextStyle => Boolean)(style : TextStyle)(nodes : Seq[Node]) : Seq[Node] =
+      if(cond(style)) {
+        val el = Elem(prefix = null,
+                      label = label,
+                      attributes = Null,
+                      scope = TopScope,
+                      minimizeEmpty = true,
+                      child = nodes : _*)
+        Seq(el)
+      } else nodes
+
+    val italicsIf = encloseIf("i")(_.italics) _
+    val boldIf = encloseIf("b")(_.bold) _
+    val supIf = encloseIf("sup")(_.superscript) _
+    val subIf = encloseIf("sub")(_.subscript) _
+
+    def styles(style : TextStyle)(nodes : Seq[Node]) : Seq[Node] =
+      boldIf(style) {
+        italicsIf(style) {
+          supIf(style) {
+            subIf(style) {
+              nodes
+            }
+          }
+        }
+      }
   }
   
   case object Space extends Segment {
     import scala.xml._
     override def toXML = Seq(Text(" "))
+    override def toString = "⎵"
   }
   
   case object Tab extends Segment {
     import scala.xml._
     override def toXML = Seq(Text(" "))
+    override def toString = "⇥"
   }
   
   //From scalaz
@@ -69,61 +103,75 @@ object DOCXReader {
     hd ++ intersperse(List(txt.split(" ") :_*).map(t => TextSegment(style,t)),Space).toIndexedSeq ++ tl
   }  
   
-  final case class XElem(ns : Option[String], label : String)
-  
-  object XElem {
-    def fromEvent(ev : EvElemStart) = {
-      val ns = Option(ev.pre).flatMap(p => Option(ev.scope.getURI(p)))
-      XElem(ns,ev.label)
+  final case class XElem(ns : Option[String], label : String, attributes : Map[(String,String),String] = Map()) {
+    override def toString = {
+      val nsTxt = ns match {
+        case Some(XElem.wNs) => "():"
+        case Some(n) => s"($n):"
+        case None => ""
+      }
+      nsTxt + label
     }
-    
-    private[this] val wNs = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-    
-    private[this] def wElem(label : String) = XElem(Some(wNs),label)
-    
-    val parPr = wElem("pPr")
-    val runPr = wElem("rPr")
-    val italic = wElem("i")
-    val tab = wElem("tab")
-    val parStyle = wElem("pStyle")
-    val bold = wElem("b")
   }
   
-  final case class Context(style : TextStyle = TextStyle(), stack : List[(XElem,TextStyle)] = List(), segments : IndexedSeq[Segment] = IndexedSeq()) {    
-    def changeStyle(f : TextStyle => TextStyle) : Context = 
-      copy(style = f(style))
+  object XElem {
+    def fromEvent(ev : StartElement): XElem = {
+      val ns = Option(ev.getName.getNamespaceURI)
+      import scala.jdk.CollectionConverters._
+      val attrs = ev.getAttributes.asScala.map { att =>
+        ((att.getName.getNamespaceURI,att.getName.getLocalPart), att.getValue) }.toMap
+      XElem(ns,ev.getName.getLocalPart,attrs)
+    }
     
-    def enter(elem : XElem) = copy(stack = (elem,style) :: stack) 
-    def leave(keepStyle : Option[TextStyle => TextStyle] = None) = {
+    val wNs = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+
+  }
+  
+  final case class Context(style : TextStyle = TextStyle(), stack : List[(XElem,TextStyle)] = List(), segments : IndexedSeq[Segment] = IndexedSeq()) {
+    
+    def enter(elem : XElem) : Context = copy(stack = (elem,style) :: stack)
+    def leave(keepStyle : Option[TextStyle => TextStyle] = None) : Context = {
     	val newStyle = keepStyle.map(f => f(style)).getOrElse(stack.head._2)    	  
     	copy(style = newStyle, stack = stack.tail)
     }
-    def head = stack.headOption.map(_._1)
-    def add(s : Segment*) = copy(segments = segments ++ s)
+
+    def head: Option[XElem] = stack.headOption.map(_._1)
+    def add(s : Segment*) : Context = copy(segments = segments ++ s)
+    override def toString =
+      s"⟦${ if (style != emptyStyle) { style.toString + ":" } else "" } ${segments.mkString("")} STACK: ${stack.map { case (e,style) => style.toString + e.toString }.mkString("⟪"," ","⟫")}⟧"
   }
   
   import XElem._
-  def processEvent(ctx : Context, ev : XMLEvent) : Context = (ev,ctx.head) match {
-    case (ev : EvElemStart,_) => ctx.enter(fromEvent(ev))
-    case (ev : EvElemEnd,Some(e)) 
-    	if e == italic => ctx.leave(Some(s => s.copy(italics = true)))
-    case (ev : EvElemEnd,Some(e))
-    	if e == bold => ctx.leave(Some(s => s.copy(bold = true)))
-    case (ev : EvElemEnd,Some(e)) 
-    	if e == parPr || e == runPr => ctx.leave(Some(x => x))
-    case (ev : EvElemEnd,Some(e))
-    	if e == tab => ctx.add(Tab)
-    case (ev : EvElemEnd,_) => ctx.leave()  
-    case (ev : EvText,_) => ctx.add(breakText(ctx.style,ev.text):_*)
-    case (ev : EvEntityRef,_) =>
-      br.gov.lexml.parser.pl.util.Entities.entities.get(ev.entity).
-        map(c => ctx.add(breakText(ctx.style,"" + c):_*)).getOrElse(ctx)
-    case _ => ctx
+  private def processEvent(ctx : Context, event : XMLEvent) : Context = {
+    (event,ctx.head) match {
+      case (ev : StartElement,_) => ctx.enter(fromEvent(ev))
+      case (ev : EndElement,Some(e)) if e.ns == Some(XElem.wNs) =>
+        e.label match {
+          case "i" => ctx.leave(Some(s => s.copy(italics = true)))
+          case "b" => ctx.leave(Some(s => s.copy(bold = true)))
+          case "pPr" | "rPr" => ctx.leave(Some(x => x))
+          case "tab" => ctx.add(Tab)
+          case "vertAlign" =>
+            e.attributes.get((XElem.wNs,"val")) match {
+              case Some("superscript") => ctx.leave(Some(s => s.copy(superscript = true)))
+              case Some("subscript") => ctx.leave(Some(s => s.copy(subscript = true)))
+              case x => sys.error(s"Unexpcted vertAlign value: $x")
+            }
+          case _ => ctx.leave()
+        }
+      case (ev : Characters,_) =>
+        val brokenText = breakText(ctx.style,ev.getData)
+        ctx.add(brokenText:_*)
+      case (ev : EntityReference,_) =>
+        br.gov.lexml.parser.pl.util.Entities.entities.get(ev.getName).
+          map(c => ctx.add(breakText(ctx.style,"" + c):_*)).getOrElse(ctx)
+      case _ => ctx
+    }
   }
-  
-  def collectText(evs : Traversable[XMLEvent]) = {
+
+  private def collectText(evs : Iterable[XMLEvent]) = {
     val segs1 = evs.foldLeft(Context())(processEvent).segments 
-	val segs2 = collapseBy(segs1) {
+	  val segs2 = collapseBy(segs1) {
     	case (Space,Space) => Space
     	case (Space,Tab) => Tab
     	case (Tab,Space) => Tab
@@ -131,10 +179,10 @@ object DOCXReader {
     	case (TextSegment(s1,t1),TextSegment(s2,t2)) 
     		if s1 == s2 => TextSegment(s1,t1 ++ t2)
   	}
-  	val segs3 = collapseBy3(segs2) ({
-  	  case (TextSegment(s1,t1),Space,TextSegment(s2,t2)) if s1 == s2 =>
-  	    	TextSegment(s1,t1 + " " + t2)
-  	}).toIndexedSeq
+  	val segs3 = collapseBy3(segs2)({
+      case (TextSegment(s1, t1), Space, TextSegment(s2, t2)) if s1 == s2 =>
+        TextSegment(s1, t1 + " " + t2)
+    })
   	
   	val segs4 = segs3.headOption match {
   	  case Some(x) if !x.isInstanceOf[TextSegment] => segs3.tail
@@ -149,29 +197,28 @@ object DOCXReader {
   
   import java.io.InputStream
   import java.util.zip._
-  
-  def readDOCX(s : InputStream) = {
+
+  def readDOCX(s: InputStream): Option[scala.xml.Elem] = {
     val zis = new ZipInputStream(s)
-    var entry = zis.getNextEntry    
-    while(entry != null && entry.getName != "word/document.xml") {
+    var entry = zis.getNextEntry
+    while (entry != null && entry.getName != "word/document.xml") {
       entry = zis.getNextEntry
     }
-    if(entry != null) {      
-      val src = Source.fromInputStream(zis, "utf-8")
-      val reader = new XMLEventReader(src)
-      val events = reader.toStream
+    if (entry != null) {
+      val reader = XMLInputFactory.newFactory().createXMLEventReader(zis, "UTF-8")
+      import scala.jdk.CollectionConverters._
+      val events = LazyList.from(reader.asScala.collect { case e: XMLEvent => e })
       val pars = collectPars(events)
       val textContents = pars.map(collectText)
       val collapsed = collapseBy(textContents) {
-  	  	case (l1,l2) if l1.isEmpty && l2.isEmpty => l1
-  	  }
-      val ps = collapsed.map(segs => <p>{segs.flatMap(_.toXML)}</p>)
-      Some(<html>
-        <body>
-         {ps}
-      	</body>
-      </html>)      
-    } else {      
+        case (l1, l2) if l1.isEmpty && l2.isEmpty => l1
+      }
+      val ps = collapsed.map(segs =>
+        <p>
+          {segs.flatMap(_.toXML)}
+        </p>)
+      Some(<html><body>{ps}</body></html>)
+    }  else {
       None
     }
   }
