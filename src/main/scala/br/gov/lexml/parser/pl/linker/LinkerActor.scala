@@ -1,8 +1,8 @@
 package br.gov.lexml.parser.pl.linker
-import akka.actor._
+import org.apache.pekko.actor._
 import scala.language.postfixOps
-import akka.dispatch._
-import akka.event.Logging
+import org.apache.pekko.dispatch._
+import org.apache.pekko.event.Logging
 import java.io._
 import java.lang.Process
 import java.lang.ProcessBuilder

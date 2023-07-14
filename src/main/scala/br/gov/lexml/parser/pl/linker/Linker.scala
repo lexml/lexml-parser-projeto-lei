@@ -1,6 +1,6 @@
 package br.gov.lexml.parser.pl.linker
 
-import akka.actor._
+import org.apache.pekko.actor._
 
 import scala.language.postfixOps
 import br.gov.lexml.parser.pl.block._
@@ -8,13 +8,12 @@ import br.gov.lexml.parser.pl.rotulo._
 
 import scala.xml._
 import scala.concurrent.duration._
-import akka.actor.SupervisorStrategy._
+import org.apache.pekko.actor.SupervisorStrategy._
 import grizzled.slf4j.Logger
 
 import scala.concurrent.Await
-//import akka.config.Supervision._
-import akka.pattern.ask
-import akka.routing.SmallestMailboxPool
+import org.apache.pekko.pattern.ask
+import org.apache.pekko.routing.SmallestMailboxPool
 
 object Linker {
 
@@ -33,7 +32,7 @@ object Linker {
   
   def findLinks(urnContexto : String, ns : Seq[Node]) : (List[String],List[Node]) = {
     logger.info(s"findLinks: urnContexto = $urnContexto, ns=$ns")
-    import akka.util.Timeout
+    import org.apache.pekko.util.Timeout
     implicit val timeout : Timeout = Timeout(30 seconds)
     val msg = (urnContexto,ns)
     import system.dispatcher
