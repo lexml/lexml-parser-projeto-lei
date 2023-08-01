@@ -1,6 +1,7 @@
 package br.gov.lexml.parser.pl.validation
 
 import br.gov.lexml.parser.pl.errors._
+
 import scala.language.postfixOps
 import scala.collection.immutable.Set
 import br.gov.lexml.parser.pl.output.LexmlRenderer
@@ -9,14 +10,18 @@ import br.gov.lexml.parser.pl.rotulo.Rotulo
 import br.gov.lexml.parser.pl.block.Block
 import br.gov.lexml.parser.pl.block.Alteracao
 import br.gov.lexml.parser.pl.rotulo._
+
 import scala.xml.NodeSeq
 import scala.util.matching.Regex
 import br.gov.lexml.parser.pl.util.ClassificadoresRegex
 import br.gov.lexml.parser.pl.block.OL
+
 import scala.xml.Node
 import br.gov.lexml.parser.pl.block.Paragraph
 import br.gov.lexml.parser.pl.block.Omissis
 import br.gov.lexml.parser.pl.block.Table
+
+import scala.annotation.tailrec
 
 final case class Path(rl: List[Rotulo]) extends Ordered[Path] {
   import LexmlRenderer.{ renderRotulo2 => render }
@@ -34,13 +39,14 @@ final case class Path(rl: List[Rotulo]) extends Ordered[Path] {
     mkTexto1(rl)
   }
 
-  lazy val txt = mkTexto(rl)
+  lazy val txt: String = mkTexto(rl)
 
   override def toString: String = txt
 
   def +(r: Rotulo) = Path(rl :+ r)
 
   def compare(p: Path): Int = {
+    @tailrec
     def comp(l1: Seq[Rotulo], l2: Seq[Rotulo]): Int = (l1, l2) match {
       case (a :: al, b :: bl) => a.compare(b) match {
         case 0 => comp(al, bl)
@@ -57,7 +63,7 @@ final case class Path(rl: List[Rotulo]) extends Ordered[Path] {
     case _ => false
   }
   override lazy val hashCode: Int = rl.foldLeft(41)((x, y) => 41 * (x + y.hashCode))
-  val empty = rl.isEmpty
+  val empty: Boolean = rl.isEmpty
 }
 
 
@@ -67,9 +73,9 @@ trait ToContext[-T] {
 
 class Validation {
 
-  type ValidationRule[P] = PartialFunction[P, Set[ParseProblem]]
+  private type ValidationRule[P] = PartialFunction[P, Set[ParseProblem]]
 
-  val es = Set[ParseProblem]()
+  private val es = Set[ParseProblem]()
 
   var ctx: Seq[String] = Seq()
 
@@ -89,21 +95,13 @@ class Validation {
     }
   }
 
-  def withContext(p: ParseProblem): ParseProblem = {
+  private def withContext(p: ParseProblem): ParseProblem = {
     p.in(ctx: _*)
   }
 
-  def withContext(p: Set[ParseProblem]): Set[ParseProblem] = p.map(withContext)
+  private val tcAny: ToContext[Any] = (_: Any) => Seq ()
 
-  private val tcAny: ToContext[Any] = new ToContext[Any] {
-    def toContext(t: Any) = {
-      Seq()
-    }
-  }
-
-  implicit val tcString: ToContext[String] = new ToContext[String] {
-    def toContext(t: String) = Seq(t)
-  }
+  implicit val tcString: ToContext[String] = (t: String) => Seq(t)
 
   implicit val tcBlock: ToContext[Block] = new ToContext[Block] {
     def toContext(b: Block): Seq[String] = b match {
@@ -118,14 +116,14 @@ class Validation {
     }
   }
 
-  def verificaTodos[P](vl: ValidationRule[P]*)(implicit tc: ToContext[P]): ValidationRule[P] = {
+  private def verificaTodos[P](vl: ValidationRule[P]*)(implicit tc: ToContext[P]): ValidationRule[P] = {
     case p =>
       in(p) {
         vl.map((f: ValidationRule[P]) => f.lift(p).getOrElse(es)).foldLeft(es)(_ | _)
       }
   }
 
-  def paraTodoConjuntoDeIrmaos(vl: ValidationRule[(Path, List[Rotulo])]*): ValidationRule[List[Block]] = {
+  private def paraTodoConjuntoDeIrmaos(vl: ValidationRule[(Path, List[Rotulo])]*): ValidationRule[List[Block]] = {
     case (bl: List[Block]) => {
       val vf = verificaTodos(vl: _*)(tcAny)
 
@@ -145,17 +143,19 @@ class Validation {
     }
   }
 
-  def paraTodoIrmaoConsecutivo(vl: ValidationRule[(Path, Rotulo, Rotulo)]*): ValidationRule[(Path, List[Rotulo])] = {
+  private def paraTodoIrmaoConsecutivo(vl: ValidationRule[(Path, Rotulo, Rotulo)]*): ValidationRule[(Path, List[Rotulo])] = {
     case (pai: Path, rl: List[Rotulo]) => rl match {
-      case (r1 :: (rll@(_ :: _))) => {
+      case r1 :: (rll@(_ :: _)) =>
         val vf = verificaTodos(vl: _*)(tcAny)
-        rll.foldLeft((r1, es))({ case ((r1, s), r2) => (r2, s | vf.lift(pai, r1, r2).getOrElse(es)) })._2
-      }
+        rll.foldLeft((r1, es))({
+          case ((r1, s), r2) =>
+            (r2, s | vf.lift(pai, r1, r2).getOrElse(es))
+        })._2
       case _ => es
     }
   }
 
-  def paraTodoParagrafo(vl: ValidationRule[Seq[Node]]*): ValidationRule[List[Block]] = {
+  private def paraTodoParagrafo(vl: ValidationRule[Seq[Node]]*): ValidationRule[List[Block]] = {
     val vf = verificaTodos(vl: _*)(tcAny)
 
     def rule: ValidationRule[Block] = {
@@ -178,7 +178,7 @@ class Validation {
     r
   }
 
-  def paraTodaAlteracao(vl: ValidationRule[Alteracao]*): ValidationRule[List[Block]] = {
+  private def paraTodaAlteracao(vl: ValidationRule[Alteracao]*): ValidationRule[List[Block]] = {
     val vf = verificaTodos(vl: _*)
 
     def rule: ValidationRule[Block] = {
@@ -198,7 +198,7 @@ class Validation {
     r
   }
 
-  def paraTodoDispositivo(vl: ValidationRule[Dispositivo]*): ValidationRule[List[Block]] = {
+  private def paraTodoDispositivo(vl: ValidationRule[Dispositivo]*): ValidationRule[List[Block]] = {
     case (bl: List[Block]) => {
       val vf = verificaTodos(vl: _*)
       val r = bl.collect {
@@ -211,7 +211,7 @@ class Validation {
     }
   }
 
-  def paraTodoPaiOpcional_e_Filho(vl: ValidationRule[(Option[Block], Block)]*) = {
+  private def paraTodoPaiOpcional_e_Filho(vl: ValidationRule[(Option[Block], Block)]*) = {
     val vf = verificaTodos(vl: _*)(tcAny)
 
     def verifica(b: Block, pai: Option[Block]): Set[ParseProblem] = {
@@ -235,18 +235,18 @@ class Validation {
     r
   }
 
-  val semTabelasPorEnquanto: ValidationRule[(Option[Block], Block)] = {
+  private val semTabelasPorEnquanto: ValidationRule[(Option[Block], Block)] = {
     case (Some(d: Dispositivo), _: Table) => Set(ElementoNaoSuportado("tabela", Some(Path(d.path).txt)))
     case (_, _: Table) => Set(ElementoNaoSuportado("tabela"))
   }
 
-  val noTopoSoDispositivos: ValidationRule[(Option[Block], Block)] = {
+  private val noTopoSoDispositivos: ValidationRule[(Option[Block], Block)] = {
     case (None, p: Paragraph) => {
       Set(ElementoArticulacaoNaoReconhecido("", "Text Paragraph: " + p.text))
     }
   }
 
-  def paraTodosOsCaminhos(vl: ValidationRule[List[(Path, Block)]]*) = {
+  private def paraTodosOsCaminhos(vl: ValidationRule[List[(Path, Block)]]*) = {
     val vf = verificaTodos(vl: _*)(tcAny)
 
     def collectPaths(b: Block): List[(Path, Block)] = b match {
@@ -261,7 +261,7 @@ class Validation {
     r
   }
 
-  def paraTodo[T : ToContext](vl: ValidationRule[T]*) = {
+  private def paraTodo[T : ToContext](vl: ValidationRule[T]*) = {
     val vf = verificaTodos(vl: _*)
     val r: ValidationRule[List[T]] = {
       case l: List[T] => l.collect(vf).foldLeft(Set[ParseProblem]())(_ union _)
@@ -269,17 +269,11 @@ class Validation {
     r
   }
 
-  def toMultiSet[T](i: Iterable[T]): Map[T, Int] = {
-    i.foldLeft(Map[T, Int]()) {
-      case (m, x) => m + (x -> (m.getOrElse(x, 0) + 1))
-    }
-  }
-
-  def procDuplicado(data : (Path,List[Block])) : Option[ParseProblem] = data match {
+  private def procDuplicado(data : (Path,List[Block])) : Option[ParseProblem] = data match {
     case (p, bl) if bl.length > 1 =>
       val itsOk = if (p.rl.exists(x => x.nivel == niveis.alteracao)
         && bl.length == 2) {
-        (bl(0), bl(1)) match {
+        (bl.head, bl(1)) match {
           case (d1: Dispositivo, d2: Dispositivo) => (d1.rotulo, d2.rotulo) match {
             case (RotuloParagrafo(Some(1), None, true),
             RotuloParagrafo(Some(1), None, false)) => true
@@ -298,13 +292,12 @@ class Validation {
       }
     case _ => None
   }
-  val naoPodeHaverCaminhoDuplicado: ValidationRule[List[(Path, Block)]] = {
-    case l: List[(Path, Block)] => {
-      l.groupBy(_._1).mapValues(_.map(_._2)).toList.flatMap(procDuplicado).toSet
-    }
+  private val naoPodeHaverCaminhoDuplicado: ValidationRule[List[(Path, Block)]] = {
+    case l: List[(Path, Block)] =>
+      l.groupBy(_._1).view.mapValues(_.map(_._2)).toList.flatMap(procDuplicado).toSet
   }
 
-  val somenteOmissisOuDispositivoEmAlteracao: ValidationRule[Alteracao] = {
+  private val somenteOmissisOuDispositivoEmAlteracao: ValidationRule[Alteracao] = {
     case a: Alteracao => in(a) {
       a.blocks collect {
         case p: Paragraph =>
@@ -316,7 +309,7 @@ class Validation {
     }
   }
 
-  val somenteUmRotuloUnico: ValidationRule[(Path, List[Rotulo])] = {
+  private val somenteUmRotuloUnico: ValidationRule[(Path, List[Rotulo])] = {
     case (p, l) => {
       val possuiUnico = l.collect({
         case t: PodeSerUnico if t.unico => t
@@ -331,12 +324,7 @@ class Validation {
     }
   }
 
-  def lastPair[T](l: List[T]): Option[(T, T)] = l.reverse match {
-    case (x :: y :: _) => Some(x, y)
-    case _ => None
-  }
-
-  val niveisSubNiveisValidos: ValidationRule[(Path, Block)] = {
+  private val niveisSubNiveisValidos: ValidationRule[(Path, Block)] = {
     case (Path(rl@(x :: xs)), bl)
       if x.isInstanceOf[RotuloAlteracao] &&
         xs.exists(_.isInstanceOf[RotuloAlteracao]) => in(bl) {
@@ -362,7 +350,7 @@ class Validation {
     }
   }
 
-  def alineasSoDebaixoDeIncisos: ValidationRule[(Path, Block)] = {
+  private def alineasSoDebaixoDeIncisos: ValidationRule[(Path, Block)] = {
     def check(rl: List[Rotulo]): Boolean = rl match {
       case (_: RotuloInciso) :: (_: RotuloAlinea) :: r => check(r)
       case (_: RotuloAlinea) :: _ => true
@@ -384,8 +372,7 @@ class Validation {
     }
   }
 
-  lazy val listaNegraTextosDispositivos: ClassificadoresRegex[Dispositivo => TextoInvalido] = {
-    import br.gov.lexml.parser.pl.util.Proc
+  private lazy val listaNegraTextosDispositivos: ClassificadoresRegex[Dispositivo => TextoInvalido] = {
     def procBuilder(r: Regex, msg: String) = (t: String, _: List[String]) =>
       (d: Dispositivo) =>
         in(d) {
@@ -397,26 +384,25 @@ class Validation {
 
   import br.gov.lexml.parser.pl.block.Paragraph
 
-  def somenteDispositivosComTextoValido: ValidationRule[Dispositivo] = {
+  private def somenteDispositivosComTextoValido: ValidationRule[Dispositivo] = {
     case d: Dispositivo =>
       in(d) {
         d.conteudo match {
-          case Some(p: Paragraph) => {
+          case Some(p: Paragraph) =>
             val l = listaNegraTextosDispositivos.classifique(p.text)
             Set[ParseProblem](l.map(_ (d)): _*)
-          }
           case _ => Set()
         }
       }
   }
 
-  def todosOsPares[T](l: Seq[T]): List[(T, T)] = l match {
+  private def todosOsPares[T](l: Seq[T]): List[(T, T)] = l match {
     case v1 :: (l2@(v2 :: r)) => (v1, v2) :: todosOsPares[T](l2)
     case _ => Nil
   }
 
-  val naoPodeHaveOlLi: ValidationRule[Seq[Node]] = {
-    case (ns: Seq[Node]) => {
+  private val naoPodeHaveOlLi: ValidationRule[Seq[Node]] = {
+    case ns: Seq[Node] =>
       val ols = ((NodeSeq fromSeq ns) \\ "ol").length
       val lis = ((NodeSeq fromSeq ns) \\ "li").length
       if ((ols == 0) && (lis == 0)) {
@@ -424,23 +410,22 @@ class Validation {
       } else {
         Set(PresencaEnumeracao)
       }
-    }
   }
 
 
-  def ordemInvertida(r1: Rotulo, r2: Rotulo): Boolean = (r1.nivel == r2.nivel) && (r1 > r2)
+  private def ordemInvertida(r1: Rotulo, r2: Rotulo): Boolean = (r1.nivel == r2.nivel) && (r1 > r2)
 
-  def numeracaoContinua: ValidationRule[(Path, List[Rotulo])] = {
+  private def numeracaoContinua: ValidationRule[(Path, List[Rotulo])] = {
     case (p: Path, _) if p.rl.exists(_.isInstanceOf[RotuloAlteracao]) => Set[ParseProblem]()
     case (p: Path, rl: List[Rotulo]) => {
-      val m = (rl :\ Map[Int, List[Rotulo]]()) {
-        case (r: RotuloAlteracao, m) => m
+      val m = rl.foldRight(Map[Int, List[Rotulo]]()) {
+        case (_: RotuloAlteracao, m) => m
         case (r: Rotulo, m) => m + (r.nivel -> (r :: m.getOrElse(r.nivel, List())))
       }
       val l = for {
-        (_, rl1@(h :: _)) <- m
+        (_, h :: _) <- m
         l1: List[ParseProblem] = if (!h.canBeFirst) {
-          val t = (p + h).txt.toString
+          val t = (p + h).txt
           val d = withContext(DispositivoInicialNumeracaoInvalida(t))
           List(d)
         } else {
@@ -458,19 +443,19 @@ class Validation {
     }
   }
 
-  val naoDevemHaverParagrafosNoMeio: ValidationRule[Dispositivo] = {
+  private val naoDevemHaverParagrafosNoMeio: ValidationRule[Dispositivo] = {
     case d: Dispositivo
       if d.subDispositivos.exists(x => x.isInstanceOf[Paragraph] || x.isInstanceOf[OL]) => {
       Set(ElementoArticulacaoNaoReconhecido(
         Path(d.path).txt,
-        (d.subDispositivos collect {
+        d.subDispositivos collect {
           case p: Paragraph => "Text Paragraph: " + p.text
           case o: OL => "OL: " + o.toNodeSeq.text
-        }): _*))
+        }: _*))
     }
   }
 
-  val omissisSoEmAlteracao: ValidationRule[(Option[Block], Block)] = {
+  private val omissisSoEmAlteracao: ValidationRule[(Option[Block], Block)] = {
     case (Some(_: Alteracao), _: Omissis) => Set()
     case (Some(d: Dispositivo), _: Omissis) if d.path.exists(_.isInstanceOf[RotuloAlteracao]) => Set()
     case (Some(d: Dispositivo), _: Omissis) =>
@@ -484,7 +469,7 @@ class Validation {
     case _ => Set()
   }
 
-  val regras: ValidationRule[List[Block]] = verificaTodos(
+  private val regras: ValidationRule[List[Block]] = verificaTodos(
     {
       case l: List[Block] if l.isEmpty => Set(ArticulacaoNaoIdentificada)
     }: ValidationRule[List[Block]],
@@ -523,19 +508,6 @@ class Validation {
         null
       }
     }
-
-    lazy val xmlInputFactory: XMLInputFactory = {
-      val i = XMLInputFactory.newInstance
-      import XMLInputFactory._
-      i.setProperty(IS_NAMESPACE_AWARE, true)
-      i.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, true)
-      i.setProperty(RESOLVER, resolver)
-      i
-    }
-
-    def unchain(ex: Throwable): List[String] =
-      ex.getMessage() :: Option(ex.getCause()).toList.
-        flatMap(unchain(_))
 
     def validate(xml: String): Set[ParseProblem] = {
       import TipoSchema._

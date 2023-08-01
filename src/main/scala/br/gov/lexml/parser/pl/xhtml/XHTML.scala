@@ -335,6 +335,7 @@ object XHTMLProcessor extends Logging {
       case (e: Elem) :: r if !blockElems.contains(e.label) => docollect(r, e :: accum, accum2)
       case (e : Elem) :: r if trim(accum).isEmpty => docollect(r,Nil,e :: accum2)
       case (e : Elem) :: r  => docollect(r,Nil,e :: <p>{ NodeSeq fromSeq accum.reverse }</p> :: accum2)
+      case b :: _ => sys.error(s"unexpected block at wrapText.docollect: $b")
     }
     docollect(nl, Nil)
   }

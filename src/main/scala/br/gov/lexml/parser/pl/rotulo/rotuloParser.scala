@@ -243,7 +243,7 @@ object rotuloParser {
 	
 	def test(s : String) : Option[Int] = (new RotuloParsers).testComplemento(s)
 
-	def main(args : Array[String]) {
+	def main(args : Array[String]) : Unit = {
 	  println("Testing rotulos:")
 	  val (tps,inputs1) = if(args.length == 0) {
 	    val lines = {

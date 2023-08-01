@@ -100,7 +100,7 @@ object DOCXReader {
     			replaceAll("\\s\\s+"," ")        		
     val hd = if(txt.startsWith(" ")) { IndexedSeq(Space) } else { IndexedSeq() }    			
     val tl = if(txt.endsWith(" ")) { IndexedSeq(Space) } else { IndexedSeq() }
-    hd ++ intersperse(List(txt.split(" ") :_*).map(t => TextSegment(style,t)),Space).toIndexedSeq ++ tl
+    hd ++ intersperse(List(txt.split(" ").toIndexedSeq :_*).map(t => TextSegment(style,t)),Space).toIndexedSeq ++ tl
   }  
   
   final case class XElem(ns : Option[String], label : String, attributes : Map[(String,String),String] = Map()) {

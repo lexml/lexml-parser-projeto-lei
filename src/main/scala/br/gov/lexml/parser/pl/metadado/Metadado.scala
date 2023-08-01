@@ -47,7 +47,7 @@ case class Data(ano : Int, mes : Int, dia : Int) {
 			"janeiro","fevereiro","março","abril","maio","junho",
 			"julho","agosto","setembro","outubro","novembro","dezembro"
 			)
-	lazy val extenso: String = dia + " de " + nomeMes(mes-1) + " de " + ano
+	lazy val extenso: String = s"$dia de ${nomeMes(mes-1)} de $ano"
 }
 
 object Data {

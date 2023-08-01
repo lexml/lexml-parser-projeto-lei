@@ -154,11 +154,11 @@ trait DocumentProfile extends RegexProfile with TipoNormaProfile with Autoridade
      "localidade" -> localidadeProfileAsMap,
      "regex" -> regProfileAsMap
   )
-  override def toString() = {
+  override def toString : String = {
     val sw = new java.io.StringWriter()
     val pw = new java.io.PrintWriter(sw)    
-    pw.println(super.toString() + ":")
-    def printMap(m : Map[_,Any], indent : String) {
+    pw.println(super.toString + ":")
+    def printMap(m : Map[_,Any], indent : String) : Unit = {
       m.foreach { case (k,v) =>
         pw.print(indent + k + ":")
         v match {
@@ -330,7 +330,7 @@ object DocumentProfileRegister {
   def register(profile : DocumentProfile): Unit = { profiles = profiles + ((profile.urnFragLocalidade,profile.urnFragAutoridade,profile.urnFragTipoNorma) -> profile) }
   def getProfile(autoridade : Autoridade, tipoNorma : TipoNorma, localidade : Option[String] = Some("br")) : Option[DocumentProfile] = profiles.get((localidade,autoridade,tipoNorma))
   def profileByAutoridadeSigla(autoridade : Autoridade, sigla : String): Option[DocumentProfile] =
-    profiles.filterKeys({ case (_,aut,tn) => aut == autoridade && tn.endsWith(";" + sigla)}).values.headOption
+    profiles.view.filterKeys({ case (_,aut,tn) => aut == autoridade && tn.endsWith(";" + sigla)}).values.headOption
   def autoridades: Set[Autoridade] = profiles.keySet.map(_._2)
   def tiposDeNormasPorAutoridade(autoridade : String) : Set[String] = for { (_,aut,tn) <- profiles.keySet ; if aut == autoridade } yield tn
   def tiposDeNormas : Set[String] = profiles.keySet.map(_._2)
@@ -339,12 +339,12 @@ object DocumentProfileRegister {
     case _ => None
   }   
   
-  def dumpProfiles(pw : java.io.PrintWriter = new java.io.PrintWriter(System.err)) {
-      profiles.to(Vector).sortBy { case (x,y) => x }.foreach {
+  def dumpProfiles(pw : java.io.PrintWriter = new java.io.PrintWriter(System.err)) : Unit = {
+      profiles.to(Vector).sortBy(_._1).foreach {
       case ((loc,aut,tn),prof) =>
-        System.err.println(s"localidade: ${loc}, autoridade=${aut}, tipoNorma: ${tn}")
-        System.err.println(prof)
-        System.err.println()
+        pw.println(s"localidade: $loc, autoridade=$aut, tipoNorma: $tn")
+        pw.println(prof)
+        pw.println()
     }
   }
   

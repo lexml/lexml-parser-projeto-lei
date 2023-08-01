@@ -38,13 +38,13 @@ class LinkerActor extends Actor {
 
   var oprocess: Option[LinkerProcess] = None
 
-  override def preStart() {
+  override def preStart() : Unit = {
     if(!skipLinker && cmdPath.canExecute()) {
       oprocess = Some(new LinkerProcess())
       log.info("oprocess created.")
     }    
   }
-  override def postStop() {
+  override def postStop() : Unit = {
     for { p <- oprocess } {
       try { p.reader.close() } catch { case _ : Exception => }
       try { p.writer.close() } catch { case _ : Exception => }
@@ -84,11 +84,11 @@ class LinkerActor extends Actor {
           log.debug(s"parsed result: $r")
           val links: Set[String] = (r \\ "span").collect({ case (e: Elem) => e.attributes.find(_.prefixedKey == "xlink:href").map(_.value.text) }).flatten.toSet
           log.debug(s"links found: $links")
-          sender ! ((r.child.toList, links))
+          sender() ! ((r.child.toList, links))
         case None =>
           log.warning("receive: no oprocess found! returning input with empty set of links!")
-          sender ! ((msg,Set()))
-      }
+          sender() ! ((msg,Set()))
+        }
     case r => 
       log.warning("received unexpected message: {} ", r)
   } 

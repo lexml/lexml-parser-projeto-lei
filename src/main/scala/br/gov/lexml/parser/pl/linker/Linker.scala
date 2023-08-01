@@ -26,7 +26,7 @@ object Linker {
     case _ : Exception => Escalate
   }
 
-  private val linkerRouter = system.actorOf(Props[LinkerActor].withRouter(SmallestMailboxPool(8,
+  private val linkerRouter = system.actorOf(Props[LinkerActor]().withRouter(SmallestMailboxPool(8,
     supervisorStrategy = strategy)))
             
   

@@ -337,6 +337,7 @@ object Block extends Block {
       case (e: Elem) :: r => docollect(r, Nil, e :: <p>
         {NodeSeq fromSeq accum.reverse}
       </p> :: accum2)
+      case x :: _ => sys.error(s"unexpected node in docollect: $x")
     }
 
     docollect(nl, Nil)
@@ -380,7 +381,7 @@ object Block extends Block {
             case t : String =>
               val (t1, t2) = t.splitAt(target - p)
               (p + len, Text(t1) :: bef, Text(t2) :: aft)
-            case x => throw new RuntimeException(s"unexpected scala.xml object class: ${x.getClass.getName}, object: $x")
+            case x => sys.error(s"unexpected scala.xml object class: ${x.getClass.getName}, object: $x")
           }
           case Elem(pref, label, attrs, scope, cl@_*) =>
             val (cl1, cl2) = splitAt(target - p, List(cl: _*))
@@ -388,7 +389,7 @@ object Block extends Block {
             val e2 = Elem(pref, label, attrs, scope, true, cl2: _*)
             (p + len, e1 :: bef, e2 :: aft)
 
-          case x => throw new RuntimeException(s"unexpected scala.xml object class: ${x.getClass.getName}, object: $x")
+          case x => sys.error(s"unexpected scala.xml object class: ${x.getClass.getName}, object: $x")
         }
       }
     }
@@ -445,6 +446,7 @@ object Block extends Block {
                     val acum2 = OL(lis2) :: acum
                     (acum2.reverse, na, rest)
                 }
+              case b => sys.error(s"unexpected block in procuraFim: $b")
             }
         }
         case b :: rest =>
@@ -490,6 +492,7 @@ object Block extends Block {
               } else {
                 reconheceInicio(rest, o :: acum)
               }
+            case x :: _ => sys.error(s"unexpcted block in reconheceInicio: $x")
           }
         case b :: rest => reconheceInicio(rest, b :: acum)
         case Nil => acum.reverse
