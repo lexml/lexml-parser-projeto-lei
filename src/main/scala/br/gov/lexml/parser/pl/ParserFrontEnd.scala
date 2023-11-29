@@ -9,81 +9,89 @@ import br.gov.lexml.parser.pl.block.Paragraph
 import java.util.zip.ZipOutputStream
 import java.io.ByteArrayOutputStream
 import br.gov.lexml.parser.pl.block.Block
-import br.gov.lexml.parser.pl.xhtml.{AbiwordConverter, Failure, Success, TextUtils, XHTMLProcessor}
+import br.gov.lexml.parser.pl.xhtml.{AbiwordConverter, XHTMLProcessor, XHTMLProcessorResult}
+import XHTMLProcessorResult.{Failure, Success}
 import br.gov.lexml.parser.pl.metadado.Metadado
 
 import java.io.InputStream
-import br.gov.lexml.parser.pl.output._
+import br.gov.lexml.parser.pl.output.*
 import br.gov.lexml.parser.pl.errors.ParseProblem
 import br.gov.lexml.parser.pl.errors.ParseException
 import br.gov.lexml.parser.pl.errors.FalhaConversaoPrimaria
 
 import scala.io.Source
-import br.gov.lexml.parser.pl.linker.Linker
-
-import java.util.Optional
 import scala.annotation.unused
-
+import scala.util.Using
 
 case class ParserParams(inRTF: InputStream, md: Metadado)
 
-object ParserFrontEnd {
+object ParserFrontEnd:
 
-  val versaoParser = 1
-
-  def parseProjetoLei(params: ParserParams): (Option[ProjetoLei], List[ParseProblem]) = {
+  def parseProjetoLei(
+      params: ParserParams
+  ): (Option[ProjetoLei], List[ParseProblem]) =
     val ParserParams(inRTF, md) = params
     val inRTF2 = new DigestInputStream(inRTF, MessageDigest.getInstance("MD5"))
     val xhtmlRes = XHTMLProcessor.pipeline(inRTF2, new AbiwordConverter())
-    try { params.inRTF.close() } catch { case _ : Exception => }
+    try { params.inRTF.close() }
+    catch { case _: Exception => }
     val xhtml = xhtmlRes match {
-      case Failure => throw ParseException(FalhaConversaoPrimaria)
+      case Failure        => throw ParseException(FalhaConversaoPrimaria)
       case Success(xhtml) => xhtml
     }
-    val blocks = Block fromNodes xhtml    
-    val (mpl, msgs) = new ProjetoLeiParser(params.md.profile).fromBlocks(md copy (hashFonte = Some(inRTF2.getMessageDigest.digest())), blocks)
+    val blocks = Block fromNodes xhtml
+    val (mpl, msgs) = new ProjetoLeiParser(params.md.profile).fromBlocks(
+      md copy (hashFonte = Some(inRTF2.getMessageDigest.digest())),
+      blocks
+    )
     (mpl.map(_.remakeEpigrafe), msgs)
-  }
 
-  def parseAndBuild(params: ParserParams): (Option[(ProjetoLei, Array[Byte])], List[ParseProblem]) = {
+  def parseAndBuild(
+      params: ParserParams
+  ): (Option[(ProjetoLei, Array[Byte])], List[ParseProblem]) =
     val (mpl, msgs) = parseProjetoLei(params)
-    val r = mpl.map(pl => {
+    val r = mpl.map { pl =>
       val bos = new ByteArrayOutputStream()
       val zos = new ZipOutputStream(bos)
       zos.setLevel(9)
       zos.setComment(pl.epigrafe.asInstanceOf[Paragraph].text)
-      zos.putNextEntry(new ZipEntry( /*dirName + "/" + */ "proposicao.xml"))
+      zos.putNextEntry(new ZipEntry("proposicao.xml"))
       zos.write(pl.metadado.toXMLmetadadoEditor(pl).toString.getBytes("utf-8"))
       zos.closeEntry()
-      zos.putNextEntry(new ZipEntry( /* dirName + "/" + */ "texto.xml"))
+      zos.putNextEntry(new ZipEntry("texto.xml"))
       val rpl = LexmlRenderer.render(pl)
       zos.write(rpl.toString.getBytes("utf-8"))
       zos.closeEntry()
       zos.close()
       (pl, bos.toByteArray)
-    })
+    }
     (r, msgs)
-  }  
-
-}
+end ParserFrontEnd
 
 @unused
-class ArticulacaoParser {
-  import java.util.{List => JList}  
+class ArticulacaoParser:
+  import java.util.{List => JList}
   import xml.Text
   import br.gov.lexml.parser.pl.profile.ProjetoDeLeiDoSenadoNoSenado
   import scala.jdk.javaapi.CollectionConverters.asScala
 
   def parseJList(l: JList[String]): String =
     parseList(asScala(l).to(List), None)
-  def parseJList(l : JList[String], urnContexto : String): String =
-    parseList(asScala(l).to(List),Option(urnContexto))
-  def parseList(l : List[String], urnContexto : Option[String] = None): String = {
-    val blocks = l.map((x : String) => Paragraph(Seq(Text(x))))
+  def parseJList(l: JList[String], urnContexto: String): String =
+    parseList(asScala(l).to(List), Option(urnContexto))
+  def parseList(l: List[String], urnContexto: Option[String] = None): String =
+    val blocks = l.map((x: String) => Paragraph(Seq(Text(x))))
     val parser = new ProjetoLeiParser(ProjetoDeLeiDoSenadoNoSenado)
-    val articulacao = parser.parseArticulacao(blocks,urnContexto.nonEmpty,urnContexto.getOrElse(""))
+    val articulacao = parser.parseArticulacao(
+      blocks,
+      urnContexto.nonEmpty,
+      urnContexto.getOrElse("")
+    )
     LexmlRenderer.renderArticulacao(articulacao).toString
-  }
-  def parse(f : File): String = parseList(Source.fromFile(f).getLines().to(List))
 
-}
+  def parse(f: File): String =
+    Using(Source.fromFile(f)) { s =>
+      parseList(s.getLines().to(List))
+    }.get
+    
+end ArticulacaoParser

@@ -1,29 +1,33 @@
 package br.gov.lexml.parser.pl.text
 
-object normalizer {
-	def normalize(s : String) : String = {
-		import java.text.Normalizer
-		val s1 = Normalizer.normalize(s,Normalizer.Form.NFD).
-							replaceAll("\\p{InCombiningDiacriticalMarks}+","")
-		removeDuplicateSpace(s1.toLowerCase.map(cleanchar).trim)
-	}
-	def removeDuplicateSpace(s : String) = s.replaceAll("""\p{javaWhitespace}+"""," ")
-	def cleanchar(c : Char) : Char = c match {
-		case 'á' => 'a'
-		case 'à' => 'a'
-		case 'ã' => 'a'
-		case 'â' => 'a'
-		case 'é' => 'e'
-		case 'ê' => 'e'
-		case 'í' => 'i'		
-		case 'ó' => 'o'
-		case 'ô' => 'o'
-		case 'õ' => 'o'
-		case 'ú' => 'u'
-		case 'û' => 'u'
-		case 'ü' => 'u'
-		case 'ç' => 'c'
-    case c if "‐‑‒–—―-﹢－─━-–−—".contains(c) => '-'
-		case _ => c
-	}
-}
+object normalizer:
+  def normalize(s: String): String =
+    import java.text.Normalizer
+    val s1 = Normalizer
+      .normalize(s, Normalizer.Form.NFD)
+      .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+    removeDuplicateSpace(s1.toLowerCase.map(cleanchar).trim)
+  
+  private def removeDuplicateSpace(s: String) =
+    s.replaceAll("""\p{javaWhitespace}+""", " ")
+
+  private val cleanMap : Array[Char] =
+    val m = Map(
+        'á' -> 'a',
+        'à' -> 'a',
+        'ã' -> 'a',
+        'â' -> 'a',
+        'é' -> 'e',
+        'ê' -> 'e',
+        'í' -> 'i',
+        'ó' -> 'o',
+        'ô' -> 'o',
+        'õ' -> 'o',
+        'ú' -> 'u',
+        'û' -> 'u',
+        'ü' -> 'u',
+        'ç' -> 'c'
+        )  ++ "‐‑‒–—―-﹢－─━-–−—".map(c => c -> '-')
+    Array.tabulate(m.keys.max + 1)(c => m.getOrElse(c.toChar,c.toChar))
+
+  @inline private def cleanchar(c: Char): Char = if c < cleanMap.length then cleanMap(c.toInt) else c

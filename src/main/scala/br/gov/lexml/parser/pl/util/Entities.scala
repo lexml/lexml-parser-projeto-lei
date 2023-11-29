@@ -1,8 +1,8 @@
 package br.gov.lexml.parser.pl.util
 
-object Entities {
+object Entities:
 
-  val entities = Map[String,Char](
+  val entities = Map[String, Char](
     "aacute " -> 'á',
     "Aacute " -> 'Á',
     "abreve " -> 'ă',
@@ -1727,5 +1727,3 @@ object Entities {
     "zigrarr " -> '⇝',
     "Zopf " -> 'ℤ'
   )
-
-}

@@ -1,281 +1,330 @@
 package br.gov.lexml.parser.pl.rotulo
 
-import scala.util.parsing.combinator._
+import scala.util.parsing.combinator.*
 import scala.language.postfixOps
 import scala.util.parsing.input.CharArrayReader
-import scala.util.matching._
 import br.gov.lexml.parser.pl.text.normalizer
 import scala.language.existentials
+import Character.{isLetter, isLetterOrDigit, isDigit}
 
-object rotuloParser {
+object rotuloParser:
+  abstract sealed class Genero:
+    def select[T](vMasc: T, vFem: T): T
 
-	abstract sealed class Genero {
-		def select[T](vMasc : T, vFem : T) : T
-	}
-	case object Masc extends Genero {
-		def select[T](vMasc : T, vFem : T) = vMasc
-	}
-	case object Fem extends Genero {
-		def select[T](vMasc : T, vFem : T) = vFem
-	}
+  case object Masc extends Genero:
+    def select[T](vMasc: T, vFem: T): T = vMasc
 
-	import Character.{isLetter, isLetterOrDigit, isDigit}
+  case object Fem extends Genero:
+    def select[T](vMasc: T, vFem: T) : T = vFem
 
-	def mkString(cs : List[Any]) = cs.mkString("")
+  def mkString(cs: List[Any]) : String = cs.mkString("")
 
-	def complementoToInteger (s : Seq[Char]) : Int = {
-		s.foldLeft(0)({case  (n,c) => n * 26 + (c.toInt - ('a').toInt + 1)})-1
-	}
-	
-	lazy val tipos = Seq(
-		    "artigo","paragrafo","inciso","alinea",
-		    "item", "pena", "penalidade", "infracao",
-		    "medida administrativa", "parte", "livro",
-		    "agregador","algumRotulo", "inteiro", 
-		    "complemento", "ordinalExtenso", "numeroComposto", 
-		    "simbOrdMasc", "simbOrdFem", "ordinalOuNatural", 
-		    "ordinal", "numeroRomano")
+  def complementoToInteger(s: Seq[Char]): Int =
+    s.foldLeft(0)({ case (n, c) => n * 26 + (c.toInt - 'a'.toInt + 1) }) - 1
 
-	class RotuloParsers extends Parsers with RegexParsers with ImplicitConversions {
-		lazy val eos: Parser[Unit] = Parser((i: Input) => if (i.atEnd) {
-			Success((), i)
-		} else {
-			Failure("expected end of stream", i)
-		})
+  val tipos : Seq[String] = Seq(
+    "artigo",
+    "paragrafo",
+    "inciso",
+    "alinea",
+    "item",
+    "pena",
+    "penalidade",
+    "infracao",
+    "medida administrativa",
+    "parte",
+    "livro",
+    "agregador",
+    "algumRotulo",
+    "inteiro",
+    "complemento",
+    "ordinalExtenso",
+    "numeroComposto",
+    "simbOrdMasc",
+    "simbOrdFem",
+    "ordinalOuNatural",
+    "ordinal",
+    "numeroRomano"
+  )
 
-		lazy val pos: Parser[Int] = Parser((i: Input) => Success(i.offset, i))
+  class RotuloParsers
+      extends Parsers
+      with RegexParsers
+      with ImplicitConversions:
 
-		lazy val letter: Parser[Char] = elem("letter", isLetter)
+    lazy val eos: Parser[Unit] = Parser((i: Input) =>
+      if i.atEnd then Success((), i) else Failure("expected end of stream", i))
 
-		lazy val digit: Parser[Char] = elem("digit", isDigit)
+    lazy val pos: Parser[Int] = Parser((i: Input) => Success(i.offset, i))
 
-		lazy val letterOrDigit: Parser[Char] = elem("letter or digit", isLetterOrDigit)
+    lazy val letter: Parser[Char] = elem("letter", isLetter)
 
-		lazy val hyphenCases = "‐‑‒–—―-－─━–−—"
-		lazy val hyphenOrSimilar: Parser[Elem] =
-			hyphenCases.to(Set).map(accept).reduceLeft((x, y) => x | y)
+    lazy val digit: Parser[Char] = elem("digit", isDigit)
 
-		def romanOrString(s: String): Either[String, Int] = {
-			lazy val tryroman: Parser[Either[String, Int]] = (numeroRomano <~ eos) ^^ (Right(_))
-			tryroman(new CharArrayReader(s.toCharArray())) match {
-				case Success(n, _) => n
-				case _ => Left(s)
-			}
+    lazy val letterOrDigit: Parser[Char] =
+      elem("letter or digit", isLetterOrDigit)
 
-		}
+    lazy val hyphenCases = "‐‑‒–—―-－─━–−—"
+    lazy val hyphenOrSimilar: Parser[Elem] =
+      hyphenCases.to(Set).map(accept).reduceLeft((x, y) => x | y)
 
-		def atMost[R](p: Parser[R], n: Int): Parser[List[R]] = n match {
-			case 0 => success(List[R]())
-			case _ => opt(p ~ atMost(p, n - 1)) ^^ { case None => List[R](); case Some(~(c, cl)) => c :: cl }
-		}
+    def romanOrString(s: String): Either[String, Int] =
+      lazy val tryroman: Parser[Either[String, Int]] =
+        (numeroRomano <~ eos) ^^ (Right(_))
+      tryroman(new CharArrayReader(s.toCharArray)) match {
+        case Success(n, _) => n
+        case _             => Left(s)
+      }
 
-		def fromUpTo[R](p: Parser[R], from: Int, to: Int): Parser[List[R]] = {
-			repN(from, p) ~ atMost(p, to - from) ^^ (r => r._1 ++ r._2)
-		}
+    def atMost[R](p: Parser[R], n: Int): Parser[List[R]] = n match {
+      case 0 => success(List[R]())
+      case _ =>
+        opt(p ~ atMost(p, n - 1)) ^^ {
+          case None => List[R](); case Some(~(c, cl)) => c :: cl
+        }
+    }
 
-		lazy val inteiro: Parser[Int] = ("\\d+" r) ^^ (Integer.parseInt(_))
-		lazy val lowerAlpha: Parser[Char] = elem("Alpha", c => c >= 'a' && c <= 'z')
-		lazy val complemento: Parser[Int] = hyphenOrSimilar ~> (lowerAlpha +) <~ guard(fimComplemento) ^^ complementoToInteger
+    def fromUpTo[R](p: Parser[R], from: Int, to: Int): Parser[List[R]] =
+      repN(from, p) ~ atMost(p, to - from) ^^ (r => r._1 ++ r._2)
 
-		lazy val fimComplemento: Parser[Unit] = (elem("fimComplemento", c => ",\\.;: ".contains(c)) ^^^ ((): Unit)) | eos
+    lazy val inteiro: Parser[Int] = "\\d+".r ^^ Integer.parseInt
+    lazy val lowerAlpha: Parser[Char] = elem("Alpha", c => c >= 'a' && c <= 'z')
+    lazy val complemento: Parser[Int] =
+      hyphenOrSimilar ~> lowerAlpha.+ <~ guard(fimComplemento) ^^ complementoToInteger
 
-		def ordinalExtenso(g: Genero): Parser[(Int, Boolean)] =
-			("unic" ^^^ (1, true) | "primeir" ^^^ (1, false) | "segund" ^^^ (2, false) | "terceir" ^^^ (3, false)
-				| "quart" ^^^ (4, false) | "quint" ^^^ (5, false) | "sext" ^^^ (6, false) | "setim" ^^^ (7, false)
-				| "oitav" ^^^ (8, false) | "non" ^^^ (9, false) | "decim" ^^^ (10, false)) <~ g.select("o", "a")
+    lazy val fimComplemento: Parser[Unit] =
+      elem("fimComplemento", c => ",\\.;: ".contains(c)) ^^^ () | eos
 
-		lazy val numeroComposto: Parser[Int] =
-			("\\d{1,3}+((\\.\\d\\d\\d)+|\\d*)" r) ^^ ((s: String) => {
-				Integer.parseInt(s.toList.filter(c => c != '.').mkString(""))
-			})
+    def ordinalExtenso(g: Genero): Parser[(Int, Boolean)] =
+      ("unic" ^^^ (1, true) | "primeir" ^^^ (1, false) | "segund" ^^^ (2, false) | "terceir" ^^^ (3, false)
+        | "quart" ^^^ (4, false) | "quint" ^^^ (5, false) | "sext" ^^^ (6, false) | "setim" ^^^ (7, false)
+        | "oitav" ^^^ (8, false) | "non" ^^^ (9, false) | "decim" ^^^ (10, false)) <~ g
+        .select("o", "a")
 
-		def simbOrdinal(g: Genero): Parser[Unit] =
-			(("o" | "a") ~> not(letter | digit) ~> success(())) |
-				(g.select("[º°˚]" r, "[ª]" r) ~> success(()))
+    lazy val numeroComposto: Parser[Int] =
+      "\\d{1,3}+((\\.\\d\\d\\d)+|\\d*)".r ^^ ((s: String) =>
+        Integer.parseInt(s.toList.filter(c => c != '.').mkString(""))
+      )
 
-		def ordinalOuNatural(g: Genero): Parser[(Int, Boolean)] = ordinalExtenso(g) | ((numeroComposto <~ opt(simbOrdinal(g))) ^^ ((_: Int, false)))
+    def simbOrdinal(g: Genero): Parser[Unit] =
+      (("o" | "a") ~> not(letter | digit) ~> success(())) |
+        g.select("[º°˚]".r, "ª".r) ~> success(())
 
-		def ordinal(g: Genero): Parser[(Int, Boolean)] = ordinalExtenso(g) | ((numeroComposto <~ simbOrdinal(g))) ^^ ((_: Int, false))
+    def ordinalOuNatural(g: Genero): Parser[(Int, Boolean)] =
+      ordinalExtenso(g)
+        | ((numeroComposto <~ opt(simbOrdinal(g))) ^^ ((_: Int, false)))
 
-		lazy val numeroRomano: Parser[Int] = {
-			lazy val milhares = rep('m') ^^ (_.length * 1000)
-			lazy val centenas = pscheme('m', 'd', 'c') ^^ (_ * 100)
-			lazy val dezenas = pscheme('c', 'l', 'x') ^^ (_ * 10)
-			lazy val unidades = pscheme('x', 'v', 'i')
+    def ordinal(g: Genero): Parser[(Int, Boolean)] =
+      ordinalExtenso(g)
+        | (numeroComposto <~ simbOrdinal(g)) ^^ ((_: Int, false))
 
-			def pscheme(sX: Char, sV: Char, sI: Char): Parser[Int] = {
-				(sI ~> sX) ^^^ 9 |
-					(sV ~> fromUpTo(sI, 0, 3) ^^ (_.length + 5)) |
-					(sI ~> sV) ^^^ 4 |
-					(fromUpTo(sI, 1, 3) ^^ (_.length)) |
-					success(0)
-			}
+    lazy val numeroRomano: Parser[Int] =
+      lazy val milhares = rep('m') ^^ (_.length * 1000)
+      lazy val centenas = pscheme('m', 'd', 'c') ^^ (_ * 100)
+      lazy val dezenas = pscheme('c', 'l', 'x') ^^ (_ * 10)
+      lazy val unidades = pscheme('x', 'v', 'i')
 
-			(milhares ~ centenas ~ dezenas ~ unidades ^^ { case ~(~(~(m, c), d), u) => m + c + d + u })
-				.^?({ case n if n > 0 => n }, _ => "Números romanos não podem ser vazios.")
-		}
+      def pscheme(sX: Char, sV: Char, sI: Char): Parser[Int] =
+        (sI ~> sX) ^^^ 9 |
+          (sV ~> fromUpTo(sI, 0, 3) ^^ (_.length + 5)) |
+          (sI ~> sV) ^^^ 4 |
+          (fromUpTo(sI, 1, 3) ^^ (_.length)) |
+          success(0)
 
-		lazy val artigoUnico: Parser[RotuloArtigo] = "artigo unico." ^^^ RotuloArtigo(1, None, true)
-		lazy val artigo: Parser[RotuloArtigo] =
-			("art" ~> opt("igo " | ".") ~> opt(" ")
-				~> (ordinalOuNatural(Masc) ~ opt(complemento)) <~ opt(".")) ^^ (p => RotuloArtigo(p._1._1, p._2, p._1._2))
-		lazy val paragrafo1: Parser[RotuloParagrafo] =
-			((("""§( [""" + hyphenCases + """]|\.)? ?""").r) ~> (ordinalOuNatural(Masc) ~ opt(complemento)) <~ opt(".")) ^^ { case ~((n, unico), c) => RotuloParagrafo(Some(n), c, unico) }
-		lazy val paragrafo2: Parser[RotuloParagrafo] = ("paragrafo " ~> ordinalExtenso(Masc)) ^^ { case (num, unico) => RotuloParagrafo(Some(num), None, unico) }
-		lazy val paragrafoUnico: Parser[RotuloParagrafo] = "paragrafo unico." ^^^ RotuloParagrafo(Some(1), None, true)
-		lazy val paragrafo: Parser[RotuloParagrafo] = paragrafoUnico | paragrafo2 | paragrafo1
+      (milhares ~ centenas ~ dezenas ~ unidades ^^ {
+        case ~(~(~(m, c), d), u) => m + c + d + u
+      })
+        .^?(
+          { case n if n > 0 => n },
+          _ => "Números romanos não podem ser vazios."
+        )
+    end numeroRomano
 
-		lazy val inciso: Parser[RotuloInciso] =
-			(numeroRomano ~ opt(complemento)) <~ (' ' ?) <~ not(')') <~ (hyphenOrSimilar <~ rep(' ')) ^^ RotuloInciso
+    lazy val artigoUnico: Parser[RotuloArtigo] =
+      "artigo unico." ^^^ RotuloArtigo(1, None, true)
+    lazy val artigo: Parser[RotuloArtigo] =
+      ("art" ~> opt("igo " | ".") ~> opt(" ")
+        ~> (ordinalOuNatural(Masc) ~ opt(complemento)) <~ opt(".")) ^^ (p =>
+        RotuloArtigo(p._1._1, p._2, p._1._2)
+      )
+    lazy val paragrafo1: Parser[RotuloParagrafo] =
+      (s"""§( [$hyphenCases]|\\.)? ?""".r ~> (ordinalOuNatural(
+        Masc
+      ) ~ opt(complemento)) <~ opt(".")) ^^ { case ~((n, unico), c) =>
+        RotuloParagrafo(Some(n), c, unico)
+      }
+    lazy val paragrafo2: Parser[RotuloParagrafo] =
+      ("paragrafo " ~> ordinalExtenso(Masc)) ^^ { case (num, unico) =>
+        RotuloParagrafo(Some(num), None, unico)
+      }
+    lazy val paragrafoUnico: Parser[RotuloParagrafo] =
+      "paragrafo unico." ^^^ RotuloParagrafo(Some(1), None, true)
+    lazy val paragrafo: Parser[RotuloParagrafo] =
+      paragrafoUnico | paragrafo2 | paragrafo1
 
-		lazy val alinea: Parser[RotuloAlinea] = {
-			lazy val pnum: Parser[Int] = ("[a-z]+" r) ^^ (1 + complementoToInteger(_)) | ("\\d+" r) ^^ (Integer.parseInt(_))
-			(pnum <~ opt(".")) ~ opt(complemento) <~ (" *\\)" r) ^^ RotuloAlinea
-		}
+    lazy val inciso: Parser[RotuloInciso] =
+      (numeroRomano ~ opt(complemento)) <~ (' ' ?) <~ not(
+        ')'
+      ) <~ (hyphenOrSimilar <~ rep(' ')) ^^ RotuloInciso.apply
 
-		lazy val item: Parser[RotuloItem] = (
-			(inteiro ~ opt(complemento)) <~ opt(elem(' ')) <~ (hyphenOrSimilar | opt(elem('.'))) <~ opt(elem(' '))
-			) ^^ RotuloItem
+    lazy val alinea: Parser[RotuloAlinea] =
+      lazy val pnum: Parser[Int] = "[a-z]+".r ^^ (1 + complementoToInteger(_)) | "\\d+".r ^^ Integer.parseInt
+      (pnum <~ opt(".")) ~ opt(complemento) <~ " *\\)".r ^^ RotuloAlinea.apply
 
-		lazy val pena: Parser[Rotulo] = "pena -" ^^^ RotuloPena
+    lazy val item: Parser[RotuloItem] = (
+      (inteiro ~ opt(complemento)) <~ opt(elem(' ')) <~ (hyphenOrSimilar | opt(elem('.'))) <~ opt(elem(' '))
+    ) ^^ RotuloItem.apply
 
-		lazy val dispositivoGenerico : Parser[Rotulo] = (
-		  (("penalidade" | "infracao" | "medida administrativa" | "multa") <~ rep1(whiteSpace) <~ "-") ^^ {
-				case "penalidade" => RotuloDispositivoGenerico( nomeRotulo = "Penalidade")
-				case "infracao" => RotuloDispositivoGenerico( nomeRotulo = "Infração")
-				case "medida administrativa" => RotuloDispositivoGenerico( nomeRotulo = "Medida Administrativa")
-				case "multa" => RotuloDispositivoGenerico( nomeRotulo = "Multa")
-				case x => throw new RuntimeException(
-						s"Valor não esperado em parser para rótulo de dispositivo genérico: $x")
-			} )
+    lazy val pena: Parser[Rotulo] = "pena -" ^^^ RotuloPena
 
-		lazy val parte : Parser[RotuloParte] = {
-			lazy val rotTexto : Parser[Either[String,(Int,Boolean)]] = {
-				val p0 = ("parte unica" : Parser[String]).map(x => Right((1,true)))
-				val p1 = ("parte " ~> ordinalExtenso(Masc)).map(Right(_))
-				val p2 = ("parte " ~> ("\\w+"r)).map(x => Left(x.toUpperCase))
-				val p3 = ("p a r t e" ~> rep(' ' ~> letterOrDigit) ^^ mkString).map { x =>
-					Left(x.replaceAll("(\\w) ","$1"))
-				}
-				p0 | p1 | p2 | p3
-			}
+    lazy val dispositivoGenerico: Parser[Rotulo] =
+      (("penalidade" | "infracao" | "medida administrativa" | "multa") <~ rep1(
+        whiteSpace
+      ) <~ "-") ^^ {
+        case "penalidade" =>
+          RotuloDispositivoGenerico(nomeRotulo = "Penalidade")
+        case "infracao" => RotuloDispositivoGenerico(nomeRotulo = "Infração")
+        case "medida administrativa" =>
+          RotuloDispositivoGenerico(nomeRotulo = "Medida Administrativa")
+        case "multa" => RotuloDispositivoGenerico(nomeRotulo = "Multa")
+        case x =>
+          throw new RuntimeException(
+            s"Valor não esperado em parser para rótulo de dispositivo genérico: $x"
+          )
+      }
 
-			rotTexto ~ opt(complemento) ^^ { case ~(numOrOrd, cmp) =>
-				numOrOrd match {
-					case Right((ord, false)) => RotuloParte(num = Right(ord), comp = cmp, ordinalExtenso = true)
-					case Right((_, true)) => RotuloParte(num = Right(1), unico = true)
-					case Left(num) => RotuloParte(num = romanOrString(num), comp = cmp)
-				}
-			}
-		}
+    lazy val parte: Parser[RotuloParte] = {
+      lazy val rotTexto: Parser[Either[String, (Int, Boolean)]] = {
+        val p0 = ("parte unica": Parser[String]).map(_ => Right((1, true)))
+        val p1 = ("parte " ~> ordinalExtenso(Masc)).map(Right(_))
+        val p2 = ("parte " ~> "\\w+".r).map(x => Left(x.toUpperCase))
+        val p3 = ("p a r t e" ~> rep(' ' ~> letterOrDigit) ^^ mkString).map {
+          x =>
+            Left(x.replaceAll("(\\w) ", "$1"))
+        }
+        p0 | p1 | p2 | p3
+      }
 
-		lazy val livro : Parser[RotuloLivro] = {
-			("livro " ~> ("\\w+"r)) ~ opt(complemento) ^^ {case ~(num,cmp) => RotuloLivro(romanOrString(num),cmp)}
-		}
+      rotTexto ~ opt(complemento) ^^ { case ~(numOrOrd, cmp) =>
+        numOrOrd match {
+          case Right((ord, false)) =>
+            RotuloParte(num = Right(ord), comp = cmp, ordinalExtenso = true)
+          case Right((_, true)) => RotuloParte(num = Right(1), unico = true)
+          case Left(num) => RotuloParte(num = romanOrString(num), comp = cmp)
+        }
+      }
+    }
 
-		lazy val agregador : Parser[Rotulo] = {
-			lazy val tipo : Parser[(Int,Option[Int],Boolean) => Rotulo] = (
-				  "livro" ^^^ ((n : Int, c : Option[Int],un : Boolean) => RotuloLivro(Right(n),c,un))
-				| "titulo" ^^^ RotuloTitulo
-				| "subtitulo" ^^^ RotuloSubTitulo
-				| "capitulo" ^^^ RotuloCapitulo
-				| "subcapitulo" ^^^ RotuloCapitulo
-				| "secao" ^^^ RotuloSecao
-				| "subsecao" ^^^ RotuloSubSecao
-			)
-			lazy val numParser : Parser[(Int,Boolean)] = 
-			  ("unico" ^^^ (1,true)) | ("unica" ^^^ (1,true)) | (numeroRomano ~ success (false)) ^^ {
-			  case ~(a,b) => (a,b)
-			}
-			
-			(tipo <~ ' ') ~ numParser ~ opt(complemento) ^^ 
-			  { case ~(~(t,(n,v)),c) => t (n,c,v) }
-		}
+    lazy val livro: Parser[RotuloLivro] =
+      "livro " ~> "\\w+".r ~ opt(complemento) ^^ { case ~(num, cmp) =>
+        RotuloLivro(romanOrString(num), cmp)
+      }
 
-		lazy val algumRotulo : Parser[Rotulo] = ( artigo | paragrafo | inciso | alinea | item | pena | dispositivoGenerico | parte | livro | agregador ) <~ " *-? *".r
+    lazy val agregador: Parser[Rotulo] =
+      def makeRotuloLivro(n : Int, c : Option[Int], un : Boolean) = RotuloLivro(Right(n), c, un)
+      lazy val tipo: Parser[(Int, Option[Int], Boolean) => Rotulo] =
+            "livro" ^^^ makeRotuloLivro
+          | "titulo" ^^^ RotuloTitulo.apply
+          | "subtitulo" ^^^ RotuloSubTitulo.apply
+          | "capitulo" ^^^ RotuloCapitulo.apply
+          | "subcapitulo" ^^^ RotuloCapitulo.apply
+          | "secao" ^^^ RotuloSecao.apply
+          | "subsecao" ^^^ RotuloSubSecao.apply
 
-		def parserPorTipo(tipo : String) : Parser[Any] = tipo match {
-			case "artigo" => artigo
-			case "paragrafo" => paragrafo
-			case "inciso" => inciso
-			case "alinea" => alinea
-			case "item" => item
-			case "pena" => pena
-			case "penalidade" => dispositivoGenerico
-			case "infracao" => dispositivoGenerico
-			case "medida administrativa" => dispositivoGenerico
-			case "parte" => parte
-			case "livro" => livro			
-			case "agregador" => agregador
-			case "algumRotulo" => algumRotulo
-			case "inteiro" => inteiro
-			case "complemento" => complemento
-			case "ordinalExtenso" => ordinalExtenso (Masc)
-			case "numeroComposto" => numeroComposto
-			case "simbOrdMasc" => simbOrdinal (Masc)
-			case "simbOrdFem" => simbOrdinal (Fem)
-			case "ordinalOuNatural" => ordinalOuNatural (Masc)
-			case "ordinal" => ordinal (Masc)
-			case "numeroRomano" => numeroRomano			
-		}							
+      lazy val numParser: Parser[(Int, Boolean)] =
+        ("unico" ^^^ (1, true)) | ("unica" ^^^ (1, true)) | (numeroRomano ~ success(false)) ^^
+          { case ~(a, b) => (a, b) }
 
-		lazy val pontuacao  = (" *\\."r) ~> not (".") ^^^ (())
+      (tipo <~ ' ') ~ numParser ~ opt(complemento) ^^
+        { case ~(~(t, (n, v)), c) => t(n, c, v) }
 
-		def parseRotulo(s : String) : Option[(Rotulo,Int)] = {
-		    val p = (algumRotulo <~ opt (pontuacao)) ~ pos ^^ { case ~(a,b) => (a,b) }
-		    p(new CharArrayReader(s.toCharArray())) match {
-		    	case Success(r,_) => Some(r)
-		    	case _ => None
-		    }
-		}
-		
-		def testComplemento(s : String) = {
-		    val p = complemento
-		    p(new CharArrayReader(s.toCharArray())) match {
-		    	case Success(r,_) => Some(r)
-		    	case _ => None
-		    }
-		}
-		override def skipWhitespace = false
-	}
+    lazy val algumRotulo: Parser[Rotulo] =
+      (artigo | paragrafo | inciso | alinea | item | pena | dispositivoGenerico | parte | livro | agregador) <~ " *-? *".r
 
-	val parseRotulo = (new RotuloParsers).parseRotulo(_)
-	
-	def test(s : String) : Option[Int] = (new RotuloParsers).testComplemento(s)
+    def parserPorTipo(tipo: String): Parser[Any] = tipo match {
+      case "artigo"                => artigo
+      case "paragrafo"             => paragrafo
+      case "inciso"                => inciso
+      case "alinea"                => alinea
+      case "item"                  => item
+      case "pena"                  => pena
+      case "penalidade"            => dispositivoGenerico
+      case "infracao"              => dispositivoGenerico
+      case "medida administrativa" => dispositivoGenerico
+      case "parte"                 => parte
+      case "livro"                 => livro
+      case "agregador"             => agregador
+      case "algumRotulo"           => algumRotulo
+      case "inteiro"               => inteiro
+      case "complemento"           => complemento
+      case "ordinalExtenso"        => ordinalExtenso(Masc)
+      case "numeroComposto"        => numeroComposto
+      case "simbOrdMasc"           => simbOrdinal(Masc)
+      case "simbOrdFem"            => simbOrdinal(Fem)
+      case "ordinalOuNatural"      => ordinalOuNatural(Masc)
+      case "ordinal"               => ordinal(Masc)
+      case "numeroRomano"          => numeroRomano
+    }
 
-	def main(args : Array[String]) {
-	  println("Testing rotulos:")
-	  val (tps,inputs1) = if(args.length == 0) {
-	    val lines = {
-	      val br = new java.io.BufferedReader(new java.io.InputStreamReader(System.in,"utf-8"))
-	      val b = Seq.newBuilder[String]
-	      var l = ""
-	      while( { l = br.readLine() ; l != null && l != "" }) {
-	        b += l
-	      }
-	      b.result()
-	    }
-	    (tipos, lines)			
-		} else if (args.length == 1) {
-		  (tipos, Seq(args(0)))
-		} else {
-			(Seq(args(0)),args.slice(1,args.length).to(Seq))
-		}
-	  val inputs = inputs1.map(normalizer.normalize)
-	  println(s"tps = ${tps}, inputs={$inputs}")
-	  inputs.foreach { x =>
-	    println("Input: " + x)
-	    tipos.foreach { t =>
-	      println(s"  [${t}]: ${test(t,x).toString.replaceAll("[\\n\\r]"," - ")}")
-	    }
-	    println()
-	  }	  
-	}
+    private lazy val pontuacao = " *\\.".r ~> not(".") ^^^ ()
 
-	def test(tipo : String, text : String) = {
-		    val ps = new RotuloParsers
-		    lazy val p = (ps.parserPorTipo(tipo) ~ (ps.pos ^^ ((n : Int) => text.substring(n))))
-			p(new CharArrayReader(text.toCharArray()))
-	}
+    def parseRotulo(s: String): Option[(Rotulo, Int)] =
+      val p = (algumRotulo <~ opt(pontuacao)) ~ pos ^^ { case ~(a, b) => (a, b) }
+      p(new CharArrayReader(s.toCharArray)) match {
+        case Success(r, _) => Some(r)
+        case _             => None
+      }
 
-}
+    def testComplemento(s: String): Option[Int] =
+      val p = complemento
+      p(new CharArrayReader(s.toCharArray)) match {
+        case Success(r, _) => Some(r)
+        case _             => None
+      }
+
+    override def skipWhitespace = false
+  end RotuloParsers
+
+  val parseRotulo: String => Option[(Rotulo, Int)] = (new RotuloParsers).parseRotulo
+
+  def test(s: String): Option[Int] = (new RotuloParsers).testComplemento(s)
+
+  def main(args: Array[String]) : Unit =
+    println("Testing rotulos:")
+    val (tps, inputs1) =
+      if args.length == 0 then
+        val lines = {
+          val br = new java.io.BufferedReader(
+            new java.io.InputStreamReader(System.in, "utf-8")
+          )
+          val b = Seq.newBuilder[String]
+          var l = ""
+          while ({ l = br.readLine(); l != null && l != "" }) {
+            b += l
+          }
+          b.result()
+        }
+        (tipos, lines)
+      else if args.length == 1 then
+        (tipos, Seq(args(0)))
+      else
+        (Seq(args(0)), args.slice(1, args.length).to(Seq))
+    val inputs = inputs1.map(normalizer.normalize)
+    println(s"tps = $tps, inputs=$inputs")
+    inputs.foreach { x =>
+      println(s"Input: $x")
+      tipos.foreach { t =>
+        println(
+          s"  [$t]: ${test(t, x).toString.replaceAll("[\\n\\r]", " - ")}"
+        )
+      }
+      println()
+    }
+  end main
+
+  def test(tipo: String, text: String) =
+    val ps = new RotuloParsers
+    lazy val p =
+      ps.parserPorTipo(tipo) ~ (ps.pos ^^ ((n: Int) => text.substring(n)))
+    p(new CharArrayReader(text.toCharArray))
+end rotuloParser

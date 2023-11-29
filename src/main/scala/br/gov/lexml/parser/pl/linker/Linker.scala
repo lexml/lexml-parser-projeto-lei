@@ -15,64 +15,66 @@ import scala.concurrent.Await
 import org.apache.pekko.pattern.ask
 import org.apache.pekko.routing.SmallestMailboxPool
 
-object Linker {
+object Linker:
 
   val logger: Logger = Logger(this.getClass)
 
   val system: ActorSystem = ActorSystem("linker")
-  
-  private val strategy = OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {
-    case _ : java.io.IOException => Restart
-    case _ : Exception => Escalate
-  }
 
-  private val linkerRouter = system.actorOf(Props[LinkerActor].withRouter(SmallestMailboxPool(8,
-    supervisorStrategy = strategy)))
-            
-  
-  def findLinks(urnContexto : String, ns : Seq[Node]) : (List[String],List[Node]) = {
+  private val strategy =
+    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {
+      case _: java.io.IOException => Restart
+      case _: Exception           => Escalate
+    }
+
+  private val linkerRouter = system.actorOf(
+    Props[LinkerActor]().withRouter(
+      SmallestMailboxPool(8, supervisorStrategy = strategy)
+    )
+  )
+
+  def findLinks(
+      urnContexto: String,
+      ns: Seq[Node]
+  ): (List[String], List[Node]) =
     logger.info(s"findLinks: urnContexto = $urnContexto, ns=$ns")
     import org.apache.pekko.util.Timeout
-    implicit val timeout : Timeout = Timeout(30 seconds)
-    val msg = (urnContexto,ns)
+    given timeout: Timeout = Timeout(30 seconds)
+    val msg = (urnContexto, ns)
     import system.dispatcher
-    val f = (linkerRouter ? msg).mapTo[(List[Node],Set[String])] map {
-      case (nl,links) => (links.toList,nl)
+    val f = (linkerRouter ? msg).mapTo[(List[Node], Set[String])] map {
+      case (nl, links) => (links.toList, nl)
     }
     logger.info(s"findLinks: waiting for result....")
-    val res = Await.result(f,timeout.duration)
+    val res = Await.result(f, timeout.duration)
     logger.info(s"findLinks: result = $res")
     res
-  }
 
-  private def processaAlteracao(a: Alteracao, links: List[URN]): Alteracao = {
-    val mr = MatchResult.fromAlteracao(a,links)
+  private def processaAlteracao(a: Alteracao, links: List[URN]): Alteracao =
+    val mr = MatchResult.fromAlteracao(a, links)
     val a1 = a copy (matches = Some(mr))
     mr.first.map(_.updateAlteracao(a1)).getOrElse(a1)
-  }
 
   private def getLinks(d: Dispositivo): List[URN] = d.rotulo match {
-    case _: RotuloArtigo => for {
-      dd <- d.conteudo.toList.collect {
-        case d: Dispositivo => d
-      }
-      l <- getLinks(dd)
-    } yield l
+    case _ : RotuloArtigo =>
+      for {
+        dd <- d.conteudo.toList.collect { case d: Dispositivo => d }
+        l <- getLinks(dd)
+      } yield l
     case _ => d.links.flatMap(URN.fromString)
   }
 
-  def paraCadaAlteracao(bl: List[Block]): List[Block] = {
+  def paraCadaAlteracao(bl: List[Block]): List[Block] =
     def f(d: Dispositivo): Block => Block = {
       case a: Alteracao =>
         val links = getLinks(d)
         processaAlteracao(a, links)
       case dd: Dispositivo => dd.replaceChildren(dd.children.map(f(dd)))
-      case x => x
+      case x               => x
     }
     def g(b: Block) = b match {
       case dd: Dispositivo => dd.replaceChildren(dd.children.map(f(dd)))
-      case x => x
+      case x               => x
     }
     bl.map(g)
-  }
-}
+end Linker
