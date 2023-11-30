@@ -12,8 +12,8 @@ case class URN(
     fragment: String,
     urn: String
 ) extends Ordered[URN]:
-  lazy val base = urn.takeWhile(_ != '!')
-  override def compare(u: URN) =
+  lazy val base: String = urn.takeWhile(_ != '!')
+  override def compare(u: URN): Int =
     List(
       ano.compare(u.ano),
       mesdia.map(_._1).getOrElse(0).compare(u.mesdia.map(_._1).getOrElse(0)),
@@ -23,12 +23,12 @@ case class URN(
     ).dropWhile(_ == 0).headOption.getOrElse(0)
 
 object URN:
-  val urnRe =
+  private val urnRe =
     """^urn:lex:br:[^:]*:[^:]*:(\d\d\d\d(?:-\d\d-\d\d)?);[^!]*(!.*)?$""".r
-  val dataCompletaRe = """(\d\d\d\d)-(\d\d)-(\d\d)""".r
-  def fromString(urn: String) =
+  private val dataCompletaRe = """(\d\d\d\d)-(\d\d)-(\d\d)""".r
+  def fromString(urn: String): Option[URN] =
     urn match {
-      case urnRe(date, fragment) => {
+      case urnRe(date, fragment) =>
         date match {
           case dataCompletaRe(ano, mes, dia) =>
             Some(
@@ -51,7 +51,6 @@ object URN:
               )
             )
         }
-      }
       case _ => None
     }
 
@@ -85,13 +84,13 @@ object URN:
 end URN
 
 case class MatchCount(
-    val exact: Int = 0,
-    val prefix: Int = 0,
-    val suffix: Int = 0,
-    val superPrefix: Int = 0,
-    val partial: Int = 0,
-    val neighbor: Int = 0,
-    val noMatch: Int = 0
+    exact: Int = 0,
+    prefix: Int = 0,
+    suffix: Int = 0,
+    superPrefix: Int = 0,
+    partial: Int = 0,
+    neighbor: Int = 0,
+    noMatch: Int = 0
 ):
   @targetName("plus")
   def +(m: UMatch): MatchCount = m match {
@@ -112,21 +111,21 @@ case class MatchCount(
       partial compareTo mc.partial,
       neighbor compareTo mc.neighbor,
       noMatch compareTo mc.noMatch
-    ).dropWhile((0 == _)).headOption.getOrElse(0)
+    ).dropWhile(0 == _).headOption.getOrElse(0)
 end MatchCount
 
 case class MatchData(
-    val urn: URN,
-    val count: MatchCount = MatchCount(),
-    val matches: Map[String, UMatch] = Map()
+    urn: URN,
+    count: MatchCount = MatchCount(),
+    matches: Map[String, UMatch] = Map()
 ):
   @targetName("plus")
   def +(m: UMatch): MatchData =
-    if (m.urn == urn) then
+    if m.urn == urn then
       copy(count = count + m, matches = matches + (m.fragment -> m))
     else this
 
-  lazy val mapId: String => Option[String] =
+  private lazy val mapId: String => Option[String] =
     matches.view
       .mapValues(m => m.complement + m.fragment)
       .filter(x => x._1 != x._2)
@@ -135,34 +134,33 @@ case class MatchData(
     val baseId = a.id + "_"
     val blen = baseId.length
     def applyBlock(b: Block): Block = b match {
-      case d: Dispositivo => {
+      case d: Dispositivo =>
         val d1 = mapId(d.id.substring(blen)) match {
           case None        => d
           case Some(newId) => d overrideId (baseId + newId)
         }
-        d1 replaceChildren (applyBlocks(d.children))
-      }
-      case a: Alteracao =>
+        d1.replaceChildren(applyBlocks(d.children))
+      case _: Alteracao =>
         throw new RuntimeException(
           "Nao pode haver alteracao dentro de alteracao"
         )
       case x => x
     }
-    def applyBlocks(bl: List[Block]): List[Block] = bl.map(applyBlock(_))
-    a.mapBlocks(applyBlocks(_)).copy(baseURN = Some(urn.base))
+    def applyBlocks(bl: List[Block]): List[Block] = bl.map(applyBlock)
+    a.mapBlocks(applyBlocks).copy(baseURN = Some(urn.base))
 
-  lazy val anyNonMatch = matches.values.exists(_.isInstanceOf[NoMatch])
+  lazy val anyNonMatch: Boolean = matches.values.exists(_.isInstanceOf[NoMatch])
 end MatchData
 
 case class CompareKey(count: MatchCount, ano: Int, mesDia: Option[(Int, Int)])
     extends Ordered[CompareKey]:
-  def compareMesDia(md1: Option[(Int, Int)], md2: Option[(Int, Int)]) =
+  @inline private def compareMesDia(md1: Option[(Int, Int)], md2: Option[(Int, Int)]) =
     (md1, md2) match {
       case (None, _) => 1
       case (_, None) => -1
       case (Some((m1, d1)), Some((m2, d2))) =>
         List(m1 compareTo m2, d1 compareTo d2)
-          .dropWhile((0 == _))
+          .dropWhile(0 == _)
           .headOption
           .getOrElse(0)
     }
@@ -171,7 +169,7 @@ case class CompareKey(count: MatchCount, ano: Int, mesDia: Option[(Int, Int)])
       d.count compareTo count,
       ano compareTo d.ano,
       compareMesDia(mesDia, d.mesDia)
-    ).dropWhile((0 == _)).headOption.getOrElse(0)
+    ).dropWhile(0 == _).headOption.getOrElse(0)
 end CompareKey
 
 case class MatchByBase(
@@ -205,30 +203,29 @@ case class MatchByBase(
             val nid2 = baseId + newId
             val n = nid2.lastIndexOf(nid)
             val rid = nid2.patch(n, oid, oid.length)
-            d overrideId (rid)
+            d.overrideId(rid)
         }
-        d1 replaceChildren (applyBlocks(d.children))
+        d1.replaceChildren(applyBlocks(d.children))
       case a: Alteracao =>
         throw new RuntimeException(
           s"Nao pode haver alteracao dentro de alteracao: ${a.id}"
         )
       case x => x
     }
-    def applyBlocks(bl: List[Block]): List[Block] = bl.map(applyBlock(_))
-    a.mapBlocks(applyBlocks(_)).copy(baseURN = Some(base))
+    def applyBlocks(bl: List[Block]): List[Block] = bl.map(applyBlock)
+    a.mapBlocks(applyBlocks).copy(baseURN = Some(base))
   end updateAlteracao
 
-  lazy val mapId: String => Option[String] =
+  private lazy val mapId: String => Option[String] =
     fragMap.view
       .mapValues(ma => ma.complement + ma.fragment)
       .filter(x => x._1 != x._2)
       .lift
 end MatchByBase
 
-case class MatchResult(val m: Map[String, MatchByBase] = Map()):
-
+case class MatchResult(m: Map[String, MatchByBase] = Map()):
   @targetName("plus")
-  def +(u: URN) =
+  def +(u: URN): MatchResult =
     copy(m =
       m + (u.base -> m.getOrElse(u.base, MatchByBase(u.base, u.ano, u.mesdia)))
     )
@@ -241,7 +238,7 @@ case class MatchResult(val m: Map[String, MatchByBase] = Map()):
         MatchByBase(mt.urn.base, mt.urn.ano, mt.urn.mesdia)
       ) + mt))
     )
-  lazy val rank: List[MatchByBase] =
+  private lazy val rank: List[MatchByBase] =
     val (l1, l2) = m.values.partition(_.allMatched)
     def s(l: List[MatchByBase]) =
       l.sortBy(md => CompareKey(md.count, md.ano, md.mesdia))
@@ -255,7 +252,7 @@ object MatchResult:
     import br.gov.lexml.parser.pl.output.LexmlRenderer.renderId
     def getIds(b: Block): List[String] =
       b match {
-        case d: Dispositivo => { d.id :: d.subDispositivos.flatMap(getIds) }
+        case d: Dispositivo => d.id :: d.subDispositivos.flatMap(getIds)
         case _              => Nil
       }
     val altIdLength = renderId(a.path).length() + 1
@@ -263,8 +260,7 @@ object MatchResult:
       a.blocks
         .flatMap(getIds)
         .map(s =>
-          if (s.length >= altIdLength) { s.substring(altIdLength) }
-          else { s }
+          if s.length >= altIdLength then s.substring(altIdLength) else s
         )
     val matches = URN.matchAll(links, allIds)
 
@@ -289,24 +285,24 @@ abstract sealed class UMatch extends Ordered[UMatch]:
   def max(um: UMatch): UMatch =
     if um > this then um else this
 
-case class ExactMatch(val urn: URN) extends UMatch:
+case class ExactMatch(urn: URN) extends UMatch:
   val fragment: String = urn.fragment
   def level = 10
 
-case class PrefixMatch(val urn: URN, val fragment: String) extends UMatch:
+case class PrefixMatch(urn: URN, fragment: String) extends UMatch:
   def level = 9
 
-case class SuffixMatch(val urn: URN, val fragment: String) extends UMatch:
+case class SuffixMatch(urn: URN, fragment: String) extends UMatch:
   override val complement: String =
     urn.fragment.substring(0, urn.fragment.length - fragment.length)
   def level = 8
 
-case class SuperPrefixMatch(val urn: URN, val fragment: String) extends UMatch:
+case class SuperPrefixMatch(urn: URN, fragment: String) extends UMatch:
   def level = 7
 
 case class NeighborMatch(
-    val urn: URN,
-    val fragment: String,
+    urn: URN,
+    fragment: String,
     override val subComplement: String
 ) extends UMatch:
   override val complement: String = urn.fragment + subComplement + "_"
@@ -316,7 +312,7 @@ object NeighborMatch:
   private def lastComponent(s: String) =
     s.reverse.takeWhile(_ != '_').reverse.takeWhile(Character.isLetter)
   private def firstComponent(s: String) = s.takeWhile(Character.isLetter)
-  val compatiblePairs: List[(String, String, String)] = List(
+  private val compatiblePairs: List[(String, String, String)] = List(
     ("art", "inc", "cpt"),
     ("art", "par", ""),
     ("par", "inc", ""),
@@ -341,11 +337,11 @@ object NeighborMatch:
 end NeighborMatch
 
 case class PartialMatch(
-    val urn: URN,
-    val fragment: String,
+    urn: URN,
+    fragment: String,
     override val complement: String
 ) extends UMatch:
   def level = 4
 
-case class NoMatch(val urn: URN, val fragment: String) extends UMatch:
+case class NoMatch(urn: URN, fragment: String) extends UMatch:
   def level = 0

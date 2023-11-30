@@ -21,10 +21,10 @@ case class ClassificadoresRegex[T](
 
 object ClassificadoresRegex:
   import java.io._
-  type ProcBuilder[T] = (Regex, String) => Proc[T]
+  private type ProcBuilder[T] = (Regex, String) => Proc[T]
 
-  val paramPat = """^(.)(.*)\1,(.+)$""".r
-  def fromReader[T](
+  private val paramPat: Regex = """^(.)(.*)\1,(.+)$""".r
+  private def fromReader[T](
       r: Reader,
       procBuilder: ProcBuilder[T]
   ): ClassificadoresRegex[T] =
@@ -32,7 +32,7 @@ object ClassificadoresRegex:
     var c = ClassificadoresRegex[T]()
     var line: String = null
     while
-      line = br.readLine();
+      line = br.readLine()
       line != null
     do
       line match {
@@ -43,7 +43,7 @@ object ClassificadoresRegex:
       }
     c
 
-  def fromInputStream[T](
+  private def fromInputStream[T](
       is: InputStream,
       procBuilder: ProcBuilder[T]
   ): ClassificadoresRegex[T] =

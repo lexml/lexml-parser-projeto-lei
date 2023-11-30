@@ -21,7 +21,7 @@ trait HasId[T]:
 
 class IdRenderException(msg: String) extends Exception(msg)
 
-object HasId:
+private object HasId:
   def renderCompId(n: Option[Int]): String =
     n.map(n => "-" + (n + 1).toString).getOrElse("")
 
@@ -146,9 +146,9 @@ class Paragraph(
 
   lazy val text: String = normalizer.normalize(unormalizedText)
 
-  lazy val unormalizedText: String = (NodeSeq fromSeq nodes).text.trim
+  private lazy val unormalizedText: String = (NodeSeq fromSeq nodes).text.trim
 
-  def splitAt(p: Int): (Paragraph, Paragraph) =
+  private def splitAt(p: Int): (Paragraph, Paragraph) =
     val (nodes1, nodes2) = Block.splitAt(p, nodes)
     (
       Paragraph(
@@ -244,7 +244,7 @@ class Paragraph(
    }
   end dispositivoIfPossible
 
-  val omissisRe: Regex = """^[.… ]*(?:…|\.\.\.|\(\.\.\.+\))[…. ]*$""" r
+  private val omissisRe: Regex = """^[.… ]*(?:…|\.\.\.|\(\.\.\.+\))[…. ]*$""" r
 
   override lazy val recognizeOmissis: Block =
     text match {
@@ -539,10 +539,10 @@ object Block extends Block:
     (bef.reverse, aft.reverse)
   end splitAt
 
-  val reFimAlteracao: Regex =
+  private val reFimAlteracao: Regex =
     """ *(?:\((ac|nr)\))? *(?:”|“|"|'')(?: *\((ac|nr)\.?\))?$""".r
 
-  def agrupaAlteracoes(blocks: List[Block]): List[Block] =
+  private def agrupaAlteracoes(blocks: List[Block]): List[Block] =
     blocks.foldRight[List[Block]](Nil) {
       case (a1: Alteracao, (a2: Alteracao) :: r) =>
         Alteracao(a1.blocks ++ a2.blocks, Nil, None) :: r
@@ -664,7 +664,7 @@ object Block extends Block:
     reconheceInicio(blocks, List[Block]())
   }
 
-  def spanNivel(nivel: Int, bl: List[Block]): (List[Block], List[Block]) =
+  private def spanNivel(nivel: Int, bl: List[Block]): (List[Block], List[Block]) =
     def proxSpan(l: List[Block]): (List[Block], List[Block]) =
       val (omissis, posOmissis) = l.span(_.isInstanceOf[Omissis])
       val (nivelSuperior, resto) = posOmissis.span({
@@ -683,27 +683,27 @@ object Block extends Block:
     case d: Dispositivo => d
   })
 
-  def hasAlteracao(d: Dispositivo): Boolean = d.subDispositivos.exists {
+  private def hasAlteracao(d: Dispositivo): Boolean = d.subDispositivos.exists {
     case d1: Dispositivo => hasAlteracao(d1)
     case _: Alteracao    => true
     case _               => false
   }
 
-  def hasFechaAspas(b: Block): Boolean = b match {
+  private def hasFechaAspas(b: Block): Boolean = b match {
     case d: Dispositivo if d.fechaAspas => true
     case d: Dispositivo             => d.subDispositivos.exists(hasFechaAspas)
     case o: Omissis if o.fechaAspas => true
     case _                          => false
   }
 
-  def lastIsFechaAspas(b: Block): Boolean = b match {
+  private def lastIsFechaAspas(b: Block): Boolean = b match {
     case d: Dispositivo if d.fechaAspas => true
     case d: Dispositivo => d.subDispositivos.lastOption.exists(lastIsFechaAspas)
     case o: Omissis if o.fechaAspas => true
     case _                          => false
   }
 
-  def hasOmissis(b: Block): Boolean = b match {
+  private def hasOmissis(b: Block): Boolean = b match {
     case _: Omissis => true
     case d: Dispositivo =>
       (d.rotulo, d.conteudo) match {
@@ -899,7 +899,7 @@ object Block extends Block:
   end limpaParagrafosVazios
 
 
-  def splitLi(li: List[Block]): (Option[Paragraph], List[Block]) = li match {
+  private def splitLi(li: List[Block]): (Option[Paragraph], List[Block]) = li match {
     case (p: Paragraph) :: r => (Some(p), r)
     case _                   => (None, Nil)
   }
@@ -1028,7 +1028,7 @@ object Block extends Block:
   def reconheceOmissis(blocks: List[Block]): List[Block] =
     blocks.mapConserve(_.mapBlock(_.recognizeOmissis))
 
-  def reconheceOmissisVazio(b: Block): Block =
+  private def reconheceOmissisVazio(b: Block): Block =
     def h(ob: Option[Block]) = ob match {
       case None => Some(Omissis())
       case Some(p: Paragraph) if p.text == "" =>
@@ -1048,7 +1048,7 @@ object Block extends Block:
     }
   end reconheceOmissisVazio
 
-  def reconheceOmissisVazio2(blocks: List[Block]): List[Block] =
+  private def reconheceOmissisVazio2(blocks: List[Block]): List[Block] =
     blocks.map(_.mapBlock(reconheceOmissisVazio))
 
   def reconheceOmissisVazio(blocks: List[Block]): List[Block] =
@@ -1167,7 +1167,7 @@ object Block extends Block:
       }
       .reverse
 
-  def podeSerTitulo(s: String): Boolean =
+  private def podeSerTitulo(s: String): Boolean =
     !s.toList.exists(List[Char](';', '.', ':').contains(_))
 
   def corrigeRotuloParte(blocks: List[Block]): List[Block] =

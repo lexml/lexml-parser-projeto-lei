@@ -27,7 +27,7 @@ object CollectionUtils:
     var last: Option[A] = None
     var curSeq: Seq[A] = Seq()
 
-    def seek(x: A) = (last, x) match {
+    def seek(x: A) : Unit = (last, x) match {
       case (None, x) =>
         last = Some(x)
         curSeq = Seq(x)

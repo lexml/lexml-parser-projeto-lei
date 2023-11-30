@@ -2,13 +2,10 @@ package br.gov.lexml.parser.pl.linker
 import org.apache.pekko.actor.*
 
 import scala.language.postfixOps
-import org.apache.pekko.dispatch.*
 import org.apache.pekko.event.Logging
 
 import java.io.*
-import java.lang.Process
 import java.lang.ProcessBuilder
-import java.lang.ProcessBuilder.Redirect
 import scala.xml.*
 import scala.xml.parsing.*
 import scala.io.Source
@@ -17,21 +14,21 @@ import scala.util.matching.Regex
 class LinkerActorException(msg: String) extends Exception(msg)
 
 class LinkerActor extends Actor:
-  val log = Logging(context.system, this)
+  private val log = Logging(context.system, this)
 
-  val skipLinker =
-    sys.props.get("lexml.skiplinker").map(_.toBoolean).getOrElse(false)
+  private val skipLinker =
+    sys.props.get("lexml.skiplinker").exists(_.toBoolean)
 
   log.info(s"skipLinker: $skipLinker")
 
-  val cmdPath = new File(
+  private val cmdPath = new File(
     sys.props.getOrElse("lexml.linkertool", "/usr/local/bin/linkertool")
   )
 
   log.info(s"cmdPath: $cmdPath")
 
-  final class LinkerProcess:
-    val process = new ProcessBuilder(
+  private final class LinkerProcess:
+    val process: Process = new ProcessBuilder(
       cmdPath.getCanonicalPath,
       "--hxml",
       "--xml",
@@ -39,21 +36,21 @@ class LinkerActor extends Actor:
     ).start
 
     val reader = new BufferedReader(
-      new InputStreamReader(process.getInputStream(), "utf-8")
+      new InputStreamReader(process.getInputStream, "utf-8")
     )
 
     val writer = new PrintWriter(
       new BufferedWriter(
-        new OutputStreamWriter(process.getOutputStream(), "utf-8")
+        new OutputStreamWriter(process.getOutputStream, "utf-8")
       ),
       true
     )
   end LinkerProcess
 
-  var oprocess: Option[LinkerProcess] = None
+  private var oprocess: Option[LinkerProcess] = None
 
   override def preStart() : Unit =
-    if !skipLinker && cmdPath.canExecute() then
+    if !skipLinker && cmdPath.canExecute then
       oprocess = Some(new LinkerProcess())
       log.info("oprocess created.")
     else ()
@@ -101,9 +98,9 @@ class LinkerActor extends Actor:
           ).head.asInstanceOf[Elem]
           log.debug(s"parsed result: $r")
           val links: Set[String] = (r \\ "span")
-            .collect({ case (e: Elem) =>
+            .collect { case e: Elem =>
               e.attributes.find(_.prefixedKey == "xlink:href").map(_.value.text)
-            })
+            }
             .flatten
             .toSet
           log.debug(s"links found: $links")

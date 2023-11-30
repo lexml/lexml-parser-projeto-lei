@@ -2,7 +2,7 @@ package br.gov.lexml.parser.pl.util
 
 object Entities:
 
-  val entities = Map[String, Char](
+  val entities : Map[String, Char] = Map(
     "aacute " -> 'á',
     "Aacute " -> 'Á',
     "abreve " -> 'ă',

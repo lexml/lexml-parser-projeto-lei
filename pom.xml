@@ -81,7 +81,7 @@
                 <configuration>
                     <!--                    <sourceDir>src/main/scala</sourceDir> -->
                     <fork>true</fork>
-                    <scalaVersion>${scala.lib.version}</scalaVersion>
+                    <scalaVersion>${scala.version}</scalaVersion>
 
                     <args>
                         <arg>-deprecation</arg>

@@ -34,7 +34,7 @@ import br.gov.lexml.parser.pl.profile.DocumentProfile
 import org.apache.commons.io.FileUtils
 
 import java.io.File
-import scala.annotation.unused
+import scala.annotation.{tailrec, unused}
 
 object Caracteristicas:
   val POSSUI_TABELA_ARTICULACAO = "possui tabela na articulacao"
@@ -56,14 +56,14 @@ case class ProjetoLei(
   lazy val toNodeSeq: NodeSeq =
     <projetolei>
       <preEpigrafe>{
-      NodeSeq fromSeq (preEpigrafe.flatMap(_.toNodeSeq))
+      NodeSeq fromSeq preEpigrafe.flatMap(_.toNodeSeq)
     }</preEpigrafe>
 			{
       ementa.map(x => <ementa>{x.toNodeSeq}</ementa>).getOrElse(NodeSeq.Empty)
     }      
       <preambulo>{NodeSeq fromSeq preambulo.flatMap(_.toNodeSeq)}</preambulo>
       <articulacao>{
-      NodeSeq fromSeq (articulacao.flatMap(_.toNodeSeq))
+      NodeSeq fromSeq articulacao.flatMap(_.toNodeSeq)
     }</articulacao>
     </projetolei>
 
@@ -79,7 +79,7 @@ case class ProjetoLei(
     articulacao.map(count).sum
 
   import Caracteristicas._
-  lazy val caracteristicas: Map[String, Boolean] = (Map(
+  lazy val caracteristicas: Map[String, Boolean] = Map(
     POSSUI_TABELA_ARTICULACAO -> existsAnyThat(
       articulacao,
       _.isInstanceOf[Table]
@@ -95,7 +95,7 @@ case class ProjetoLei(
       { case d: Dispositivo => d.rotulo == RotuloPena }
     )
   )
-    ++ otherCaracteristicas)
+    ++ otherCaracteristicas
 
   lazy val asXML: NodeSeq = LexmlRenderer.render(this)
 end ProjetoLei
@@ -135,7 +135,7 @@ case class Marcadores(
 
   @inline private def matchesOneOf(r: List[Regex]) = oneOf(r).andThen(_.isDefined)
 
-  val reMarcadores: Map[Marcador, Block => Boolean] =
+  private val reMarcadores: Map[Marcador, Block => Boolean] =
     Map[Marcador, List[Regex]](
       LocalData -> profile.regexLocalData,
       Justificacao -> profile.regexJustificativa,
@@ -186,6 +186,7 @@ case class Marcadores(
   end reconhece
 
   def span(bl: List[Block]): Map[Marcador, List[Block]] =
+    @tailrec
     def seek(
         ms: Marcadores,
         m: Marcador,
@@ -195,8 +196,8 @@ case class Marcadores(
     ): Map[Marcador, List[Block]] =
       blocks match {
         case Nil => blockMap + ((m, accum.reverse))
-        case (b :: bl) =>
-          (ms.reconhece(b)) match {
+        case b :: bl =>
+          ms.reconhece(b) match {
             case None => seek(ms, m, b :: accum, blockMap, bl)
             case Some((ms2, m2)) =>
               seek(ms2, m2, Nil, blockMap + ((m, accum.reverse)), bl)
@@ -338,7 +339,7 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
             ementa2.exists(isEmptyPar) ||
             ementa2.exists(!isParagraph(_))
         then
-          if (profile.ementaAusente) then None
+          if profile.ementaAusente then None
           else throw ParseException(EmentaAusente)
         else
           Some(Block.joinParagraphs(ementa2).head)
@@ -415,7 +416,7 @@ object ProjetoLeiParser:
 
   private def doesNotMatchAnyOf(r: List[Regex]) = oneOf(r).andThen(_.isEmpty)
 
-  def reconheceLinks(b: Block, urnContexto: String): Block = b.mapBlock {
+  private def reconheceLinks(b: Block, urnContexto: String): Block = b.mapBlock {
     case d: Dispositivo =>
       d.conteudo match {
         case Some(p: Paragraph) =>
@@ -431,7 +432,7 @@ object ProjetoLeiParser:
     case x => x
   }
 
-  def reconheceLinks(bl: List[Block], urnContexto: String): List[Block] =
+  private def reconheceLinks(bl: List[Block], urnContexto: String): List[Block] =
     bl.map(reconheceLinks(_, urnContexto))
 
   @unused
@@ -462,7 +463,7 @@ object ProjetoLeiParser:
       case _        => println(indent + "<SOMETHING>")
     }
 
-    bl.foreach(printBlock(_,""))
+    bl.foreach(printBlock(_))
 
 
   def limpaParagrafosVazios(blocks: List[Block]): List[Block] = blocks.filter {
@@ -491,7 +492,8 @@ object ProjetoLeiParser:
 end ProjetoLeiParser
 
 object ProjetoLei:
-  def firstThat(l: List[Block], f: Block => Option[Block]): Option[Block] =
+  private def firstThat(l: List[Block], f: Block => Option[Block]): Option[Block] =
+    @tailrec
     def h(l: List[Block]): Option[Block] =
       l match {
         case Nil => None

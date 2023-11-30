@@ -23,13 +23,13 @@ object DOCXReader:
       "<" + f(bold, "B") + f(italics, "I") + f(superscript,"⌃") + f(subscript,"⌄" ) + ">"
 
 
-  val emptyStyle: TextStyle = TextStyle()
+  private val emptyStyle: TextStyle = TextStyle()
 
   abstract sealed class Segment:
     import scala.xml.*
     def toXML: Seq[Node]
 
-  final case class TextSegment(style: TextStyle, text: String) extends Segment:
+  private final case class TextSegment(style: TextStyle, text: String) extends Segment:
     import scala.xml._
     override def toXML: Seq[Node] =
       TextSegment.styles(style)(Text(text))
@@ -38,9 +38,9 @@ object DOCXReader:
       val head = if style != emptyStyle then style.toString  else ""
       s"〈$head$text〉"
 
-  object TextSegment:
+  private object TextSegment:
     import scala.xml.*
-    def encloseIf(label: String)(
+    private def encloseIf(label: String)(
         cond: TextStyle => Boolean
     )(style: TextStyle)(nodes: Seq[Node]): Seq[Node] =
       if cond(style) then
@@ -54,10 +54,10 @@ object DOCXReader:
         ))
       else nodes
 
-    val italicsIf = encloseIf("i")(_.italics) _
-    val boldIf = encloseIf("b")(_.bold) _
-    val supIf = encloseIf("sup")(_.superscript) _
-    val subIf = encloseIf("sub")(_.subscript) _
+    private val italicsIf = encloseIf("i")(_.italics) _
+    private val boldIf = encloseIf("b")(_.bold) _
+    private val supIf = encloseIf("sup")(_.superscript) _
+    private val subIf = encloseIf("sub")(_.subscript) _
 
     def styles(style: TextStyle) : Seq[Node] => Seq[Node] =
       subIf(style) andThen
@@ -67,15 +67,15 @@ object DOCXReader:
   end TextSegment
 
 
-  case object Space extends Segment:
+  private case object Space extends Segment:
     import scala.xml.*
-    override def toXML = Seq(Text(" "))
+    override def toXML : Seq[Node] = Seq(Text(" "))
     override def toString = "⎵"
 
 
-  case object Tab extends Segment:
+  private case object Tab extends Segment:
     import scala.xml.*
-    override def toXML = Seq(Text(" "))
+    override def toXML : Seq[Node] = Seq(Text(" "))
     override def toString = "⇥"
 
 
@@ -89,7 +89,7 @@ object DOCXReader:
     }
     intersperse0(Nil, as).reverse
 
-  def breakText(style: TextStyle, text: String): IndexedSeq[Segment] =
+  private def breakText(style: TextStyle, text: String): IndexedSeq[Segment] =
     val txt = text.replaceAll("[\\u00A0\\s]", " ").replaceAll("\\s\\s+", " ")
     val hd = if txt.startsWith(" ") then IndexedSeq(Space) else IndexedSeq()
     val tl = if txt.endsWith(" ") then IndexedSeq(Space) else IndexedSeq()
@@ -112,7 +112,7 @@ object DOCXReader:
       nsTxt + label
   end XElem
 
-  object XElem:
+  private object XElem:
     def fromEvent(ev: StartElement): XElem =
       val ns = Option(ev.getName.getNamespaceURI)
       import scala.jdk.CollectionConverters._

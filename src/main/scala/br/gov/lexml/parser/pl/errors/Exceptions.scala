@@ -7,7 +7,7 @@ final case class ParseException(_errors: ParseProblem*)
   var errors: Seq[ParseProblem] = _errors
 
 abstract class ProblemCategory(val code: Int, val description: String):
-  override final def toString() = "[" + code + ": " + description + "]"
+  override final def toString : String = s"[$code: $description]"
 
 case object PC_TecnicaLegislativa
     extends ProblemCategory(1, "Erro de técnica legislativa")
@@ -148,7 +148,7 @@ abstract class ParseProblem(
 ):
   override final def toString : String = s"[$message ${pos.mkString("(",",",")")} | $problemType]"
   var context: Seq[String] = Seq()
-  final def message : String = msg.getOrElse(problemType.description)
+  private final def message : String = msg.getOrElse(problemType.description)
 
   def in(ctx: String*): ParseProblem =
     context = ctx ++ context
@@ -226,7 +226,7 @@ case object FalhaConversaoPrimaria extends ParseProblem(TFalhaConversao, None)
 
 object ErroValidacaoSchema:
   def unchain(ex: Throwable): List[String] =
-    ex.getMessage() :: Option(ex.getCause()).toList.flatMap(unchain(_))
+    ex.getMessage :: Option(ex.getCause).toList.flatMap(unchain)
 
 
 final case class ErroValidacaoSchema(ex: org.xml.sax.SAXParseException)

@@ -114,25 +114,25 @@ case class CmdLineOpts(
     }
 
 class FECmdLineOptionParser extends scopt.OptionParser[CmdLineOpts]("parser"):
-  def cmdParse[T](
+  private def cmdParse[T](
       f: (T, CmdParse) => CmdParse
   ): (T, CmdLineOpts) => CmdLineOpts = {
     case (v, opts) => opts.command(CmdParse())(c => f(v, c))
   }
 
-  def stringToRegexList(txt: String): Option[List[Regex]] =
+  private def stringToRegexList(txt: String): Option[List[Regex]] =
     txt.split('%').to(List) match {
       case Nil => None
       case l   => Some(l.map(_.r))
     }
-  def optOverrides[T](
+  private def optOverrides[T](
       f: (T, OverridesData) => OverridesData
   ): (T, CmdLineOpts) => CmdLineOpts =
     cmdParse { case (v, cmd) =>
       cmd changeOverrides { f(v, _) }
     }
 
-  def optOverridesRegex(suffix: String, desc: String)(
+  private def optOverridesRegex(suffix: String, desc: String)(
       f: (OverridesData, Option[List[Regex]]) => OverridesData
   ): OptionDef[String, CmdLineOpts] =
     opt[String](s"prof-regex-$suffix")
@@ -146,7 +146,7 @@ class FECmdLineOptionParser extends scopt.OptionParser[CmdLineOpts]("parser"):
         s"expressões regulares, separadas pelo caracter '%', que são usada para identificar $desc"
       )
 
-  def cmdParseArticulacao[T](
+  private def cmdParseArticulacao[T](
       f: (T, CmdParseArticulacao) => CmdParseArticulacao
   ): (T, CmdLineOpts) => CmdLineOpts = {
     case (v, opts) => opts.command(CmdParseArticulacao())(c => f(v, c))
@@ -504,7 +504,7 @@ final case class ErroNaRenderizacao(ex: Exception)
 object FECmdLine:
   def println(s: String): Unit = System.err.println(s)
 
-  def setupLogging(log4jConfigFile: Option[File]): Unit =
+  private def setupLogging(log4jConfigFile: Option[File]): Unit =
     import org.apache.logging.log4j.core.config.*
     import org.apache.logging.log4j.core.config.xml.*
     import java.io.*
@@ -538,11 +538,11 @@ object FECmdLine:
           val profile0 = DocumentProfileRegister
             .getProfile(urnFragAutoridade, urnFragTipoNorma)
             .getOrElse(Lei)
-          val profile = cmd.overrides match {
+          val profile1 = cmd.overrides match {
             case None    => profile0
             case Some(o) => profile0 + o
           }
-          val md = md0.copy(profile = profile)
+          val md = md0.copy(profile = profile1)
 
           if verbose || cmd.showInfo then
             println("Opções de I/O:")
@@ -578,7 +578,7 @@ object FECmdLine:
                 }
               })
             }
-            dumpProfile(profile)
+            dumpProfile(profile1)
           else ()
           if !cmd.showInfo then
             cmd.linkerPath match {
@@ -595,7 +595,7 @@ object FECmdLine:
                 sys.props += ("lexml.linkertool" -> path1)
             }
             process(
-              profile,
+              profile1,
               md,
               cmd.input,
               cmd.mimeType,
@@ -615,7 +615,7 @@ object FECmdLine:
       }
     }
 
-  def dumpProfile(p: DocumentProfile): Unit =
+  private def dumpProfile(p: DocumentProfile): Unit =
     import p.*
     println(
       s"Profile localidade: ${urnFragLocalidade.getOrElse("-")}, autoridade: $urnFragAutoridade, tipoNorma: $urnFragTipoNorma"
@@ -650,7 +650,7 @@ object FECmdLine:
     // FIXME: adicionar suporte a template de epígrafe
     println("")
 
-  def renderAndValidaXML(pl: ProjetoLei): (Elem, List[ParseProblem]) =
+  private def renderAndValidaXML(pl: ProjetoLei): (Elem, List[ParseProblem]) =
     val pl2 = pl.remakeEpigrafe
     val res = LexmlRenderer.render(pl2)
     val falhasXML =
@@ -699,7 +699,7 @@ object FECmdLine:
       }
     }
 
-  def processArticulacao(cmd: CmdParseArticulacao, verbose: Boolean): Unit =
+  private def processArticulacao(cmd: CmdParseArticulacao, verbose: Boolean): Unit =
     import br.gov.lexml.parser.pl.block.*
     import br.gov.lexml.parser.pl.profile.*
     import java.io.*
