@@ -438,7 +438,7 @@ case object Image extends Block
 
 object Block extends Block:
 
-  def collectText(nl: List[Node]): List[Node] = {
+  def collectText(nl: List[Node]): List[Node] =
     val validLabels = List("i", "b", "span", "sub", "sup")
 
     @tailrec
@@ -466,7 +466,6 @@ object Block extends Block:
     }
 
     docollect(nl, Nil)
-  }
 
   def fromNodes(nodes: List[Node]): List[Block] =
     nodes.flatMap((n: Node) =>
@@ -632,7 +631,7 @@ object Block extends Block:
             .getOrElse(balt)
           val alt = Alteracao(balt2)
           reconheceInicio(rest2, alt :: acum)
-        case (pp: Paragraph) :: Paragraph(_, t) :: rest if t.length == 0 =>
+        case (pp: Paragraph) :: Paragraph(_, t) :: rest if t.isEmpty =>
           reconheceInicio(pp :: rest, acum)
 
         case (o@OL(lis)) :: rest =>
@@ -942,28 +941,29 @@ object Block extends Block:
           l match {
             case Paragraph(n2, text2) :: bl =>
               val nodes2 = n2.toList
-              val nodes: List[Node] = if text1.nonEmpty && text2.nonEmpty then
-                if !text1.endsWith(" ") && !text2.startsWith(" ") then
-                  val revNodes1 = nodes1.reverse
-                  revNodes1 match {
-                    case Text(lastText1) :: revTail1 =>
-                      nodes2 match {
-                        case Text(firstText2) :: tail2 =>
-                          revTail1.reverse ++ (Text(
-                            lastText1 + " " + firstText2
-                          ) :: tail2)
-                        case _ =>
-                          revTail1.reverse ++ (Text(lastText1 + " ") :: nodes2)
-                      }
-                    case _ =>
-                      nodes2 match {
-                        case Text(firstText2) :: tail2 =>
-                          nodes1 ++ (Text(" " + firstText2) :: tail2)
-                        case _ => nodes1 ++ List(Text(" ")) ++ nodes2
-                      }
-                  }
-                else  nodes1 ++ nodes2
-              else nodes1 ++ nodes2
+              val nodes: List[Node] =
+                if text1.nonEmpty && text2.nonEmpty then
+                  if !text1.endsWith(" ") && !text2.startsWith(" ") then
+                    val revNodes1 = nodes1.reverse
+                    revNodes1 match {
+                      case Text(lastText1) :: revTail1 =>
+                        nodes2 match {
+                          case Text(firstText2) :: tail2 =>
+                            revTail1.reverse ++ (Text(
+                              lastText1 + " " + firstText2
+                            ) :: tail2)
+                          case _ =>
+                            revTail1.reverse ++ (Text(lastText1 + " ") :: nodes2)
+                        }
+                      case _ =>
+                        nodes2 match {
+                          case Text(firstText2) :: tail2 =>
+                            nodes1 ++ (Text(" " + firstText2) :: tail2)
+                          case _ => nodes1 ++ List(Text(" ")) ++ nodes2
+                        }
+                    }
+                  else  nodes1 ++ nodes2
+                else nodes1 ++ nodes2
 
               Paragraph(nodes, p.indentation) :: bl
             case _ => b :: l
