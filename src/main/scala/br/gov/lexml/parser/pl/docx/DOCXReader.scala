@@ -11,7 +11,7 @@ import javax.xml.stream.events._
 object DOCXReader {
   type Elem = (String,String)
 
-  final case class TextStyle(bold : Boolean = false, italics : Boolean = false, 
+  final case class TextStyle(bold : Boolean = false, italics : Boolean = false,
     subscript : Boolean = false, superscript : Boolean = false) {
 
     override def toString : String = {
@@ -23,17 +23,17 @@ object DOCXReader {
       s"<$label>"
     }
   }
-  
+
   val emptyStyle: TextStyle = TextStyle()
 
   abstract sealed class Segment {
     import scala.xml._
     def toXML : Seq[Node]
-  } 
-  
+  }
+
   final case class TextSegment(style : TextStyle, text : String) extends Segment {
     import scala.xml._
-	  override def toXML: Seq[Node] =
+    override def toXML: Seq[Node] =
       TextSegment.styles(style)(Text(text))
 
     override def toString : String = {
@@ -71,19 +71,19 @@ object DOCXReader {
         }
       }
   }
-  
+
   case object Space extends Segment {
     import scala.xml._
     override def toXML = Seq(Text(" "))
     override def toString = "⎵"
   }
-  
+
   case object Tab extends Segment {
     import scala.xml._
     override def toXML = Seq(Text(" "))
     override def toString = "⇥"
   }
-  
+
   //From scalaz
   def intersperse[A](as: List[A], a: A): List[A] = {
     @tailrec
@@ -96,13 +96,13 @@ object DOCXReader {
   }
   def breakText(style : TextStyle, text : String) : IndexedSeq[Segment] = {
     val txt = text.
-    			replaceAll("[\\u00A0\\s]"," ").    			
-    			replaceAll("\\s\\s+"," ")        		
-    val hd = if(txt.startsWith(" ")) { IndexedSeq(Space) } else { IndexedSeq() }    			
+                        replaceAll("""[\u00A0\s\n\r]"""," ").
+                        replaceAll("""\s\s+"""," ")
+    val hd = if(txt.startsWith(" ")) { IndexedSeq(Space) } else { IndexedSeq() }
     val tl = if(txt.endsWith(" ")) { IndexedSeq(Space) } else { IndexedSeq() }
     hd ++ intersperse(List(txt.split(" ").toIndexedSeq :_*).map(t => TextSegment(style,t)),Space).toIndexedSeq ++ tl
-  }  
-  
+  }
+
   final case class XElem(ns : Option[String], label : String, attributes : Map[(String,String),String] = Map()) {
     override def toString = {
       val nsTxt = ns match {
@@ -113,7 +113,7 @@ object DOCXReader {
       nsTxt + label
     }
   }
-  
+
   object XElem {
     def fromEvent(ev : StartElement): XElem = {
       val ns = Option(ev.getName.getNamespaceURI)
@@ -126,17 +126,17 @@ object DOCXReader {
       val attrs = attrPairs.toMap
       XElem(ns,ev.getName.getLocalPart,attrs)
     }
-    
+
     val wNs = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 
   }
-  
+
   final case class Context(style : TextStyle = TextStyle(), stack : List[(XElem,TextStyle)] = List(), segments : IndexedSeq[Segment] = IndexedSeq()) {
-    
+
     def enter(elem : XElem) : Context = copy(stack = (elem,style) :: stack)
     def leave(keepStyle : Option[TextStyle => TextStyle] = None) : Context = {
-    	val newStyle = keepStyle.map(f => f(style)).getOrElse(stack.head._2)    	  
-    	copy(style = newStyle, stack = stack.tail)
+      val newStyle = keepStyle.map(f => f(style)).getOrElse(stack.head._2)
+      copy(style = newStyle, stack = stack.tail)
     }
 
     def head: Option[XElem] = stack.headOption.map(_._1)
@@ -144,7 +144,7 @@ object DOCXReader {
     override def toString =
       s"⟦${ if (style != emptyStyle) { style.toString + ":" } else "" } ${segments.mkString("")} STACK: ${stack.map { case (e,style) => style.toString + e.toString }.mkString("⟪"," ","⟫")}⟧"
   }
-  
+
   import XElem._
   private def processEvent(ctx : Context, event : XMLEvent) : Context = {
     (event,ctx.head) match {
@@ -174,31 +174,31 @@ object DOCXReader {
   }
 
   private def collectText(evs : Iterable[XMLEvent]) = {
-    val segs1 = evs.foldLeft(Context())(processEvent).segments 
-	  val segs2 = collapseBy(segs1) {
-    	case (Space,Space) => Space
-    	case (Space,Tab) => Tab
-    	case (Tab,Space) => Tab
-    	case (Tab,Tab) => Tab
-    	case (TextSegment(s1,t1),TextSegment(s2,t2)) 
-    		if s1 == s2 => TextSegment(s1,t1 ++ t2)
-  	}
-  	val segs3 = collapseBy3(segs2)({
+    val segs1 = evs.foldLeft(Context())(processEvent).segments
+    val segs2 = collapseBy(segs1) {
+      case (Space,Space) => Space
+      case (Space,Tab) => Tab
+      case (Tab,Space) => Tab
+      case (Tab,Tab) => Tab
+      case (TextSegment(s1,t1),TextSegment(s2,t2))
+        if s1 == s2 => TextSegment(s1,t1 ++ t2)
+    }
+    val segs3 = collapseBy3(segs2)({
       case (TextSegment(s1, t1), Space, TextSegment(s2, t2)) if s1 == s2 =>
         TextSegment(s1, t1 + " " + t2)
     })
-  	
-  	val segs4 = segs3.headOption match {
-  	  case Some(x) if !x.isInstanceOf[TextSegment] => segs3.tail
-  	  case _ => segs3
-  	}
-  	val segs5 = segs4.lastOption match {
-  	  case Some(x) if !x.isInstanceOf[TextSegment] => segs4.init
-  	  case _ => segs4
-  	}
-  	segs5  	  
+
+    val segs4 = segs3.headOption match {
+      case Some(x) if !x.isInstanceOf[TextSegment] => segs3.tail
+      case _ => segs3
+    }
+    val segs5 = segs4.lastOption match {
+      case Some(x) if !x.isInstanceOf[TextSegment] => segs4.init
+      case _ => segs4
+    }
+    segs5
   }
-  
+
   import java.io.InputStream
   import java.util.zip._
 
@@ -227,5 +227,3 @@ object DOCXReader {
     }
   }
 }
-
-
