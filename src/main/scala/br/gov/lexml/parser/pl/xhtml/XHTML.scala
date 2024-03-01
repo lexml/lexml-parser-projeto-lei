@@ -537,7 +537,8 @@ object XHTMLProcessor extends Logging {
     def doit(bl: (A, List[Node]), n: Node): (A, List[Node]) = {
       val (b1, l) = bl
       n match {
-        case Text(t1) =>
+        case x : Atom[String] =>
+          val t1 = x.text
           val (t2, b2) = f(b1, t1)
           if (t2.isEmpty) { (b2, l) }
           else { (b2, Text(t2) :: l) }
@@ -556,7 +557,8 @@ object XHTMLProcessor extends Logging {
       def doit(bl: (A, List[Node], Boolean), n: Node): (A, List[Node], Boolean) = {
         val (b1, l, skip) = bl
         if (skip) { (b1, n :: l, skip) } else n match {
-          case Text(t1) =>
+          case x : Atom[String] =>
+            val t1 = x.text
             f(b1, t1) match {
               case None => (b1, n :: l, true)
               case Some((t2, b2)) =>
@@ -601,6 +603,8 @@ object XHTMLProcessor extends Logging {
             else { Some(re5.replaceFirstIn(t, ""), true) })(false)(ns1)
         ns2
     })
+
+
 
   private def getAttr(md: MetaData, key: String): String = {
     md.get(key) match {
@@ -733,7 +737,7 @@ object XHTMLProcessor extends Logging {
       //debug("after cleanNameSpaces"),
       cleanSeqNodes,
       //debug("after cleanSeqNodes"),
-      _.flatMap(cleanAttributes),      
+      _.flatMap(cleanAttributes),
       normalizeSpace,
       cleanSpuriousSpans,      
       mergeTextNodes,
