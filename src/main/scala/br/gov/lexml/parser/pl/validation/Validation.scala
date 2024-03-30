@@ -36,7 +36,7 @@ final case class Path(rl: List[Rotulo]) extends Ordered[Path] {
         }
       }
     }
-    mkTexto1(rl)
+    mkTexto1(rl.reverse)
   }
 
   lazy val txt: String = mkTexto(rl)
@@ -324,6 +324,38 @@ class Validation {
     }
   }
 
+  private val rotulosSingularesUnicos : ValidationRule[(Path, List[Rotulo])] = {
+    case (p,l) if !p.rl.exists(_.isInstanceOf[RotuloAlteracao]) =>
+      val g = l.collect { case r : PodeSerUnico if r.nivel > niveis.artigo => r }.groupBy(_.nivel).values
+      g.collect {
+        case ll
+          if ll.size == ll.last.numRotulosQuandoTemUnico &&
+             !ll.exists(_.unico) =>
+              withContext(RotuloNaoUnicoSingular((p + ll.last).txt))
+      }.to(Set)
+  }
+
+  private val RE_CONECTIVO = ".*[,;] *(e|E|ou|OU) *$".r
+  private val conectivosSoNaPenultimaPosicao : ValidationRule[Dispositivo] = {
+    case disp =>
+      val cl = disp.children.collect { case d : Dispositivo => d}
+      def temConectivo(d : Dispositivo) = {
+        val txt = d.conteudo.collect { case p : Paragraph => p.text }.mkString(" ")
+        RE_CONECTIVO.matches(txt)
+      }
+      cl.groupBy(_.rotulo.nivel)
+        .view
+        .filterKeys(n => n >= niveis.inciso && n <= niveis.item)
+        .values
+        .flatMap { (l: List[Dispositivo]) =>
+          val len = l.size
+          val penultimo = len - 2
+          l.zipWithIndex.collect { case (d,idx) if idx != penultimo && temConectivo(d) => d }
+        }
+        .map { d => EnumeracaoComConectivoEmPosicaoErrada(d.path.toString) }
+        .to(Set)
+  }
+
   private val niveisSubNiveisValidos: ValidationRule[(Path, Block)] = {
     case (Path(rl@(x :: xs)), bl)
       if x.isInstanceOf[RotuloAlteracao] &&
@@ -481,11 +513,15 @@ class Validation {
           Set(withContext(OrdemInvertida((p + r1).txt, (p + r2).txt)))
       }),
       somenteUmRotuloUnico,
-      numeracaoContinua),
+      numeracaoContinua,
+      rotulosSingularesUnicos),
     paraTodosOsCaminhos(
       paraTodo(niveisSubNiveisValidos, alineasSoDebaixoDeIncisos)(tcAny),
       naoPodeHaverCaminhoDuplicado),
-    paraTodoDispositivo(naoDevemHaverParagrafosNoMeio, somenteDispositivosComTextoValido),
+    paraTodoDispositivo(
+      naoDevemHaverParagrafosNoMeio,
+      somenteDispositivosComTextoValido,
+      conectivosSoNaPenultimaPosicao),
     paraTodoParagrafo(naoPodeHaveOlLi),
     paraTodaAlteracao(somenteOmissisOuDispositivoEmAlteracao),
     paraTodoPaiOpcional_e_Filho(omissisSoEmAlteracao, semTabelasPorEnquanto, noTopoSoDispositivos))(tcAny)

@@ -65,12 +65,16 @@ case object TOmissisForaAlteracao extends ProblemType(20,"Omissis fora da altera
 
 case object TElementoNaoSuportado extends ProblemType(21,"Elemento não suportado", PC_LimitacaoEditor)
 
+case object TRotuloNaoUnicoSingular extends ProblemType(22, "Rótulo singular não expresso como único.",PC_TecnicaLegislativa)
+
+case object TEnumeracaoComConectivoEmPosicaoErrada extends ProblemType(23, "Enumeração com conectivo em posição errada.",PC_TecnicaLegislativa)
+
 abstract class ParseProblem(val problemType : ProblemType, val msg : Option[String], val pos : String*) {
-  override final def toString() = "[" + message + " " + pos.mkString("(",",",")") + " | " + problemType + "]"
+  override final def toString = s"[$message ${pos.mkString("(",",",")")} | $problemType]"
 	var context : Seq[String] = Seq()
   final def message = msg.getOrElse(problemType.description)
 	def in(ctx : String*) = { context = ctx ++ context ; this }
-	lazy val desc = s"Problem type = ${problemType}, pos = ${pos}, msg = ${msg}, context=${context}"
+	lazy val desc = s"Problem type = $problemType, pos = $pos, msg = $msg, context=$context"
 }
 
 object ParseProblem {
@@ -107,6 +111,11 @@ final case class RotuloRepetido(id : String) extends ParseProblem(TRotuloRepetid
 final case class RotuloUnicoNaoUnico(idUnico : String, idNaoUnico : String) extends 
 	ParseProblem(TRotuloUnicoNaoUnico,None,idUnico,idNaoUnico)
 
+final case class RotuloNaoUnicoSingular(idNaoUnico : String) extends
+	ParseProblem(TRotuloNaoUnicoSingular,None,idNaoUnico)
+
+final case class EnumeracaoComConectivoEmPosicaoErrada(id : String) extends
+	ParseProblem(TEnumeracaoComConectivoEmPosicaoErrada,None,id)
 
 final case class PosicaoInvalida(id : String) extends ParseProblem(TPosicaoInvalida,None, id)
 
@@ -122,8 +131,6 @@ case object EmentaAusente extends ParseProblem(TEmentaAusente,None)
 final case class ErroSistema(ex : Exception) extends ParseProblem(TErroSistema,Some("Erro de sistema: " + ex.getMessage)) {
   ex.printStackTrace
 }
- 
-
 
 case object FalhaConversaoPrimaria extends ParseProblem(TFalhaConversao,None)
       
