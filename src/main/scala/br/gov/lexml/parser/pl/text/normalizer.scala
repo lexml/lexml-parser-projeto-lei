@@ -7,7 +7,7 @@ object normalizer {
 							replaceAll("\\p{InCombiningDiacriticalMarks}+","")
 		removeDuplicateSpace(s1.toLowerCase.map(cleanchar).trim)
 	}
-	def removeDuplicateSpace(s : String) = s.replaceAll("""\p{javaWhitespace}+"""," ")
+	def removeDuplicateSpace(s : String) = s.replaceAll("""[\s\p{Z}]+"""," ")
 	def cleanchar(c : Char) : Char = c match {
 		case 'á' => 'a'
 		case 'à' => 'a'

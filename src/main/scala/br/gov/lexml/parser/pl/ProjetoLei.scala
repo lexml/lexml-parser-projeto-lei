@@ -277,11 +277,8 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
           }
         }
       }
-
       val (ementa1, preambulo, posPreambulo) = reconhecePreambulo(posEpigrafe)
-      
       val ementa2 = trimEmptyPars(ementa1)
-      
       val ementa = if (
             ementa2.isEmpty ||
             ementa2.exists(isEmptyPar) ||
