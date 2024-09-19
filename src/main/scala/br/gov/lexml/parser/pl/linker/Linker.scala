@@ -26,14 +26,17 @@ object Linker {
     case _ : Exception => Escalate
   }
 
-  private val linkerRouter = system.actorOf(Props[LinkerActor]().withRouter(SmallestMailboxPool(8,
+  val numLinkerInstances = sys.props.getOrElse("linker.numInstances","8").toInt
+  val linkerProcessTimeout = sys.props.getOrElse("linker.timeoutSeconds","30").toInt
+
+  private val linkerRouter = system.actorOf(Props[LinkerActor]().withRouter(SmallestMailboxPool(numLinkerInstances,
     supervisorStrategy = strategy)))
             
   
   def findLinks(urnContexto : String, ns : Seq[Node]) : (List[String],List[Node]) = {
     logger.info(s"findLinks: urnContexto = $urnContexto, ns=$ns")
     import org.apache.pekko.util.Timeout
-    implicit val timeout : Timeout = Timeout(30 seconds)
+    implicit val timeout : Timeout = Timeout(linkerProcessTimeout.seconds)
     val msg = (urnContexto,ns)
     import system.dispatcher
     val f = (linkerRouter ? msg).mapTo[(List[Node],Set[String])] map {
