@@ -17,9 +17,9 @@ case object PC_LimitacaoParser extends ProblemCategory(2,"Limitação técnica d
   
 case object PC_LimitacaoEditor extends ProblemCategory(3,"Limitação técnica do editor")
 
-case object PC_XMLSchema extends ProblemCategory(3,"Erro de validação do esquema XML")
+case object PC_XMLSchema extends ProblemCategory(4,"Erro de validação do esquema XML")
 
-case object PC_ErroGeralParser extends ProblemCategory(4,"Erro geral do parser")
+case object PC_ErroGeralParser extends ProblemCategory(5,"Erro geral do parser")
 
 abstract class ProblemType(val code : Int, val description : String, val category : ProblemCategory) {
   override final def toString() = "[" + code + ": " +  description + ", categoria: " + category + "]"
@@ -128,9 +128,7 @@ case object EpigrafeAusente extends ParseProblem(TEpigrafeAusente,None)
 
 case object EmentaAusente extends ParseProblem(TEmentaAusente,None)
 
-final case class ErroSistema(ex : Exception) extends ParseProblem(TErroSistema,Some("Erro de sistema: " + ex.getMessage)) {
-  ex.printStackTrace
-}
+final case class ErroSistema(ex : Exception) extends ParseProblem(TErroSistema,Some("Erro de sistema: " + ex.getMessage))
 
 case object FalhaConversaoPrimaria extends ParseProblem(TFalhaConversao,None)
       
