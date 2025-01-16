@@ -152,12 +152,14 @@ object rotuloParser {
 		lazy val parte : Parser[RotuloParte] = {
 			lazy val rotTexto : Parser[Either[String,(Int,Boolean)]] = {
 				val p0 = ("parte unica" : Parser[String]).map(x => Right((1,true)))
-				val p1 = ("parte " ~> ordinalExtenso(Masc)).map(Right(_))
-				val p2 = ("parte " ~> ("\\w+"r)).map(x => Left(x.toUpperCase))
-				val p3 = ("p a r t e" ~> rep(' ' ~> letterOrDigit) ^^ mkString).map { x =>
+				val p1 = ("parte geral" : Parser[String]).map(x => Left(("GERAL")))
+				val p2 = ("parte especial" : Parser[String]).map(x => Left(("ESPECIAL")))
+				val p3 = ("parte " ~> ordinalExtenso(Masc)).map(Right(_))
+				val p4 = ("parte " ~> ("\\w+"r)).map(x => Left(x.toUpperCase))
+				val p5 = ("p a r t e" ~> rep(' ' ~> letterOrDigit) ^^ mkString).map { x =>
 					Left(x.replaceAll("(\\w) ","$1"))
 				}
-				p0 | p1 | p2 | p3
+				p0 | p1 | p2 | p3 | p4 | p5
 			}
 
 			rotTexto ~ opt(complemento) ^^ { case ~(numOrOrd, cmp) =>

@@ -562,7 +562,7 @@ object Block extends Block {
       def spanUpToEvidenciaAlteracao(bl: List[Block], rl: List[Block] = Nil): Option[(List[Block], List[Block])] = bl match {
         case (o: Omissis) :: bl1 => Some((o :: rl).reverse, bl1)
         case (a: Alteracao) :: bl1 => Some((a :: rl).reverse, bl1)
-        case (d: Dispositivo) :: bl1 if !hasAlteracao(d) && (lastIsFechaAspas(d) || hasOmissis(d)) => Some(d :: rl, bl1)
+        case (d: Dispositivo) :: bl1 if !hasAlteracao(d) && (lastIsFechaAspas(d) || hasOmissis(d)) => Some((d :: rl).reverse, bl1)
         case (p: Paragraph) :: bl1 if p.text.isEmpty => spanUpToEvidenciaAlteracao(bl1, p :: rl)
         case _ => None
       }
@@ -827,14 +827,14 @@ object Block extends Block {
 
   def reconheceOmissisVazio2(blocks: List[Block]): List[Block] = blocks.map(_.mapBlock(reconheceOmissisVazio))
 
-  def reconheceOmissisVazio(blocks: List[Block]): List[Block] = {
+  /*def reconheceOmissisVazio(blocks: List[Block]): List[Block] = {
     def f(b: Block): (List[Block], Boolean) = b match {
       case a: Alteracao => (List(a.copy(blocks = reconheceOmissisVazio2(a.blocks))), false)
       case x => (List(x), true)
     }
 
     blocks.flatMap(_.topDownUntil(f))
-  }
+  }*/
 
   def numeraAlteracoes(blocks: List[Block]): List[Block] = {
     def numera(blp: (List[Block], Int), b: Block) = {
@@ -910,7 +910,12 @@ object Block extends Block {
         d.rotulo match {
           case RotuloParte(Right(n),_,_,_,_) => (blks :+ d,n)
           case r@RotuloParte(Left(txt),_,_,_,_) =>
-            val d1 = d.copy(rotulo = r.copy(num = Right(partePos+1),rotulo=Some(txt)))
+            val num = txt match {
+              case "GERAL" => 1
+              case "ESPECIAL" => 2
+              case _ => partePos + 1
+            }
+            val d1 = d.copy(rotulo = r.copy(num = Right(num),rotulo=Some(txt)))
             (blks :+ d1,partePos+1)
           case _ => (blks :+ d,partePos)
         }
