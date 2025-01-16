@@ -228,7 +228,7 @@
               <plugin>
                   <groupId>org.sonatype.plugins</groupId>
                   <artifactId>nexus-staging-maven-plugin</artifactId>
-                  <version>1.6.13</version>
+                  <version>1.7.0</version>
                   <extensions>true</extensions>
                   <configuration>
                       <serverId>ossrh</serverId>
@@ -239,7 +239,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -251,7 +251,8 @@
               </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-jar-plugin</artifactId>
+	    <artifactId>maven-jar-plugin</artifactId>
+	    <version>3.2.2</version>
             <executions>
                 <execution>
                     <id>empty-javadoc-jar</id>
@@ -269,7 +270,7 @@
               <plugin>
                   <groupId>org.apache.maven.plugins</groupId>
                   <artifactId>maven-gpg-plugin</artifactId>
-                  <version>3.0.1</version>
+                  <version>3.2.7</version>
                   <executions>
                       <execution>
                           <id>sign-artifacts</id>
