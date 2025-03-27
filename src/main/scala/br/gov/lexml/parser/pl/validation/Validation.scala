@@ -513,15 +513,15 @@ class Validation {
           Set(withContext(OrdemInvertida((p + r1).txt, (p + r2).txt)))
       }),
       somenteUmRotuloUnico,
-      numeracaoContinua,
-      rotulosSingularesUnicos),
+      numeracaoContinua/*,
+      rotulosSingularesUnicos*/),
     paraTodosOsCaminhos(
       paraTodo(niveisSubNiveisValidos, alineasSoDebaixoDeIncisos)(tcAny),
       naoPodeHaverCaminhoDuplicado),
     paraTodoDispositivo(
       naoDevemHaverParagrafosNoMeio,
-      somenteDispositivosComTextoValido,
-      conectivosSoNaPenultimaPosicao),
+      somenteDispositivosComTextoValido/*,
+      conectivosSoNaPenultimaPosicao*/),
     paraTodoParagrafo(naoPodeHaveOlLi),
     paraTodaAlteracao(somenteOmissisOuDispositivoEmAlteracao),
     paraTodoPaiOpcional_e_Filho(omissisSoEmAlteracao, semTabelasPorEnquanto, noTopoSoDispositivos))(tcAny)
