@@ -29,7 +29,7 @@ object rotuloParser {
 	
 	lazy val tipos = Seq(
 		    "artigo","paragrafo","inciso","alinea",
-		    "item", "pena", "penalidade", "infracao",
+		    "item", "pena", "penas", "penalidade", "infracao",
 		    "medida administrativa", "parte", "livro",
 		    "agregador","algumRotulo", "inteiro", 
 		    "complemento", "ordinalExtenso", "numeroComposto", 
@@ -140,8 +140,9 @@ object rotuloParser {
 		lazy val pena: Parser[Rotulo] = "pena -" ^^^ RotuloPena
 
 		lazy val dispositivoGenerico : Parser[Rotulo] = (
-		  (("penalidade" | "infracao" | "medida administrativa" | "multa") <~ rep1(whiteSpace) <~ "-") ^^ {
+		  (("penas" | "penalidade" | "infracao" | "medida administrativa" | "multa") <~ rep1(whiteSpace) <~ "-") ^^ {
 				case "penalidade" => RotuloDispositivoGenerico( nomeRotulo = "Penalidade")
+				case "penas" => RotuloDispositivoGenerico( nomeRotulo = "Penas")
 				case "infracao" => RotuloDispositivoGenerico( nomeRotulo = "Infração")
 				case "medida administrativa" => RotuloDispositivoGenerico( nomeRotulo = "Medida Administrativa")
 				case "multa" => RotuloDispositivoGenerico( nomeRotulo = "Multa")
@@ -204,6 +205,7 @@ object rotuloParser {
 			case "item" => item
 			case "pena" => pena
 			case "penalidade" => dispositivoGenerico
+			case "penas" => dispositivoGenerico
 			case "infracao" => dispositivoGenerico
 			case "medida administrativa" => dispositivoGenerico
 			case "parte" => parte
