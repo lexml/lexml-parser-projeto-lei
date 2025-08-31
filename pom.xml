@@ -225,6 +225,7 @@
                     <tagNameFormat>@{project.version}</tagNameFormat>
                 </configuration>
             </plugin>
+<!--
               <plugin>
                   <groupId>org.sonatype.plugins</groupId>
                   <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -237,7 +238,22 @@
 		      <stagingProgressTimeoutMinutes>15</stagingProgressTimeoutMinutes>
 		      <stagingProgressPauseDurationSeconds>10</stagingProgressPauseDurationSeconds>
                   </configuration>
+              </plugin> -->
+
+              <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.8.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                  <publishingServerId>central</publishingServerId>
+                  <!-- optional -->
+                  <autoPublish>true</autoPublish>
+                  <waitUntil>published</waitUntil>
+                </configuration>
               </plugin>
+
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
