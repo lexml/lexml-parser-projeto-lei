@@ -83,7 +83,7 @@ trait DefaultRegexProfile extends RegexProfile {
     override def regexPosEpigrafe: List[Regex] = super.regexPosEpigrafe ++ List(
         """^\s*(\(.*\)|autora?:.*|autoria d.*|(d[oa] )?senador.*)\s*$""".r
     )
-    
+
     override def regexPreambulo: List[Regex] = super.regexPreambulo ++ List(
         "^o (congress+o nacional|senado federal) (decret[oa]|resolve|promulg[oa])"r,
         """^[ao] president[ae] (da republica|do senado|do supremo tribunal|da camara)"""r,
