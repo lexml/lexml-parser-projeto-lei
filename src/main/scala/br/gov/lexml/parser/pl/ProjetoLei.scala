@@ -200,11 +200,10 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
     val (prePreambulo, preAmbuloAndPos) = bl.span(x => !isPreambulo(x) && !isArticulacao(x))
     val (preAmbulo1, posPreambulo) = preAmbuloAndPos.span(!isArticulacao(_))
     val preAmbulo = preAmbulo1.filter({ case p: Paragraph => !isPosEpigrafe(p); case _ => true })
-    (prePreambulo, preAmbulo.collect { case p: Paragraph => p }, posPreambulo)
+    val preAmbuloPars = preAmbulo.collect { case p: Paragraph => p }
+    (prePreambulo, preAmbuloPars, posPreambulo)
   }
 
-
-  
   def parseArticulacao(bl: List[Block], useLinker: Boolean = true, urnContexto : String): List[Block] = {
     val articulacao0 = {
       import java.text.Normalizer

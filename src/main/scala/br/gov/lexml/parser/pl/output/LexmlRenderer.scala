@@ -5,6 +5,7 @@ import br.gov.lexml.parser.pl.rotulo._
 import br.gov.lexml.parser.pl.block._
 import br.gov.lexml.parser.pl.ProjetoLei
 import br.gov.lexml.parser.pl.rotulo.rotuloParser.{Fem, Genero}
+import br.gov.lexml.parser.pl.util.Embolden
 
 import scala.xml._
 import scala.collection.immutable.List
@@ -306,12 +307,21 @@ object LexmlRenderer {
     <Metadado>
       <Identificacao URN={ m.urn }/>
     </Metadado>
-  def renderParteInicial(pl: ProjetoLei): NodeSeq =
+
+  private val cargosRE =
+    """\b([OA] +)?(VICE-)?PRESIDENT[EA] +DA +REP.BLICA\b""".r
+  def renderParteInicial(pl: ProjetoLei): NodeSeq = {
+    val preAmbulo = NodeSeq fromSeq pl.preambulo.flatMap { p =>
+      Embolden.embolden(cargosRE,cleanBs(p.toNodeSeq))
+    }
+
     <ParteInicial>
       <Epigrafe id="epigrafe">{ renderParagraphWithoutP(pl.epigrafe) }</Epigrafe>
 		  {pl.ementa.map(x => <Ementa id="ementa">{ cleanTopBIs(renderParagraphWithoutP(x)) }</Ementa>).getOrElse(NodeSeq.Empty)}
-      <Preambulo id="preambulo">{ NodeSeq fromSeq pl.preambulo.flatMap(p => cleanBs(p.toNodeSeq)) }</Preambulo>
+      <Preambulo id="preambulo">{ preAmbulo }</Preambulo>
     </ParteInicial>
+  }
+
 
   import scala.xml.Utility.trim
 

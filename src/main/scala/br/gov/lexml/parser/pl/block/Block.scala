@@ -167,7 +167,10 @@ class Paragraph(val nodes: Seq[Node], val indentation: Double = 0, val centered:
 
     }
   }
-
+  def embolden(re : Regex) : Paragraph = {
+    import br.gov.lexml.parser.pl.util.Embolden
+    copy(nodes = Embolden.embolden(re, nodes))
+  }
   val omissisRe: Regex = """^[.… ]*(?:…|\.\.\.|\(\.\.\.\.*\))[…. ]*$""" r
 
   override lazy val recognizeOmissis: Block =
