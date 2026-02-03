@@ -3,7 +3,7 @@
 
     <groupId>br.gov.lexml.parser.pl</groupId>
     <artifactId>lexml-parser-projeto-lei</artifactId>
-    <version>1.14.23-SNAPSHOT</version>
+    <version>1.14.23</version>
 
     <name>LexML Brazil Legal Document Parser</name>
     <description>Brazillian legal document parsing library.</description>
@@ -48,7 +48,7 @@
         <url>https://github.com/lexml/lexml-parser-projeto-lei</url>
         <developerConnection>scm:git:https://github.com/lexml/lexml-parser-projeto-lei.git</developerConnection>
         <connection>scm:git:https://github.com/lexml/lexml-parser-projeto-lei.git</connection>
-        <tag>HEAD</tag>
+        <tag>lexml-parser-projeto-lei-1.14.23</tag>
     </scm>
 
     <build>
