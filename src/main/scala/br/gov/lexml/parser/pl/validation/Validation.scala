@@ -300,7 +300,7 @@ class Validation {
   private val somenteOmissisOuDispositivoEmAlteracao: ValidationRule[Alteracao] = {
     case a: Alteracao => in(a) {
       a.blocks collect {
-        case p: Paragraph =>
+        case p: Paragraph if p.paragraphClass.isEmpty =>
           in(p) {
             withContext(ElementoArticulacaoNaoReconhecido(Path(a.path).txt,
               "Text Paragraph: " + p.text))

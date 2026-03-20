@@ -921,7 +921,7 @@ object Block extends Block {
     }.to(List)
   }
 
-  private val ementaWord : Regex = """\bementa\b""".r
+  private val ementaWord : Regex = """.*\bementa\b.*""".r
 
   def identificaAlteracaoDeEmenta(blocks : List[Block]) : List[Block] = {
     def identifica(b : Block) = b match {

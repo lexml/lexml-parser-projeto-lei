@@ -284,11 +284,19 @@ object LexmlRenderer {
         }
         case Omissis(abreAspas, fechaAspas, notaAlteracao) =>
           List(<Omissis id={ idPai + "omi" + (omissisCount + 1) } abreAspas={ if (abreAspas) { "s" } else { null } } fechaAspas={ if (fechaAspas) { "s" } else { null } } notaAlteracao={ notaAlteracao.map(_.toUpperCase).orNull }/>)
-        case p: Paragraph => List(
-          /*<p abreAspas={ if (p.abreAspas) { "s" } else { null } } 
-                       fechaAspas={ if (p.abreAspas) { "s" } else { null } } 
-                       notaAlteracao={ p.notaAlteracao.map(_.toUpperCase).orNull } > */
-          <p>{ NodeSeq fromSeq p.nodes }</p>)
+        case p: Paragraph => {
+          val res = <p>
+            {NodeSeq fromSeq p.nodes}
+          </p>
+          val res1 = p.paragraphClass match {
+            case None => res
+            case Some(PC_Ementa) => res.copy(
+              label = "Ementa",
+              attributes = new UnprefixedAttribute("id",idPai + "ementa",Null)
+            )
+          }
+          res1
+        }
         case Table(elem) => List(elem)
         case _ => List[Node]()
       }
