@@ -247,20 +247,21 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
     //printArticulacao(articulacao9,9)
     val articulacao9_1 = Block.pushLastOmissis(articulacao9)
     //val articulacao9 = articulacao8
-    //printArticulacao(articulacao9,9)
+    printArticulacao(articulacao9_1,9)
     val articulacao10 = Block.numeraAlteracoes(articulacao9_1)
     //printArticulacao(articulacao10,10)
     val articulacao11 = Block.identificaPaths(articulacao10)
     //printArticulacao(articulacao11,11)
     val articulacao11_1 = Block.numeraDispsGenericos(articulacao11)
+    val articulacao11_2 = Block.identificaAlteracaoDeEmenta(articulacao11_1)
     if (useLinker) {
-      val articulacao12 = reconheceLinks(articulacao11_1, urnContexto)
+      val articulacao12 = reconheceLinks(articulacao11_2, urnContexto)
       //printArticulacao(articulacao12,12)
       val articulacao13 = Linker.paraCadaAlteracao(articulacao12)
       //printArticulacao(articulacao13,13)
       articulacao13
     } else {
-      articulacao11_1
+      articulacao11_2
     }
   }
   def fromBlocks(metadado: Metadado, blocks: List[Block]): (Option[ProjetoLei], List[ParseProblem]) = {

@@ -110,8 +110,13 @@ sealed abstract class Block extends Logging {
   }
 }
 
-class Paragraph(val nodes: Seq[Node], val indentation: Double = 0, val centered: Boolean = false, val abreAspas: Boolean = false, val fechaAspas: Boolean = false,
-                val notaAlteracao: Option[String]) extends Block {
+sealed class ParagraphClass
+
+object PC_Ementa extends ParagraphClass
+
+final case class Paragraph(nodes: Seq[Node], indentation: Double = 0, centered: Boolean = false,
+                     abreAspas: Boolean = false, fechaAspas: Boolean = false, notaAlteracao: Option[String] = None,
+                     paragraphClass : Option[ParagraphClass] = None) extends Block {
   lazy val isEmpty: Boolean = text.isEmpty && !abreAspas && !fechaAspas && notaAlteracao.isEmpty
 
   lazy val text: String = normalizer.normalize(unormalizedText)
@@ -129,11 +134,6 @@ class Paragraph(val nodes: Seq[Node], val indentation: Double = 0, val centered:
   def cutRight(length: Int): Paragraph = splitAt(text.length - length)._1
 
   override def toString: String = "Paragraph(" + (NodeSeq fromSeq nodes) + ", fechasAspas = " + fechaAspas + ")"
-
-  def copy(nodes: Seq[Node] = nodes, indentation: Double = indentation, centered: Boolean = centered,
-           abreAspas: Boolean = abreAspas, fechaAspas: Boolean = fechaAspas,
-           notaAlteracao: Option[String] = notaAlteracao) =
-    new Paragraph(nodes, indentation, centered, abreAspas, fechaAspas, notaAlteracao)
 
   lazy val withAbreAspas: Paragraph = copy(abreAspas = true)
   lazy val withFechaAspas: Paragraph = copy(fechaAspas = true)
@@ -184,10 +184,6 @@ class Paragraph(val nodes: Seq[Node], val indentation: Double = 0, val centered:
 }
 
 object Paragraph {
-  def apply(nodes: Seq[Node], indentation: Double = 0, centered: Boolean = false, abreAspas: Boolean = false, fechaAspas: Boolean = false,
-            notaAlteracao: Option[String] = None) =
-    new Paragraph(nodes, indentation, centered, abreAspas, fechaAspas, notaAlteracao)
-
   def unapply(p: Paragraph): Option[(Seq[Node], String)] = Some((p.nodes, p.text))
 }
 
@@ -210,10 +206,6 @@ case class Dispositivo(rotulo: Rotulo,
   override def flatMapBlock(f: Block => List[Block]): List[Block] = {
     f(copy(subDispositivos = subDispositivos.flatMap(f)))
   }
-
-  override def toString: String = ("Dispositivo(" + rotulo + "," + conteudo
-    + ",titulo = " + titulo + ", subDispositivos = " + subDispositivos.mkString("[", ",", "]")
-    + ", path = " + path.mkString("<", " ", ">") + ", fechaAspas = " + fechaAspas + ")")
 
   def mapConteudo(f: Option[Block] => Option[Block]): Dispositivo = {
     copy(conteudo = f(conteudo))
@@ -927,5 +919,24 @@ object Block extends Block {
     blocks1.map { b =>
       b.replaceChildren(corrigeRotuloParte(b.children))
     }.to(List)
+  }
+
+  private val ementaWord : Regex = """\bementa\b""".r
+
+  def identificaAlteracaoDeEmenta(blocks : List[Block]) : List[Block] = {
+    def identifica(b : Block) = b match {
+      case d : Dispositivo => (d.conteudo,d.subDispositivos) match {
+        case (Some(p1 : Paragraph), List(a : Alteracao)) if
+          ementaWord.matches(p1.text.toLowerCase) && a.blocks.size == 1 && a.blocks.head.isInstanceOf[Paragraph] =>
+            d.copy(
+              subDispositivos = List(
+                a.copy(blocks = List(a.blocks.head.asInstanceOf[Paragraph].copy(paragraphClass = Some(PC_Ementa))))
+              )
+            )
+        case _ => d
+      }
+      case x => x
+    }
+    blocks.map(_.mapBlock(identifica))
   }
 }
