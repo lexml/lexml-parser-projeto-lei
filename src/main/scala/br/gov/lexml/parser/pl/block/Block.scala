@@ -927,10 +927,13 @@ object Block extends Block {
     def identifica(b : Block) = b match {
       case d : Dispositivo => (d.conteudo,d.subDispositivos) match {
         case (Some(p1 : Paragraph), List(a : Alteracao)) if
-          ementaWord.matches(p1.text.toLowerCase) && a.blocks.size == 1 && a.blocks.head.isInstanceOf[Paragraph] =>
+          ementaWord.matches(p1.text.toLowerCase) && !a.blocks.isEmpty && a.blocks.head.isInstanceOf[Paragraph] =>
+            val pp = a.blocks.head.asInstanceOf[Paragraph]
             d.copy(
               subDispositivos = List(
-                a.copy(blocks = List(a.blocks.head.asInstanceOf[Paragraph].copy(paragraphClass = Some(PC_Ementa))))
+                a.copy(blocks = pp.copy(
+                  paragraphClass = Some(PC_Ementa)
+                ) :: a.blocks.tail)
               )
             )
         case _ => d
