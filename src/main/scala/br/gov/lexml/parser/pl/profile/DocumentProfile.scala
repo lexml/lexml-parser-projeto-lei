@@ -74,7 +74,7 @@ trait DefaultRegexProfile extends RegexProfile {
 	)
 	override def regexAssinatura: List[Regex] = super.regexAssinatura ++ List("^senadora? "r)
 	override def regexEpigrafe1: List[Regex] = super.regexEpigrafe1 ++ List(
-          """^\s*(red\d+;+)?(projeto( de)? (lei|decreto legislativo)|(proposta|projeto) de emenda|projeto de resolu)""".r
+          """^\s*(red\d+;+)?(substitutivo (ao|a)\s+)?(projeto( de)? (lei|decreto legislativo)|(proposta|projeto) de emenda|projeto de resolu)""".r
     )
   override def regexEpigrafe: List[Regex] = super.regexEpigrafe ++ List(          
          """^(n[oº°˚]|complementar)"""r
@@ -85,7 +85,7 @@ trait DefaultRegexProfile extends RegexProfile {
     )
 
     override def regexPreambulo: List[Regex] = super.regexPreambulo ++ List(
-        "^o (congress+o nacional|senado federal) (decret[oa]|resolve|promulg[oa])"r,
+        "^o (congress+o nacional|senado federal|camara dos deputados) (decret[oa]|resolve|promulg[oa])"r,
         """^[ao] president[ae] (da republica|do senado|do supremo tribunal|da camara)"""r,
         "^[ao] vice-president[ae] da republica"r,
         "^as? mesas?"r,
