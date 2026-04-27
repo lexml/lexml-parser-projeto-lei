@@ -42,6 +42,7 @@ object Caracteristicas {
   val POSSUI_TITULO = "possui titulo"
   val POSSUI_PENA = "possui pena"
   val POSSUI_IMAGEM = "possui imagem"
+  val POSSUI_EMENDA_DE_EMENTA = "possui emenda de ementa"
 }
 
 case class ProjetoLei(
