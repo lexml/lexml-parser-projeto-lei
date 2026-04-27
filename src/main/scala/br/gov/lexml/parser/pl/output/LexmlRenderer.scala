@@ -291,17 +291,7 @@ object LexmlRenderer {
           val res1 = p.paragraphClass match {
             case None => res
             case Some(PC_Ementa) =>
-              var attrs = new UnprefixedAttribute("id",idPai + "ementa",Null)
-              if(p.abreAspas) {
-                attrs = new UnprefixedAttribute("abreAspas","s",attrs)
-              }
-              if(p.fechaAspas) {
-                attrs = new UnprefixedAttribute("fechaAspas","s",attrs)
-              }
-              p.notaAlteracao match {
-                case None => ()
-                case Some(na) => attrs = new UnprefixedAttribute("notaAlteracao",na,attrs)
-              }
+              val attrs = new UnprefixedAttribute("id",idPai + "ementa",Null)
               res.copy(
                 label = "Ementa",
                 attributes = attrs
