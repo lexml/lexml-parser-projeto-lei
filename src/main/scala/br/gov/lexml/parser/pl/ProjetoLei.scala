@@ -277,7 +277,8 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
           }
         }
       }
-      val (ementa1, preambulo, posPreambulo) = reconhecePreambulo(posEpigrafe)
+      val (ementa1, preambulo1, posPreambulo) = reconhecePreambulo(posEpigrafe)
+      val preambulo2 = trimEmptyPars(preambulo1)
       val ementa2 = trimEmptyPars(ementa1)
       val ementa = if (
             ementa2.isEmpty ||
@@ -299,7 +300,7 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
       
       val articulacao1 = elementos(Articulacao)
       val articulacao = parseArticulacao(articulacao1,urnContexto = urnContexto)
-      val possuiImagem = (preEpigrafe ++ List(epigrafe) ++ preambulo ++ articulacao1).exists({
+      val possuiImagem = (preEpigrafe ++ List(epigrafe) ++ preambulo2 ++ articulacao1).exists({
         case p: Paragraph => (p.nodes \\ "img").nonEmpty
         case Image => true
         case _ => false
@@ -315,7 +316,7 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
         preEpigrafe = preEpigrafe,
         epigrafe = epigrafe,
         ementa = ementa.map(x => reconheceLinks(x,urnContexto)),
-        preambulo = preambulo,
+        preambulo = preambulo2,
         articulacao = articulacao,
         otherCaracteristicas = otherCaracteristicas)
 
@@ -344,7 +345,7 @@ object ProjetoLeiParser {
     case _ => false
   }
 
-  private def trimEmptyPars(bl: List[Block]): List[Block] = {
+  private def trimEmptyPars[T <: Block](bl: List[T]): List[T] = {
     bl.dropWhile(isEmptyPar).reverse.dropWhile(isEmptyPar).reverse
   }
 
