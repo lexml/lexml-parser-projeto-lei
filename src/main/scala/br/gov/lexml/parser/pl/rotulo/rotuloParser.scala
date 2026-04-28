@@ -77,7 +77,7 @@ object rotuloParser {
 		lazy val lowerAlpha: Parser[Char] = elem("Alpha", c => c >= 'a' && c <= 'z')
 		lazy val complemento: Parser[Int] = hyphenOrSimilar ~> (lowerAlpha +) <~ guard(fimComplemento) ^^ complementoToInteger
 
-		lazy val fimComplemento: Parser[Unit] = (elem("fimComplemento", c => ",\\.;: ".contains(c)) ^^^ ((): Unit)) | eos
+		lazy val fimComplemento: Parser[Unit] = (elem("fimComplemento", c => ",\\.;: )".contains(c)) ^^^ ((): Unit)) | eos
 
 		def ordinalExtenso(g: Genero): Parser[(Int, Boolean)] =
 			("unic" ^^^ (1, true) | "primeir" ^^^ (1, false) | "segund" ^^^ (2, false) | "terceir" ^^^ (3, false)
