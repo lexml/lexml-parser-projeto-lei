@@ -85,7 +85,7 @@ trait DefaultRegexProfile extends RegexProfile {
     )
 
     override def regexPreambulo: List[Regex] = super.regexPreambulo ++ List(
-        "^o (congress+o nacional|senado federal|camara dos deputados) (decret[oa]|resolve|promulg[oa])"r,
+        "^[ao] (congress+o nacional|senado federal|camara dos deputados) (decret[oa]|resolve|promulg[oa])"r,
         """^[ao] president[ae] (da republica|do senado|do supremo tribunal|da camara)"""r,
         "^[ao] vice-president[ae] da republica"r,
         "^as? mesas?"r,

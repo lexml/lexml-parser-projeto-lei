@@ -195,7 +195,7 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
         case None => false
         case Some((rotulo, _)) => rotulo.nivel <= niveis.nivel_maximo_aceito_na_raiz
       }
-      case x => false
+      case _ => false
     }
     val (prePreambulo, preAmbuloAndPos) = bl.span(x => !isPreambulo(x) && !isArticulacao(x))
     val (preAmbulo1, posPreambulo) = preAmbuloAndPos.span(!isArticulacao(_))
@@ -289,7 +289,6 @@ class ProjetoLeiParser(profile: DocumentProfile) extends Logging {
           } else {
             Some(Block.joinParagraphs(ementa2).head)
           }
-      
       val ms = Marcadores(profile)
       val elementos = ms.span(posPreambulo)
       if (!elementos.contains(Articulacao)) {
@@ -350,7 +349,8 @@ object ProjetoLeiParser {
   }
 
   private def oneOf(r: List[Regex]) = (b: Block) => b match {
-    case p: Paragraph => r.find(_.findFirstIn(p.text).isDefined).map(_ => p)
+    case p: Paragraph =>
+      r.find(_.findFirstIn(p.text).isDefined).map(_ => p)
     case _ => None
   }
 
