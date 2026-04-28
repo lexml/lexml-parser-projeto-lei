@@ -7,14 +7,7 @@ import scala.xml.Text
 import grizzled.slf4j.Logging
 import ProjetoLei.existsAnyThat
 import ProjetoLei.existsAnyThatP
-import br.gov.lexml.parser.pl.block.Alteracao
-import br.gov.lexml.parser.pl.block.Block
-import br.gov.lexml.parser.pl.block.Dispositivo
-import br.gov.lexml.parser.pl.block.Image
-import br.gov.lexml.parser.pl.block.OL
-import br.gov.lexml.parser.pl.block.Omissis
-import br.gov.lexml.parser.pl.block.Paragraph
-import br.gov.lexml.parser.pl.block.Table
+import br.gov.lexml.parser.pl.block.{Alteracao, Block, Dispositivo, Image, OL, Omissis, Paragraph, PC_Ementa, Table}
 import br.gov.lexml.parser.pl.errors.ArticulacaoNaoIdentificada
 import br.gov.lexml.parser.pl.errors.EmentaAusente
 import br.gov.lexml.parser.pl.errors.EpigrafeAusente
@@ -72,12 +65,18 @@ case class ProjetoLei(
 
   import Caracteristicas._
   lazy val caracteristicas: Map[String, Boolean] = (Map(
-    POSSUI_TABELA_ARTICULACAO -> existsAnyThat(articulacao, _.isInstanceOf[Table]),
-    POSSUI_ALTERACAO -> existsAnyThat(articulacao, _.isInstanceOf[Alteracao]),
-    //"possui imagem" -> existsAnyThat(articulacao, _ == Image), 
-    POSSUI_TITULO -> existsAnyThatP(articulacao, { case d: Dispositivo => d.titulo.isDefined }),
-    POSSUI_PENA -> existsAnyThatP(articulacao, { case d: Dispositivo => d.rotulo == RotuloPena }))
-    ++ otherCaracteristicas)
+      POSSUI_TABELA_ARTICULACAO -> existsAnyThat(articulacao, _.isInstanceOf[Table]),
+      POSSUI_ALTERACAO -> existsAnyThat(articulacao, _.isInstanceOf[Alteracao]),
+      //"possui imagem" -> existsAnyThat(articulacao, _ == Image),
+      POSSUI_TITULO -> existsAnyThatP(articulacao, { case d: Dispositivo => d.titulo.isDefined }),
+      POSSUI_PENA -> existsAnyThatP(articulacao, { case d: Dispositivo => d.rotulo == RotuloPena }),
+      POSSUI_EMENDA_DE_EMENTA -> existsAnyThatP(articulacao, {
+        case a : Alteracao =>
+          existsAnyThatP(a.children, {
+            case p : Paragraph => p.paragraphClass == Some(PC_Ementa)
+          })
+      })
+  ) ++ otherCaracteristicas)
 
   lazy val asXML: NodeSeq = LexmlRenderer.render(this)
 }
