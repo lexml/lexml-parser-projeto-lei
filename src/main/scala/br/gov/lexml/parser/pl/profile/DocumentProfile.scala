@@ -640,6 +640,12 @@ object ProjetoDeResolucaoNaCamara extends DocumentProfile with DefaultRegexProfi
   override def epigrafeHead = "PROJETO DE RESOLUÇÃO"
 }
 
+object PropostaEmendaConstitucionalNaCamara extends DocumentProfile with DefaultRegexProfile with DaCamaraProfile  with ProjetoNorma {
+  override def urnFragTipoNorma = "proposta.emenda.constitucional;pec"
+  override def epigrafeHead = "PROPOSTA DE EMENDA CONSTITUCIONAL"
+  override def epigrafeObrigatoria: Boolean = false
+}
+
 object MedidaProvisoriaNoCongresso extends DocumentProfile with DefaultRegexProfile with DoCongressoProfile  with ProjetoNorma {
   override def urnFragTipoNorma = "medida.provisoria;mpv"
   override def epigrafeHead = "MEDIDA PROVISÓRIA"
