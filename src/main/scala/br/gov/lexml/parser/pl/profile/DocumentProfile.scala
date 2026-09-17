@@ -365,6 +365,7 @@ object DocumentProfileRegister {
       ProjetoDeLeiComplementarNaCamara,
       ProjetoDeLeiComplementarNovaNomenclatura,
       ProjetoDeResolucaoNaCamara,
+      PropostaEmendaConstitucionalNaCamara,
       MedidaProvisoriaNoCongresso,
       MedidaProvisoriaFederal,
       Lei,
