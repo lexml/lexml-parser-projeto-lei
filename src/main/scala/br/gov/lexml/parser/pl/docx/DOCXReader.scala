@@ -153,7 +153,8 @@ object DOCXReader {
         e.label match {
           case "i" => ctx.leave(Some(s => s.copy(italics = true)))
           case "b" => ctx.leave(Some(s => s.copy(bold = true)))
-          case "pPr" | "rPr" => ctx.leave(Some(x => x))
+          case "pPr" => ctx.leave(Some(_ => TextStyle()))
+          case "rPr" => ctx.leave(Some(x => x))
           case "tab" => ctx.add(Tab)
           case "vertAlign" =>
             e.attributes.get((XElem.wNs,"val")) match {
